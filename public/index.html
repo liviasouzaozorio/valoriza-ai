@@ -1,0 +1,356 @@
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Valoriza AI - A inteligência que valoriza o seu produto</title>
+        
+        <!-- Google Fonts - Poppins -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+        
+        <!-- Tailwind CSS CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+        
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            'valoriza-dark': '#0F172A',
+                            'valoriza-cyan': '#00E5FF',
+                            'valoriza-purple': '#7B61FF',
+                        },
+                        fontFamily: {
+                            'poppins': ['Poppins', 'sans-serif'],
+                        },
+                    }
+                }
+            }
+        </script>
+        
+        <style>
+            body {
+                font-family: 'Poppins', sans-serif;
+            }
+            
+            .glow-cyan {
+                text-shadow: 0 0 20px rgba(0, 229, 255, 0.6), 0 0 40px rgba(0, 229, 255, 0.4);
+            }
+            
+            .glow-cyan-bg {
+                box-shadow: 0 0 30px rgba(0, 229, 255, 0.5);
+            }
+            
+            .hover-glow:hover {
+                box-shadow: 0 0 20px rgba(0, 229, 255, 0.6);
+                transform: translateY(-2px);
+                transition: all 0.3s ease;
+            }
+
+            /* Animação suave para scroll */
+            html {
+                scroll-behavior: smooth;
+            }
+        </style>
+    </head>
+    <body class="bg-valoriza-dark text-white">
+
+        <!-- Header -->
+        <header class="fixed top-0 left-0 right-0 z-50 bg-valoriza-dark/90 backdrop-blur-sm border-b border-valoriza-cyan/20">
+            <nav class="container mx-auto px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl font-bold glow-cyan">Valoriza </span>
+                    <span class="text-valoriza-cyan font-bold glow-cyan">AI</span>
+                </div>
+                
+                <ul class="hidden md:flex items-center gap-8">
+                    <li><a href="#inicio" class="hover:text-valoriza-cyan transition-colors">Início</a></li>
+                    <li><a href="#calculadora" class="hover:text-valoriza-cyan transition-colors">Calculadora</a></li>
+                    <li><a href="#sobre" class="hover:text-valoriza-cyan transition-colors">Sobre</a></li>
+                </ul>
+                
+                <button class="bg-valoriza-cyan text-valoriza-dark px-6 py-2 rounded-lg font-semibold hover-glow">
+                    Começar Agora
+                </button>
+            </nav>
+        </header>
+
+        <!-- Hero Section -->
+        <section id="inicio" class="min-h-screen flex items-center justify-center pt-20 px-6 relative overflow-hidden">
+            <!-- Abstract Shapes -->
+            <div class="absolute top-20 left-10 w-64 h-64 bg-valoriza-cyan/10 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-20 right-10 w-96 h-96 bg-valoriza-purple/10 rounded-full blur-3xl"></div>
+            
+            <div class="container mx-auto grid md:grid-cols-2 gap-12 items-center relative z-10">
+                <!-- Texto -->
+                <div>
+                    <h1 class="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+                        A inteligência que 
+                        <span class="text-valoriza-cyan glow-cyan">valoriza</span> 
+                    o seu produto.
+                    </h1>
+                    <p class="text-gray-400 text-lg mb-8">
+                        Calcule seus custos e lucros de forma inteligente. 
+                        Valoriza AI ajuda novos empreendedores a precificar produtos com precisão e confiança.
+                    </p>
+                    <div class="flex gap-4">
+                        <button class="bg-valoriza-cyan text-valoriza-dark px-8 py-3 rounded-lg font-semibold hover-glow">
+                            Experimentar Grátis
+                        </button>
+                        <button class="border-2 border-valoriza-purple text-valoriza-purple px-8 py-3 rounded-lg font-semibold hover:bg-valoriza-purple hover:text-white transition-all">
+                            Saiba Mais
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Robô AI SVG -->
+                <div class="flex justify-center">
+                    <svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" class="drop-shadow-2xl">
+                        <!-- Cabeça do Robô -->
+                        <rect x="125" y="100" width="150" height="150" rx="20" fill="url(#gradient1)" stroke="#00E5FF" stroke-width="3"/>
+                        
+                        <!-- Olhos -->
+                        <circle cx="165" cy="150" r="15" fill="#00E5FF" class="animate-pulse"/>
+                        <circle cx="235" cy="150" r="15" fill="#00E5FF" class="animate-pulse"/>
+                        
+                        <!-- Boca/Display -->
+                        <rect x="155" y="190" width="90" height="30" rx="15" fill="#0F172A" stroke="#7B61FF" stroke-width="2"/>
+                        <line x1="170" y1="205" x2="230" y2="205" stroke="#7B61FF" stroke-width="2" stroke-linecap="round"/>
+                        
+                        <!-- Antena -->
+                        <line x1="200" y1="100" x2="200" y2="70" stroke="#00E5FF" stroke-width="3"/>
+                        <circle cx="200" cy="60" r="10" fill="#00E5FF" class="animate-pulse"/>
+                        
+                        <!-- Corpo -->
+                        <rect x="140" y="260" width="120" height="100" rx="15" fill="url(#gradient2)" stroke="#7B61FF" stroke-width="3"/>
+                        
+                        <!-- Detalhes do Corpo -->
+                        <circle cx="170" cy="300" r="8" fill="#00E5FF"/>
+                        <circle cx="200" cy="300" r="8" fill="#00E5FF"/>
+                        <circle cx="230" cy="300" r="8" fill="#00E5FF"/>
+                        
+                        <!-- Gradientes -->
+                        <defs>
+                            <linearGradient id="gradient1" x1="125" y1="100" x2="275" y2="250">
+                                <stop offset="0%" style="stop-color:#1e293b;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#334155;stop-opacity:1" />
+                            </linearGradient>
+                            <linearGradient id="gradient2" x1="140" y1="260" x2="260" y2="360">
+                                <stop offset="0%" style="stop-color:#1e293b;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#334155;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- Calculator Section -->
+        <section id="calculadora" class="min-h-screen flex items-center justify-center px-6 py-20 bg-gradient-to-b from-valoriza-dark to-[#1a1f35]">
+            <div class="container mx-auto">
+                <h2 class="text-4xl md:text-5xl font-bold text-center mb-4">
+                    Calcule seu <span class="text-valoriza-cyan glow-cyan">Preço de Venda</span>
+                </h2>
+                <p class="text-gray-400 text-center mb-12 max-w-2xl mx-auto">
+                    Experimente nossa calculadora inteligente e descubra o valor ideal para seu produto
+                </p>
+                
+                <div class="max-w-2xl mx-auto bg-gradient-to-br from-gray-900 to-gray-800 p-8 rounded-2xl border border-valoriza-cyan/20 glow-cyan-bg">
+        <div class="grid md:grid-cols-2 gap-4 mb-6">
+            <div>
+                <label class="block text-sm font-medium mb-2 text-gray-400">Custo do Produto (R$)</label>
+                <input type="number" id="custo" placeholder="0.00" oninput="calcular()"
+                    class="w-full bg-valoriza-dark border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-valoriza-cyan focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2 text-gray-400">Embalagem (R$)</label>
+                <input type="number" id="embalagem" placeholder="0.00" oninput="calcular()"
+                    class="w-full bg-valoriza-dark border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-valoriza-cyan focus:outline-none">
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-4 mb-6">
+            <div>
+                <label class="block text-sm font-medium mb-2 text-gray-400">Frete/Logística (R$)</label>
+                <input type="number" id="frete" placeholder="0.00" oninput="calcular()"
+                    class="w-full bg-valoriza-dark border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-valoriza-cyan focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2 text-gray-400">Taxas de Venda (%)</label>
+                <input type="number" id="taxas" placeholder="0" oninput="calcular()"
+                    class="w-full bg-valoriza-dark border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-valoriza-cyan focus:outline-none">
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <label class="block text-sm font-medium mb-2 text-gray-400">Margem de Lucro Desejada (%)</label>
+            <div class="flex items-center gap-4">
+                <input type="range" id="margem" min="0" max="100" value="30" oninput="calcular()"
+                    class="flex-1 accent-valoriza-cyan">
+                <span id="margemValor" class="text-valoriza-cyan font-bold text-xl w-16 text-right">30%</span>
+            </div>
+        </div>
+
+        <div class="bg-valoriza-dark border-2 border-valoriza-cyan rounded-xl p-6 text-center">
+            <p class="text-gray-400 mb-2">Preço de Venda Sugerido</p>
+            <p class="text-5xl font-bold text-valoriza-cyan glow-cyan" id="resultado">R$ 0,00</p>
+        </div>
+
+        <div class="mt-6 grid grid-cols-3 gap-4 text-center">
+            <div>
+                <p class="text-gray-400 text-sm">Custo Fixo</p>
+                <p class="text-lg font-semibold text-white" id="custoTotal">R$ 0,00</p>
+            </div>
+            <div>
+                <p class="text-gray-400 text-sm">Lucro Líquido</p>
+                <p class="text-lg font-semibold text-valoriza-purple" id="lucro">R$ 0,00</p>
+            </div>
+            <div>
+                <p class="text-gray-400 text-sm">Margem</p>
+                <p class="text-lg font-semibold text-valoriza-cyan" id="margemFinal">30%</p>
+            </div>
+        </div>
+    </div>
+                <div class="max-w-2xl mx-auto mt-24 mb-32 p-6 bg-valoriza-dark/50 border border-valoriza-purple/30 rounded-xl">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 bg-valoriza-purple rounded-full flex items-center justify-center animate-bounce">
+                <span class="text-xs">🤖</span>
+            </div>
+            <h3 class="font-semibold text-valoriza-purple">Consultor de Logística AI</h3>
+        </div>
+        <div class="space-y-4">
+            <p class="text-sm text-gray-400">Dúvida sobre frete ou embalagem? Pergunte para a inteligência do SENAI:</p>
+            <div class="flex gap-2">
+                <input type="text" id="pergunta-ia" placeholder="Ex: Qual o frete médio para SP capital?" 
+                    class="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-sm focus:border-valoriza-purple outline-none">
+                <button onclick="perguntarIA()" class="bg-valoriza-purple text-white px-4 py-2 rounded-lg text-sm hover:opacity-80 transition-all">
+                    Perguntar
+                </button>
+            </div>
+            <div id="resposta-ia" class="hidden text-sm bg-gray-900/50 p-3 rounded-lg border-l-4 border-valoriza-purple italic text-gray-300 whitespace-pre-line">
+                </div>
+        </div>
+    </div>
+            </div>
+            
+        </section>
+
+        <!-- Sobre Section -->
+        <section id="sobre" class="py-20 px-6 bg-valoriza-dark">
+            <div class="container mx-auto text-center max-w-3xl">
+                <h2 class="text-4xl font-bold mb-6">
+                    Sobre o <span class="text-valoriza-cyan">Valoriza AI</span>
+                </h2>
+                <p class="text-gray-400 text-lg mb-8">
+                    O Valoriza AI é uma ferramenta desenvolvida para auxiliar novos empreendedores 
+                    a calcularem o preço de venda ideal de seus produtos, considerando custos, 
+                    margens de lucro e despesas operacionais.
+                </p>
+                <div class="grid md:grid-cols-3 gap-8 mt-12">
+                    <div class="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-xl border border-valoriza-cyan/20">
+                        <div class="text-4xl mb-4">🎯</div>
+                        <h3 class="text-xl font-semibold mb-2">Precisão</h3>
+                        <p class="text-gray-400">Cálculos precisos e confiáveis</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-xl border border-valoriza-purple/20">
+                        <div class="text-4xl mb-4">⚡</div>
+                        <h3 class="text-xl font-semibold mb-2">Rapidez</h3>
+                        <p class="text-gray-400">Resultados em tempo real</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-xl border border-valoriza-cyan/20">
+                        <div class="text-4xl mb-4">💡</div>
+                        <h3 class="text-xl font-semibold mb-2">Inteligente</h3>
+                        <p class="text-gray-400">Interface intuitiva e fácil</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="bg-[#0a0f1a] border-t border-gray-800 py-8 px-6">
+            <div class="container mx-auto text-center">
+                <p class="text-gray-400">
+                    Desenvolvido como projeto do 
+                    <span class="text-valoriza-cyan font-semibold">SENAI Logística</span>
+                </p>
+                <p class="text-gray-500 text-sm mt-2">
+                    © 2026 Valoriza AI - Todos os direitos reservados
+                </p>
+            </div>
+        </footer>
+
+        <!-- JavaScript para a Calculadora -->
+        <script>
+            function calcular() {
+        const custo = parseFloat(document.getElementById('custo').value) || 0;
+        const embalagem = parseFloat(document.getElementById('embalagem').value) || 0;
+        const frete = parseFloat(document.getElementById('frete').value) || 0;
+        const taxasPerc = parseFloat(document.getElementById('taxas').value) || 0;
+        const margem = parseFloat(document.getElementById('margem').value) || 0;
+
+        // Atualizar display da margem no slider
+        document.getElementById('margemValor').textContent = margem + '%';
+
+        // Soma dos custos fixos (Produto + Logística)
+        const custoFixoTotal = custo + embalagem + frete;
+
+        // Lógica de Precificação (Markup):
+        // Preço = Custos Fixos / (1 - (Margem% + Taxas%))
+        // Isso garante que a margem e a taxa incidam sobre o PREÇO FINAL, não sobre o custo.
+        const divisor = 1 - ((margem + taxasPerc) / 100);
+        
+        let precoVenda = 0;
+        if (divisor > 0) {
+            precoVenda = custoFixoTotal / divisor;
+        }
+
+        const lucro = precoVenda * (margem / 100);
+
+        // Atualizar resultados na tela
+        document.getElementById('resultado').textContent = 'R$ ' + precoVenda.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('custoTotal').textContent = 'R$ ' + custoFixoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        document.getElementById('lucro').textContent = 'R$ ' + lucro.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        document.getElementById('margemFinal').textContent = margem + '%';
+    }
+            
+            // Calcular ao carregar a página
+            calcular();
+       async function perguntarIA() {
+    const perguntaInput = document.getElementById('pergunta-ia');
+    const respostaDiv = document.getElementById('resposta-ia');
+    const pergunta = perguntaInput.value;
+    
+    if (!pergunta.trim()) {
+        alert("Digite sua dúvida sobre logística!");
+        return;
+    }
+
+    respostaDiv.classList.remove('hidden');
+    respostaDiv.innerHTML = "🤖 <span class='animate-pulse'>Consultando o Gemini AI...</span>";
+
+    try {
+        const response = await fetch('/perguntar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pergunta: pergunta })
+        });
+
+        const data = await response.json();
+
+        if (data.resposta) {
+            // USAMOS O MARKED AQUI PARA FORMATAR O TEXTO:
+            respostaDiv.innerHTML = `<strong>Valoriza AI:</strong> <div class="mt-2 text-sm leading-relaxed">${marked.parse(data.resposta)}</div>`;
+        } else {
+            respostaDiv.innerHTML = "⚠️ Erro ao obter resposta da IA.";
+        }
+    } catch (error) {
+        console.error("Erro:", error);
+        respostaDiv.innerHTML = "❌ O servidor está desligado. Rode 'node server.js' no terminal.";
+    }
+}
+        </script>
+
+    </body>
+    </html>
