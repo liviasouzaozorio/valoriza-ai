@@ -1,8 +1,8 @@
 <div align="center">
   <img src="https://img.icons8.com/fluency/96/bot.png" alt="Robot Icon"/>
   <h1>🤖 Valoriza AI</h1>
-  <p><b>Iniciação Científica: Engine de Markup com Inteligência Artificial Integrada</b></p>
-  <p><i>Automatização de saúde financeira e suporte logístico via rede neural.</i></p>
+  <p><b>Iniciação Científica: Sistema inteligente de markup para microempreendedores.</b></p>
+  <p><i>Plataforma de precificação e apoio logístico com IA.</i></p>
 
   <p>
     <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="NodeJS">
@@ -14,12 +14,22 @@
 ---
 
 ## ⚡ Sobre o Projeto
-O **Valoriza AI** é um projeto de **Iniciação Científica (IC)** focado em processamento de dados financeiros para microempreendedores. O sistema funciona como um **Markup**, processando variáveis de custos fixos e variáveis para garantir o equilíbrio da margem de lucro.
 
-Através de uma conexão direta com o **Google AI Studio (Gemini)**, o sistema disponibiliza um consultor robótico especializado em logística, capaz de processar perguntas sobre fretes, otimização de embalagens e supply chain.
+O **Valoriza AI** é um projeto de **Iniciação Científica (IC)** voltado à automação de precificação para microempreendedores, unindo **Inteligência Artificial, logística e análise de custos**.  
+
+O sistema funciona como uma **calculadora inteligente de markup**, processando custos fixos, variáveis e margem de lucro para auxiliar na definição estratégica de preços e redução de erros operacionais.
+
+Integrado ao **Google AI Studio (Gemini API)**, o projeto também conta com um assistente virtual especializado em logística, capaz de auxiliar em decisões relacionadas a fretes, otimização de embalagens, custos operacionais e supply chain.
+
+---
 
 ## ⚙️ Funcionalidades
-- 📟 **Calculadora de Markup:** Algoritmo preciso para definição de preço de venda.
-- 🤖 **Logistica IA:** Assistente de IA para suporte em decisões de transporte e insumos.
-- 🧬 **UI:** UI desenvolvida em Tailwind CSS com foco em legibilidade e design tech.
 
+- 📟 **Calculadora Inteligente de Markup**  
+  Automação da precificação com base em custos, margem de lucro e equilíbrio financeiro.
+
+- 🤖 **Assistente Logístico com IA**  
+  Suporte inteligente para dúvidas sobre transporte, fretes, embalagens e otimização logística através da Gemini API.
+
+- 🧬 **Interface Moderna (UI)**  
+  Desenvolvida com Tailwind CSS, priorizando legibilidade, organização visual e experiência do usuário.
