@@ -9,12 +9,17 @@ require('dotenv').config({ path: caminhoEnv });
 
 const app = express();
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public'))); // Alterado para caminho absoluto seguro
+
+// ROTA  index.html na raiz 
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // Inicialização da API com a chave carregada do ambiente
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Criamos um mapa na memória do servidor para guardar o chat de cada setor
+// mapa na memória do servidor para guardar o chat de cada setor
 const historicosDeConversa = {};
 
 app.post('/perguntar', async (req, res) => {
@@ -29,7 +34,7 @@ app.post('/perguntar', async (req, res) => {
             servico: "Foque em precificação baseada em valor percebido, custo da hora técnica e escalabilidade."
         };
 
-        // 1. Se não existir um histórico para esse setor ainda, nós inicializamos o chat
+        // inicializa o chat
         if (!historicosDeConversa[setor]) {
             
             const instrucaoSistema = `Você é o consultor chefe do ValorizaAI para o setor de ${setor}. 
@@ -45,16 +50,16 @@ app.post('/perguntar', async (req, res) => {
                     },
                     {
                         role: "model",
-                        parts: [{ text: `Entendido. Sou o consultor especialista do setor de ${setor}. Estou pronto para analisar os dados financeiros da Lívia em tempo real e ajudá-la de forma gentil e altamente profissional.` }]
+                        parts: [{ text: `Entendido. Sou o consultor especialista do setor de ${setor}. Estou pronto para analisar os dados financeiros da Lívia em tempo real e ajudá-la de forma gentil e highly profissional.` }]
                     }
                 ],
             });
         }
 
-        // 2. Recuperamos o chat existente com a memória acumulada
+        //  chat existente com a memória acumulada
         const chat = historicosDeConversa[setor];
 
-        // 3. Montamos o contexto em tempo real injetando os valores que vieram do formulário
+        //  contexto em tempo real injetando os valores que vieram do formulário
         let contextoTempoReal = `[DADOS FINANCEIROS DO CLIENTE EM TEMPO REAL]:\n`;
         
         // Verificação segura se os dados de fato chegaram preenchidos do front-end
@@ -88,3 +93,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
 });
+
+// Exportação necessária para ambientes Serverless (Vercel)
+module.exports = app;
