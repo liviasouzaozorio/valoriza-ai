@@ -9,14 +9,14 @@ require('dotenv').config({ path: caminhoEnv });
 
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public'))); // Alterado para caminho absoluto seguro
+app.use(express.static(path.join(__dirname, 'public'))); // caminho absoluto seguro
 
 // ROTA  index.html na raiz 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Inicialização da API com a chave carregada do ambiente
+// inicialização da API
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // mapa na memória do servidor para guardar o chat de cada setor
@@ -38,9 +38,9 @@ app.post('/perguntar', async (req, res) => {
         if (!historicosDeConversa[setor]) {
             
             const instrucaoSistema = `Você é o consultor chefe do ValorizaAI para o setor de ${setor}. 
-            Seu papel é analisar os dados de precificação de um empreendedor e responder às dúvidas de forma ultra realista, analítica e prestativa e resumida.
+            Seu papel é analisar os dados de precificação de um empreendedor e responder às dúvidas de forma ultra realista, analítica e prestativa e direta e resumida.
             Diretriz técnica para este setor: ${guias[setor] || ''}.
-            Seja gentil, direto e use negrito em termos contábeis importantes. Responda em formato Markdown elegante.`;
+            Seja gentil, direto e use negrito em termos contábeis importantes.`;
 
             historicosDeConversa[setor] = model.startChat({
                 history: [
