@@ -38,7 +38,7 @@ app.post('/perguntar', async (req, res) => {
         if (!historicosDeConversa[setor]) {
             
             const instrucaoSistema = `Você é o consultor chefe do ValorizaAI para o setor de ${setor}. 
-            Seu papel é analisar os dados de precificação de um microempreendedor e responder às dúvidas de forma ultra realista, analítica e prestativa.
+            Seu papel é analisar os dados de precificação de um empreendedor e responder às dúvidas de forma ultra realista, analítica e prestativa e resumida.
             Diretriz técnica para este setor: ${guias[setor] || ''}.
             Seja gentil, direto e use negrito em termos contábeis importantes. Responda em formato Markdown elegante.`;
 
@@ -50,7 +50,7 @@ app.post('/perguntar', async (req, res) => {
                     },
                     {
                         role: "model",
-                        parts: [{ text: `Entendido. Sou o consultor especialista do setor de ${setor}. Estou pronto para analisar os dados financeiros da Lívia em tempo real e ajudá-la de forma gentil e highly profissional.` }]
+                        parts: [{ text: `Entendido. Sou o consultor especialista do setor de ${setor}. Estou pronto para analisar os dados financeiros do cliente em tempo real e ajudá-la de forma gentil e highly profissional.` }]
                     }
                 ],
             });

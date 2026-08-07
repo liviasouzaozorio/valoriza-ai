@@ -185,7 +185,8 @@
                 const mod = parseFloat(document.getElementById('i2')?.value) || 0;
                 const ggf = parseFloat(document.getElementById('i3')?.value) || 0;
                 const perdaPerc = parseFloat(document.getElementById('i4')?.value) || 0;
-                somaCustos = (mp + mod + ggf) * (1 + (perdaPerc / 100));
+                // CORREÇÃO: Perda de processo incide apenas sobre a Matéria-Prima (mp)
+                somaCustos = (mp * (1 + (perdaPerc / 100))) + mod + ggf;
             } 
             else if (setorAtivo === 'servico') {
                 const valorHora = parseFloat(document.getElementById('s1')?.value) || 0;
@@ -200,8 +201,9 @@
 
             const somaPercentuais = taxas + margem;
             
+            // CORREÇÃO: Previne divisão por zero ou valor negativo quando taxas + margem >= 100%
             if (somaPercentuais >= 100) {
-                document.getElementById('resultado').innerText = 'Margem inválida (>100%)';
+                document.getElementById('resultado').innerText = 'Taxas + Margem ≥ 100%';
                 document.getElementById('desmembramento-container').classList.add('hidden');
                 document.getElementById('total-custos-fallback').classList.remove('hidden');
                 return;
