@@ -1,15 +1,37 @@
-const express = require('express');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const path = require('path');
-const fs = require('fs');
 
-// Importação segura do dotenv usando o caminho absoluto do arquivo
+// 1. CARREGAR VARIÁVEIS DE AMBIENTE PRIMEIRO DE TUDO!
 const caminhoEnv = path.resolve(__dirname, '.env');
 require('dotenv').config({ path: caminhoEnv });
 
+// 2. Importar os pacotes
+const express = require('express');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const fs = require('fs');
+const { Pool } = require('pg');
+
+// 3. Configuração da conexão com o Supabase
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  port: 6543, // Mudei para 6543 (Connection Pooler) caso sua rede não suporte IPv6
+  ssl: { rejectUnauthorized: false } 
+});
+
+// Teste rápido para garantir que estamos conectados!
+pool.connect((err, client, release) => {
+  if (err) {
+    return console.error('Erro ao conectar ao banco de dados:', err.stack);
+  }
+  console.log('✅ Conectado ao Supabase (PostgreSQL) com sucesso!');
+  release();
+});
+
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public'))); // caminho absoluto seguro
+app.use(express.static(path.join(__dirname, 'public'))); 
 
 // ROTA  index.html na raiz 
 app.get('/', (req, res) => {
@@ -36,7 +58,6 @@ app.post('/perguntar', async (req, res) => {
 
         // inicializa o chat
         if (!historicosDeConversa[setor]) {
-            
             const instrucaoSistema = `Você é o consultor chefe do ValorizaAI para o setor de ${setor}.
                 Seu papel é analisar os dados de precificação do empreendedor e responder às dúvidas de forma ultra realista, analítica e prestativa.
                 Diretriz técnica para este setor: ${guias[setor] || ''}.
@@ -56,19 +77,15 @@ app.post('/perguntar', async (req, res) => {
                     },
                     {
                         role: "model",
-                        parts: [{ text: `Entendido. Sou o consultor especialista do setor de ${setor}. Estou pronto para analisar os dados financeiros do cliente em tempo real e ajudá-la de forma gentil e highly profissional.` }]
+                        parts: [{ text: `Entendido. Sou o consultor especialista do setor de ${setor}. Estou pronto para analisar os dados financeiros do cliente em tempo real e ajudá-la de forma gentil e altamente profissional.` }]
                     }
                 ],
             });
         }
 
-        //  chat existente com a memória acumulada
         const chat = historicosDeConversa[setor];
-
-        //  contexto em tempo real injetando os valores que vieram do formulário
         let contextoTempoReal = `[DADOS FINANCEIROS DO CLIENTE EM TEMPO REAL]:\n`;
         
-        // Verificação segura se os dados de fato chegaram preenchidos do front-end
         if (resumoFinanceiro && detalhesCustos && resumoFinanceiro.precoSugerido !== 'R$ 0,00') {
             contextoTempoReal += `- Preço de Venda Final Sugerido: ${resumoFinanceiro.precoSugerido}\n`;
             contextoTempoReal += `- Custo Total Calculado: ${resumoFinanceiro.totalCustos}\n`;
@@ -86,7 +103,53 @@ app.post('/perguntar', async (req, res) => {
         const result = await chat.sendMessage(mensagemFinalComContexto);
         const respostaTexto = result.response.text();
 
-        // 5. Retornamos o JSON com a resposta completa
+        // -----------------------------------------------------------------------
+        // NOVO: SALVAR NO BANCO DE DADOS (POSTGRESQL - SUPABASE)
+        // -----------------------------------------------------------------------
+        const connection = await pool.connect();
+        
+        try {
+            // Insere os dados financeiros
+            const insertPrecificacao = `
+                INSERT INTO precificacoes 
+                (setor, custo_total, preco_sugerido, markup, margem_lucro, impostos, canais_distribuicao, publico_alvo, concorrencia_preco, demanda_estimada)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                RETURNING id;
+            `;
+            
+            const valoresPrecificacao = [
+                setor || 'Geral',
+                parseFloat(resumoFinanceiro?.totalCustos?.replace('R$', '').replace(',', '.')) || 0,
+                parseFloat(resumoFinanceiro?.precoSugerido?.replace('R$', '').replace(',', '.')) || 0,
+                parseFloat(resumoFinanceiro?.markup) || 1,
+                parseInt(resumoFinanceiro?.margemPercentual) || 0,
+                parseInt(resumoFinanceiro?.taxaPercentual) || 0,
+                detalhesCustos?.canais || null,
+                detalhesCustos?.publico || null,
+                detalhesCustos?.concorrencia || null,
+                detalhesCustos?.demanda || null
+            ];
+
+            const resultPrec = await connection.query(insertPrecificacao, valoresPrecificacao);
+            const idGerado = resultPrec.rows[0].id; 
+
+            // Insere a pergunta e a resposta atreladas ao ID gerado acima
+            const insertRecomendacao = `
+                INSERT INTO recomendacoes_ia (precificacao_id, pergunta, resposta)
+                VALUES ($1, $2, $3);
+            `;
+            await connection.query(insertRecomendacao, [idGerado, pergunta, respostaTexto]);
+
+            console.log(`✅ Dados e histórico da IA salvos com sucesso! ID da precificação: ${idGerado}`);
+
+        } catch (dbError) {
+            console.error("⚠️ Erro ao salvar no banco de dados (Mas a IA vai responder mesmo assim):", dbError.stack);
+        } finally {
+            connection.release();
+        }
+        // -----------------------------------------------------------------------
+
+        // 5. Retornamos o JSON com a resposta completa para o Frontend
         res.json({ resposta: respostaTexto });
         
     } catch (error) {
@@ -94,11 +157,10 @@ app.post('/perguntar', async (req, res) => {
         res.status(500).json({ resposta: "IA com demanda alta, por favor, tente novamente daqui alguns segundos..." });
     }
 });
-
+gi
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
 });
 
-// Exportação necessária para ambientes Serverless (Vercel)
 module.exports = app;

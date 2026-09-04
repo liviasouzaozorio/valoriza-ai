@@ -32,5 +32,3 @@ Integrado ao **Google AI Studio (Gemini API)**, o projeto também conta com um a
 - 🤖 **Assistente Logístico com IA**  
   Suporte inteligente para dúvidas sobre transporte, fretes, embalagens e otimização logística através da Gemini API.
 
-- 🧬 **Interface Moderna (UI)**  
-  Desenvolvida com Tailwind CSS, priorizando legibilidade, organização visual e experiência do usuário.
