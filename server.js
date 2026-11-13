@@ -157,7 +157,7 @@ app.post('/perguntar', async (req, res) => {
         res.status(500).json({ resposta: "IA com demanda alta, por favor, tente novamente daqui alguns segundos..." });
     }
 });
-gi
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
