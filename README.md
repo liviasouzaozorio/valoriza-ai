@@ -1,7 +1,8 @@
 <div align="center">
   <img src="public/img-valorizaai/nilo/nilo-analisando.svg" alt="Mascote Nilo" width="180"/>
   <br />
-  <img src="public/img-valorizaai/logos/valorizai-horizontal-gradient-dark.svg" alt="Logo" width="180"/>
+  <img src="public/img-valorizaai/logos/valorizai-horizontal-gradient-dark.svg" alt="Logo" width="200"/>
+   <br />
   
   <p><b>Iniciação Científica: Sistema inteligente de markup para microempreendedores.</b></p>
   <p><i>Plataforma de precificação, análise de dados e apoio à gestão logística com IA.</i></p>
