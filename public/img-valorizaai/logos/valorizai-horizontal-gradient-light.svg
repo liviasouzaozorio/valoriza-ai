@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 48" fill="none">
+  <defs>
+    <linearGradient id="valoriz-v-left" x1="8" y1="8" x2="26" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3986D8" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+    <linearGradient id="valoriz-v-right" x1="20" y1="42" x2="42" y2="6" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3986D8" />
+      <stop offset="55%" stop-color="#45B8BA" />
+      <stop offset="100%" stop-color="#55D6A0" />
+    </linearGradient>
+  </defs>
+    <g transform="translate(2, 0)">
+    <path d="M6 10H15.5L24 30.5L19.2 40L6 10Z" fill="url(#valoriz-v-left)" />
+    <path d="M19.2 40L32.8 10H42L27.2 40H19.2Z" fill="url(#valoriz-v-right)" />
+    <path d="M35.5 6L42 10H32.8L35.5 6Z" fill="#55D6A0" opacity="0.9" />
+  </g>
+    <text x="58" y="33" font-family="Manrope, Inter, sans-serif" font-weight="800" font-size="25" letter-spacing="-0.7" fill="#101827">Valoriz<tspan fill="#55D6A0">AI</tspan></text>
+  </svg>
