@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://img.icons8.com/fluency/96/bot.png" alt="Robot Icon"/>
+  <img src="public/img-valorizaai/nilo/nilo-analisando.svg" alt="Mascote Nilo"/>
   <h1>🤖 Valoriza AI</h1>
   <p><b>Iniciação Científica: Sistema inteligente de markup para microempreendedores.</b></p>
   <p><i>Plataforma de precificação, análise de dados e apoio à gestão logística com IA.</i></p>
