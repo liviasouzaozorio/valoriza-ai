@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/img-valorizaai/nilo/nilo-analisando.svg" alt="Mascote Nilo"/>
+  <img src="public/img-valorizaai/nilo/nilo-analisando.svg" alt="Mascote Nilo" width="140"/>
   <h1>🤖 Valoriza AI</h1>
   <p><b>Iniciação Científica: Sistema inteligente de markup para microempreendedores.</b></p>
   <p><i>Plataforma de precificação, análise de dados e apoio à gestão logística com IA.</i></p>
