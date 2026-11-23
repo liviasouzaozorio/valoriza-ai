@@ -788,28 +788,6 @@
             };
         },
 
-        integracoesStatus() {
-            return [
-                {
-                    nome: 'Consultor IA (Gemini API)',
-                    endpoint: 'POST /perguntar',
-                    disponivel: true,
-                    descricao: 'Integração ativa no servidor Node.js/Express.'
-                },
-                {
-                    nome: 'Persistência de Negócio, Catálogo e Histórico',
-                    endpoint: 'Endpoints REST dedicados (pendentes)',
-                    disponivel: false,
-                    descricao: 'Dados armazenados localmente no navegador em modo de demonstração até criação dos endpoints no backend.'
-                },
-                {
-                    nome: 'Motor Oficial de Precificação',
-                    endpoint: 'Endpoint de cálculo no backend (pendente)',
-                    disponivel: false,
-                    descricao: 'Cálculo exibido como prévia transparente no navegador aguardando o motor validado no servidor.'
-                }
-            ];
-        }
     };
 
     /* =========================================================================
@@ -1271,10 +1249,10 @@
             ${isDemo ? `
                 <div class="notice-bar warning">
                     <div>
-                        <div class="notice-bar-text"><strong>Modo de demonstração ativo</strong> — os itens e precificações abaixo são exemplos locais para exploração da interface.</div>
-                        <div class="notice-bar-sub">Você pode limpar esses dados a qualquer momento em Configurações ou iniciar sua própria precificação.</div>
+                        <div class="notice-bar-text"><strong>Você está vendo dados de exemplo</strong> — este negócio e suas precificações são fictícios e servem para apresentar os indicadores do ValorizAI.</div>
+                        <div class="notice-bar-sub">Remova os exemplos quando quiser começar a cadastrar as informações do seu negócio.</div>
                     </div>
-                    <button type="button" class="btn btn-sm btn-secondary" id="dash-clear-demo-btn">Limpar demonstração</button>
+                    <button type="button" class="btn btn-sm btn-secondary" id="dash-clear-demo-btn">Remover dados de exemplo</button>
                 </div>
             ` : ''}
 
@@ -1342,7 +1320,7 @@
                     <div class="card-header">
                         <div>
                             <h2 class="card-title">Insights do seu negócio</h2>
-                            <p class="card-subtitle">Leituras objetivas derivadas exclusivamente dos seus registros reais.</p>
+                            <p class="card-subtitle">Leituras objetivas com base nas informações cadastradas no negócio.</p>
                         </div>
                     </div>
                     <div id="dash-insights-content"></div>
@@ -1368,22 +1346,15 @@
                     <div>
                         <h3 style="font-size:16px;font-weight:600;margin-bottom:6px;">Olá! Sou o Nilo, seu apoio analítico.</h3>
                         <p style="font-size:13px;color:var(--color-silver);margin-bottom:14px;">
-                            Ainda não há precificações salvas para gerar diagnósticos do negócio. Comece cadastrando uma primeira precificação ou carregue um cenário de demonstração para explorar os gráficos.
+                            Cadastre sua primeira precificação para acompanhar custos, margens planejadas e recomendações do negócio.
                         </p>
                         <div style="display:flex;gap:10px;flex-wrap:wrap;">
                             <button type="button" class="btn btn-primary btn-sm" id="dash-empty-start">Criar primeira precificação</button>
-                            <button type="button" class="btn btn-secondary btn-sm" id="dash-load-demo">Carregar demonstração</button>
                         </div>
                     </div>
                 </div>
             `;
             document.getElementById('dash-empty-start')?.addEventListener('click', () => UI.navigate('precificacao'));
-            document.getElementById('dash-load-demo')?.addEventListener('click', () => {
-                WorkspaceStore.loadDemoScenario();
-                UI.updateChrome();
-                UI.renderCurrentView();
-                UI.toast('Cenário de demonstração carregado localmente.', 'success');
-            });
         } else {
             const niloPose = belowTargetCount > 0 ? NILO_ASSETS.recomendacao : NILO_ASSETS.analisando;
             insightsContainer.innerHTML = `
@@ -1438,12 +1409,6 @@
                 <div>
                     <h1 class="page-heading">Meu negócio</h1>
                     <p class="page-subtitle">Organize o perfil operacional do seu empreendimento para agilizar novas precificações e contextualizar análises.</p>
-                </div>
-            </div>
-
-            <div class="notice-bar">
-                <div class="notice-bar-text">
-                    <strong>Armazenamento local (demonstração):</strong> Estas informações ficam salvas no navegador e pré-selecionam seu segmento padrão sem impedir simulações em outros setores.
                 </div>
             </div>
 
@@ -1559,7 +1524,7 @@
             WorkspaceStore.save();
             UI.updateChrome();
             UI.renderCurrentView();
-            UI.toast('Informações do negócio salvas neste navegador. A sincronização com a conta ainda será integrada.', 'info');
+            UI.toast('Perfil do negócio atualizado.', 'success');
         });
     }
 
@@ -1943,7 +1908,7 @@
                 <div class="notice-bar">
                     <div>
                         <div class="notice-bar-text"><strong>Rascunho encontrado:</strong> ${Formatter.escapeHtml(savedDraft.itemNome || 'Precificação em andamento')} (Etapa ${savedDraft.step} de 5)</div>
-                        <div class="notice-bar-sub">Salvo localmente em ${Formatter.dateTime(savedDraft.updatedAt)}</div>
+                        <div class="notice-bar-sub">Última atualização: ${Formatter.dateTime(savedDraft.updatedAt)}</div>
                     </div>
                     <div style="display:flex;gap:8px;">
                         <button type="button" class="btn btn-primary btn-sm" id="wiz-resume-draft">Retomar rascunho</button>
@@ -2649,7 +2614,7 @@
         container.innerHTML = `
             <div class="notice-bar">
                 <div>
-                    <div class="notice-bar-text"><strong>Prévia de recomendação calculada</strong> com base nas informações declaradas (aguardando integração do motor oficial no backend).</div>
+                    <div class="notice-bar-text"><strong>Prévia de preço calculada</strong> com base nas informações preenchidas. Revise os valores antes de usar esta recomendação.</div>
                     <div class="notice-bar-sub">A margem exibida considera o percentual sobre o preço de venda sugerido, e não sobre o custo.</div>
                 </div>
             </div>
@@ -2841,12 +2806,12 @@
             <div class="page-header">
                 <div>
                     <h1 class="page-heading">Simulação rápida</h1>
-                    <p class="page-subtitle">Teste cenários de preço instantaneamente sem poluir seu histórico. Registros só são salvos se você decidir adicionar ao catálogo.</p>
+                    <p class="page-subtitle">Compare cenários de preço sem alterar seu histórico. Você escolhe se deseja salvar um resultado no catálogo.</p>
                 </div>
             </div>
 
             <div class="notice-bar">
-                <div class="notice-bar-text"><strong>Simulação temporária:</strong> Nenhum resultado desta tela entra automaticamente no histórico ou nas análises.</div>
+                <div class="notice-bar-text"><strong>Simulação não salva automaticamente:</strong> os resultados só entram no histórico se você decidir adicioná-los ao catálogo.</div>
             </div>
 
             <div class="grid-2">
@@ -2854,7 +2819,7 @@
                     <h2 class="card-title" style="margin-bottom:14px;">Parâmetros da hipótese</h2>
                     <div class="form-grid">
                         <div class="form-field">
-                            <label class="field-label" for="sim-nome">Nome do teste <span class="field-req">Opcional</span></label>
+                            <label class="field-label" for="sim-nome">Nome da simulação <span class="field-req">Opcional</span></label>
                             <input id="sim-nome" class="field-input" type="text" value="${Formatter.escapeHtml(sim.nome)}" placeholder="Ex: Teste kit promocional">
                         </div>
                         <div class="form-field">
@@ -3187,7 +3152,7 @@
             <div class="page-header">
                 <div>
                     <h1 class="page-heading">Custos e rentabilidade</h1>
-                    <p class="page-subtitle">Comparativos derivados exclusivamente dos custos e precificações salvos (sem estimativas fictícias de faturamento ou vendas realizadas).</p>
+                    <p class="page-subtitle">Indicadores calculados a partir dos custos e das precificações cadastradas. Não incluem vendas realizadas ou faturamento.</p>
                 </div>
             </div>
             <div id="analises-body"></div>
@@ -3587,20 +3552,19 @@
                 <div class="account-avatar" aria-hidden="true">👤</div>
                 <div>
                     <h2 class="card-title" id="account-user-name">Carregando conta…</h2>
-                    <p class="card-subtitle" id="account-user-email">Consultando sessão autenticada</p>
+                    <p class="card-subtitle" id="account-user-email">Carregando informações da conta</p>
                 </div>
             </section>
             <section class="surface-card account-details">
                 <h2 class="card-title">Acesso e segurança</h2>
-                <p class="card-subtitle">Sua autenticação é gerenciada pelo Supabase. A senha não é armazenada no ValorizAI.</p>
-                <div class="account-detail-row"><span>Status da sessão</span><strong id="account-session-status">Verificando…</strong></div>
-                <div class="account-detail-row"><span>Provedor de autenticação</span><strong>Supabase Auth</strong></div>
+                <p class="card-subtitle">Sua senha não fica armazenada nem visível no ValorizAI.</p>
+                <div class="account-detail-row"><span>Status do acesso</span><strong id="account-session-status">Verificando…</strong></div>
             </section>
         `;
 
         if (!supabaseLib?.createClient || !config.supabaseUrl || !config.supabaseAnonKey) {
             document.getElementById('account-user-name').textContent = 'Conta indisponível';
-            document.getElementById('account-user-email').textContent = 'Não foi possível consultar a sessão.';
+            document.getElementById('account-user-email').textContent = 'Não foi possível carregar as informações da conta.';
             document.getElementById('account-session-status').textContent = 'Não verificada';
             return;
         }
@@ -3610,7 +3574,7 @@
         });
         client.auth.getUser().then(({ data, error }) => {
             if (error || !data?.user) {
-                document.getElementById('account-user-name').textContent = 'Sessão não encontrada';
+                document.getElementById('account-user-name').textContent = 'Acesso não confirmado';
                 document.getElementById('account-user-email').textContent = 'Entre novamente para continuar.';
                 document.getElementById('account-session-status').textContent = 'Inativa';
                 return;
@@ -3628,18 +3592,17 @@
 
     // --- 8.9 CONFIGURAÇÕES ---
     function renderSettings(root) {
-        const { settings, business } = WorkspaceStore.state;
-        const integrations = ApiService.integracoesStatus();
+        const { settings } = WorkspaceStore.state;
 
         root.innerHTML = `
             <div class="page-header">
                 <div>
                     <h1 class="page-heading">Configurações</h1>
-                    <p class="page-subtitle">Preferências de metas financeiras, comportamento do assistente e estado das integrações do projeto.</p>
+                    <p class="page-subtitle">Personalize os alertas e a experiência durante o preenchimento das suas informações.</p>
                 </div>
             </div>
 
-            <div class="grid-2" style="margin-bottom:20px;">
+            <div style="margin-bottom:20px;">
                 <form id="settings-form" class="surface-card">
                     <h2 class="card-title" style="margin-bottom:6px;">Metas e preferências da interface</h2>
                     <p class="card-subtitle" style="margin-bottom:18px;">Ajuste os parâmetros de leitura de margem e exibição de ajudas nos formulários.</p>
@@ -3661,7 +3624,7 @@
                         <div class="form-field form-field-full">
                             <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;">
                                 <input id="set-rascunho" type="checkbox" ${settings.salvarRascunhoAutomatico ? 'checked' : ''} style="width:16px;height:16px;">
-                                <span>Preservar rascunhos locais automaticamente ao interromper o assistente</span>
+                                <span>Salvar rascunho automaticamente se você sair antes de concluir</span>
                             </label>
                         </div>
                     </div>
@@ -3671,36 +3634,15 @@
                     </div>
                 </form>
 
-                <section class="surface-card">
-                    <h2 class="card-title" style="margin-bottom:6px;">Perfil e estado das integrações</h2>
-                    <p class="card-subtitle" style="margin-bottom:16px;">Transparência sobre os serviços conectados ao backend atual.</p>
-
-                    <div class="kv-list" style="margin-bottom:18px;">
-                        <div class="kv-row"><span class="kv-key">Empreendedor</span><span class="kv-val">${Formatter.escapeHtml(business.empreendedor || 'Não informado')}</span></div>
-                        <div class="kv-row"><span class="kv-key">Negócio</span><span class="kv-val">${Formatter.escapeHtml(business.nomeNegocio || 'Não informado')}</span></div>
-                    </div>
-
-                    <div style="display:flex;flex-direction:column;gap:10px;">
-                        ${integrations.map(intg => `
-                            <div style="padding:12px 14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
-                                <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:4px;">
-                                    <span style="font-weight:600;font-size:13px;">${intg.nome}</span>
-                                    <span class="status-label ${intg.disponivel ? 'success' : 'warning'}">${intg.disponivel ? 'Ativo' : 'Demonstração local'}</span>
-                                </div>
-                                <div style="font-size:12px;color:var(--color-silver);">${intg.descricao}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </section>
             </div>
 
             <section class="surface-card">
-                <h2 class="card-title" style="margin-bottom:6px;">Gerenciamento de dados locais</h2>
-                <p class="card-subtitle" style="margin-bottom:16px;">Exporte seus registros locais em JSON, carregue um cenário de demonstração ou limpe o armazenamento do navegador.</p>
+                <h2 class="card-title" style="margin-bottom:6px;">Seus dados</h2>
+                <p class="card-subtitle" style="margin-bottom:16px;">Baixe uma cópia das suas informações, experimente o ValorizAI com dados de exemplo ou apague os dados salvos neste dispositivo.</p>
                 <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                    <button type="button" class="btn btn-secondary" id="set-export-btn">Exportar dados (JSON)</button>
-                    <button type="button" class="btn btn-secondary" id="set-demo-btn">Carregar cenário de demonstração</button>
-                    <button type="button" class="btn btn-danger-ghost" id="set-clear-btn">Limpar todos os dados locais</button>
+                    <button type="button" class="btn btn-secondary" id="set-export-btn">Baixar uma cópia dos meus dados</button>
+                    <button type="button" class="btn btn-secondary" id="set-demo-btn">Carregar dados de exemplo</button>
+                    <button type="button" class="btn btn-danger-ghost" id="set-clear-btn">Apagar dados salvos</button>
                 </div>
             </section>
         `;
@@ -3735,15 +3677,15 @@
             WorkspaceStore.loadDemoScenario();
             UI.updateChrome();
             UI.renderCurrentView();
-            UI.toast('Cenário de demonstração carregado.', 'success');
+            UI.toast('Dados de exemplo carregados.', 'success');
         });
 
         document.getElementById('set-clear-btn').addEventListener('click', () => {
             UI.openModal(
-                'Confirmar limpeza de dados locais',
+                'Confirmar exclusão de dados',
                 `
                 <p style="font-size:14px;color:var(--color-silver);margin-bottom:18px;">
-                    Esta ação remove informações do negócio, catálogo, histórico local, rascunhos e histórico de conversa do navegador. Deseja continuar?
+                    Esta ação apaga o perfil do negócio, o catálogo, o histórico de precificações, os rascunhos e as conversas salvos neste dispositivo. Não será possível desfazer. Deseja continuar?
                 </p>
                 <div class="wizard-footer">
                     <button type="button" class="btn btn-ghost" id="confirm-clear-cancel">Cancelar</button>
