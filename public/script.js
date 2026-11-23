@@ -3800,6 +3800,12 @@
             document.getElementById('ai-question-input')?.focus();
         });
         document.getElementById('nilo-panel-close').addEventListener('click', closeNilo);
+        document.getElementById('nilo-clear-chat').addEventListener('click', () => {
+            WorkspaceStore.state.chatHistory = [];
+            WorkspaceStore.save();
+            if (UI.niloOpen) renderConsultor(niloPanelContent);
+            if (UI.currentView === 'consultor') renderConsultor(document.getElementById('main-viewport'));
+        });
 
         // Ação Topbar Nova Precificação
         document.getElementById('topbar-new-pricing-btn').addEventListener('click', () => {
