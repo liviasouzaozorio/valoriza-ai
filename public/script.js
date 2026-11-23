@@ -239,14 +239,15 @@
     };
 
     const VIEW_LABELS = {
-        dashboard: 'Dashboard',
-        negocio: 'Meu negócio',
-        catalogo: 'Catálogo',
-        precificacao: 'Precificação',
+        dashboard: 'Visão geral',
+        negocio: 'Perfil da empresa',
+        catalogo: 'Produtos e serviços',
+        precificacao: 'Nova precificação',
         simulacao: 'Simulação rápida',
         historico: 'Histórico',
-        analises: 'Análises',
-        consultor: 'Consultor IA',
+        analises: 'Custos e rentabilidade',
+        consultor: 'Nilo',
+        conta: 'Minha conta',
         configuracoes: 'Configurações'
     };
 
@@ -1189,6 +1190,7 @@
                 case 'historico': renderHistory(viewport); break;
                 case 'analises': renderAnalyses(viewport); break;
                 case 'consultor': renderConsultor(viewport); break;
+                case 'conta': renderMyAccount(viewport); break;
                 case 'configuracoes': renderSettings(viewport); break;
                 default: renderDashboard(viewport);
             }
@@ -3133,7 +3135,7 @@
         root.innerHTML = `
             <div class="page-header">
                 <div>
-                    <h1 class="page-heading">Análises financeiras e operacionais</h1>
+                    <h1 class="page-heading">Custos e rentabilidade</h1>
                     <p class="page-subtitle">Comparativos derivados exclusivamente dos custos e precificações salvos (sem estimativas fictícias de faturamento ou vendas realizadas).</p>
                 </div>
             </div>
@@ -3511,6 +3513,60 @@
             e.preventDefault();
             const inp = document.getElementById('ai-question-input');
             sendQuestion(inp.value, root);
+        });
+    }
+
+    // --- CONTA DO USUÁRIO ---
+    function renderMyAccount(root) {
+        const config = window.VALORIZAI_CONFIG || {};
+        const supabaseLib = window.supabase;
+        root.innerHTML = `
+            <div class="page-header">
+                <div>
+                    <h1 class="page-heading">Minha conta</h1>
+                    <p class="page-subtitle">Informações da sua conta de acesso ao ValorizAI.</p>
+                </div>
+            </div>
+            <section class="surface-card account-summary">
+                <div class="account-avatar" aria-hidden="true">👤</div>
+                <div>
+                    <h2 class="card-title" id="account-user-name">Carregando conta…</h2>
+                    <p class="card-subtitle" id="account-user-email">Consultando sessão autenticada</p>
+                </div>
+            </section>
+            <section class="surface-card account-details">
+                <h2 class="card-title">Acesso e segurança</h2>
+                <p class="card-subtitle">Sua autenticação é gerenciada pelo Supabase. A senha não é armazenada no ValorizAI.</p>
+                <div class="account-detail-row"><span>Status da sessão</span><strong id="account-session-status">Verificando…</strong></div>
+                <div class="account-detail-row"><span>Provedor de autenticação</span><strong>Supabase Auth</strong></div>
+            </section>
+        `;
+
+        if (!supabaseLib?.createClient || !config.supabaseUrl || !config.supabaseAnonKey) {
+            document.getElementById('account-user-name').textContent = 'Conta indisponível';
+            document.getElementById('account-user-email').textContent = 'Não foi possível consultar a sessão.';
+            document.getElementById('account-session-status').textContent = 'Não verificada';
+            return;
+        }
+
+        const client = supabaseLib.createClient(config.supabaseUrl, config.supabaseAnonKey, {
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+        });
+        client.auth.getUser().then(({ data, error }) => {
+            if (error || !data?.user) {
+                document.getElementById('account-user-name').textContent = 'Sessão não encontrada';
+                document.getElementById('account-user-email').textContent = 'Entre novamente para continuar.';
+                document.getElementById('account-session-status').textContent = 'Inativa';
+                return;
+            }
+            const user = data.user;
+            const metadata = user.user_metadata || {};
+            document.getElementById('account-user-name').textContent =
+                metadata.full_name || metadata.name || 'Minha conta';
+            document.getElementById('account-user-email').textContent = user.email || 'E-mail não informado';
+            document.getElementById('account-session-status').textContent = 'Ativa';
+        }).catch(() => {
+            document.getElementById('account-session-status').textContent = 'Não verificada';
         });
     }
 
