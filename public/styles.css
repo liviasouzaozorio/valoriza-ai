@@ -1806,4 +1806,13 @@ body, .app-shell, .main-viewport { color: var(--text-primary); }
 .nilo-panel-content .chat-layout > aside .field-label {
     color: var(--text-primary);
 }
+/* Sobrescreve cores inline herdadas do antigo tema escuro em áreas claras */
+.main-viewport [style*="color:var(--color-cloud)"],
+.nilo-panel-content [style*="color:var(--color-cloud)"] {
+    color: var(--text-primary) !important;
+}
+.main-viewport [style*="color:var(--color-silver)"],
+.nilo-panel-content [style*="color:var(--color-silver)"] {
+    color: var(--text-secondary) !important;
+}
 
