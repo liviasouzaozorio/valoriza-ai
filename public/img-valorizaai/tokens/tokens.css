@@ -1,28 +1,21 @@
-/* ValorizAI Official Design Tokens */
+/* ValorizAI — design tokens | tema claro aprovado */
 :root {
-  /* Brand Palette */
-  --color-midnight: #101827;
-  --color-navy: #19263A;
-  --color-navy-elevated: #1F2F47;
+  --color-midnight: #F3F6FA;
+  --color-navy: #FFFFFF;
+  --color-navy-elevated: #EEF3F8;
   --color-emerald: #55D6A0;
   --color-blue: #3986D8;
-  --color-silver: #A8B5C7;
-  --color-cloud: #F1F5F9;
-
-  /* Semantic Indicators */
-  --color-success: #55D6A0;
+  --color-silver: #64748B;
+  --color-cloud: #19263A;
+  --color-success: #16A36A;
   --color-info: #3986D8;
-  --color-warning: #F59E0B;
-  --color-danger: #EF4444;
-
-  /* Typography */
-  --font-display: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-
-  /* Spacing & Radii */
+  --color-warning: #D99012;
+  --color-danger: #DC4545;
+  --font-display: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Roboto', ui-monospace, monospace;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
-  --border-hairline: 1px solid rgba(168, 181, 199, 0.14);
+  --border-hairline: 1px solid #E2E8F0;
 }
