@@ -131,8 +131,13 @@
       }
 
       await ensureBusiness(data.user, { full_name: name, company_name: company, sector });
-      feedback('register-feedback', 'Conta criada! Abrindo seu ValorizAI…', true);
-      window.location.replace('/index.html');
+
+      // O cadastro termina na tela de login: a pessoa entra usando as credenciais recém-criadas.
+      const { error: signOutError } = await client.auth.signOut();
+      if (signOutError) throw signOutError;
+
+      switchView('login');
+      feedback('login-feedback', 'Conta criada com sucesso! Agora entre com seu e-mail e senha.', true);
     } catch (error) {
       feedback('register-feedback', friendlyError(error));
     } finally {
