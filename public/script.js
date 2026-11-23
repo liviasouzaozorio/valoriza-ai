@@ -3389,7 +3389,7 @@
                         </div>
                         <div>
                             <div style="font-family:var(--font-display);font-weight:700;font-size:15px;">Nilo · Consultor</div>
-                            <div style="font-size:12px;color:var(--color-silver);">Setor ativo: <strong style="color:var(--color-cloud);">${SETORES[ctx.setor]?.nome || ctx.setor}</strong></div>
+                            <div style="font-size:12px;color:var(--color-silver);">${ctx.setor && SETORES[ctx.setor] ? `Setor: <strong style="color:var(--color-cloud);">${SETORES[ctx.setor].nome}</strong>` : 'Consultas gerais e apoio a negócios'}</div>
                         </div>
                     </div>
 
@@ -3400,15 +3400,17 @@
                         </select>
                     </div>
 
-                    <div style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
-                        <div style="font-size:12px;font-weight:600;color:var(--color-silver);margin-bottom:10px;">Resumo enviado à IA</div>
-                        <div class="kv-list">
-                            <div class="kv-row"><span class="kv-key">Preço sugerido</span><span class="kv-val mono" style="color:var(--color-emerald);">${ctx.resumoFinanceiro.precoSugerido}</span></div>
-                            <div class="kv-row"><span class="kv-key">Custo total</span><span class="kv-val mono">${ctx.resumoFinanceiro.totalCustos}</span></div>
-                            <div class="kv-row"><span class="kv-key">Markup</span><span class="kv-val mono">${ctx.resumoFinanceiro.markup}</span></div>
-                            <div class="kv-row"><span class="kv-key">Impostos e taxas</span><span class="kv-val mono">${ctx.resumoFinanceiro.taxaPercentual}</span></div>
-                            <div class="kv-row"><span class="kv-key">Margem desejada</span><span class="kv-val mono">${ctx.resumoFinanceiro.margemPercentual}</span></div>
-                        </div>
+                    <div style="padding:14px;border-radius:var(--radius-md);background:var(--app-background);border:1px solid var(--border);">
+                        <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;">Contexto enviado à IA</div>
+                        ${ctx.resumoFinanceiro ? `
+                            <div class="kv-list">
+                                <div class="kv-row"><span class="kv-key">Preço sugerido</span><span class="kv-val mono">${ctx.resumoFinanceiro.precoSugerido}</span></div>
+                                <div class="kv-row"><span class="kv-key">Custo total</span><span class="kv-val mono">${ctx.resumoFinanceiro.totalCustos}</span></div>
+                                <div class="kv-row"><span class="kv-key">Markup</span><span class="kv-val mono">${ctx.resumoFinanceiro.markup}</span></div>
+                                <div class="kv-row"><span class="kv-key">Impostos e taxas</span><span class="kv-val mono">${ctx.resumoFinanceiro.taxaPercentual}</span></div>
+                                <div class="kv-row"><span class="kv-key">Margem desejada</span><span class="kv-val mono">${ctx.resumoFinanceiro.margemPercentual}</span></div>
+                            </div>
+                        ` : '<p style="font-size:12px;color:var(--text-secondary);">Nenhum dado financeiro será enviado. O Nilo pode responder normalmente a perguntas gerais.</p>'}
                     </div>
                 </aside>
 
