@@ -1808,3 +1808,121 @@ body, .app-shell, .main-viewport { color: var(--text-primary); }
     color: var(--text-secondary) !important;
 }
 
+/* --------------------------------------------------------------------------
+   Fase 1 — contraste consistente em todas as superfícies claras
+   Inclui conteúdo dinâmico, modais e SVGs gerados pelo JavaScript.
+   -------------------------------------------------------------------------- */
+
+/* Texto-base das áreas claras */
+.main-viewport,
+.modal-body,
+.modal-panel {
+    color: var(--text-primary);
+}
+
+.main-viewport h1,
+.main-viewport h2,
+.main-viewport h3,
+.main-viewport h4,
+.main-viewport p,
+.modal-body h1,
+.modal-body h2,
+.modal-body h3,
+.modal-body h4,
+.modal-body p,
+.modal-body label,
+.modal-body li {
+    color: var(--text-primary);
+}
+
+.main-viewport .page-subtitle,
+.main-viewport .card-subtitle,
+.main-viewport .kpi-label,
+.main-viewport .kpi-meta,
+.main-viewport .field-help,
+.main-viewport .field-req,
+.main-viewport .empty-state-desc,
+.main-viewport .table-description,
+.modal-body .kv-key,
+.modal-body .field-help,
+.modal-body .field-req,
+.modal-body .empty-state-desc {
+    color: var(--text-secondary);
+}
+
+/* Detalhes de versões e demais conteúdos renderizados em modais */
+.modal-body .kv-row {
+    border-bottom-color: var(--border);
+}
+
+.modal-body .kv-val {
+    color: var(--text-primary);
+}
+
+.modal-body .chart-legend,
+.main-viewport .chart-legend {
+    color: var(--text-secondary);
+}
+
+.modal-body .chart-svg text,
+.main-viewport .chart-svg text {
+    fill: #64748B;
+}
+
+/* Cores de destaque para texto precisam continuar legíveis sobre branco */
+.main-viewport .kpi-value.positive,
+.main-viewport .status-label.success,
+.modal-body .status-label.success {
+    color: #16865A;
+}
+
+/* Campos e controles em telas claras */
+.main-viewport input:not([type="checkbox"]):not([type="radio"]),
+.main-viewport select,
+.main-viewport textarea,
+.modal-body input:not([type="checkbox"]):not([type="radio"]),
+.modal-body select,
+.modal-body textarea {
+    background-color: #FFFFFF;
+    color: var(--text-primary);
+    border-color: #CBD5E1;
+}
+
+.main-viewport input:not([type="checkbox"]):not([type="radio"])::placeholder,
+.main-viewport textarea::placeholder,
+.modal-body input:not([type="checkbox"]):not([type="radio"])::placeholder,
+.modal-body textarea::placeholder {
+    color: #64748B;
+    opacity: 1;
+}
+
+.main-viewport input:disabled,
+.main-viewport select:disabled,
+.main-viewport textarea:disabled,
+.modal-body input:disabled,
+.modal-body select:disabled,
+.modal-body textarea:disabled {
+    background-color: #F1F5F9;
+    color: #64748B;
+    opacity: 1;
+}
+
+/* Corrige estilos inline legados nos conteúdos claros sem afetar sidebar e superfícies escuras */
+.main-viewport [style*="color:var(--color-cloud)"],
+.modal-body [style*="color:var(--color-cloud)"],
+.nilo-panel-content [style*="color:var(--color-cloud)"] {
+    color: var(--text-primary) !important;
+}
+
+.main-viewport [style*="color:var(--color-silver)"],
+.modal-body [style*="color:var(--color-silver)"],
+.nilo-panel-content [style*="color:var(--color-silver)"] {
+    color: var(--text-secondary) !important;
+}
+
+.main-viewport [style*="color:var(--color-emerald)"],
+.modal-body [style*="color:var(--color-emerald)"],
+.nilo-panel-content [style*="color:var(--color-emerald)"] {
+    color: #16865A !important;
+}
+
