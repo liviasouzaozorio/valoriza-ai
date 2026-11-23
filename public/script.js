@@ -2663,7 +2663,7 @@
                             <div style="font-size:13px;color:var(--color-silver);margin-top:6px;">Item: <strong style="color:var(--color-cloud);">${Formatter.escapeHtml(w.itemNome)}</strong> · ${SETORES[w.setor]?.nome}</div>
                         </div>
                         <div class="nilo-avatar-box-sm">
-                            <img src="${healthyMargin ? NILO_ASSETS.comemorando : NILO_ASSETS.recomendacao}" alt="Nilo resultado da precificação" class="nilo-figure nilo-enter">
+                            <img src="${targetMargin === null ? NILO_ASSETS.analisando : (healthyMargin ? NILO_ASSETS.comemorando : NILO_ASSETS.recomendacao)}" alt="Nilo resultado da precificação" class="nilo-figure nilo-enter">
                         </div>
                     </div>
 
