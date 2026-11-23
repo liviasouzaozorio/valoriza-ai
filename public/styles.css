@@ -1809,6 +1809,31 @@ body, .app-shell, .main-viewport { color: var(--text-primary); }
 }
 
 
+
+/* Avisos informativos em páginas claras: texto legível sem depender de hover. */
+.main-viewport .notice-bar {
+    color: #19263A;
+}
+
+.main-viewport .notice-bar .notice-bar-text,
+.main-viewport .notice-bar .notice-bar-text strong {
+    color: #19263A !important;
+}
+
+.main-viewport .notice-bar .notice-bar-sub {
+    color: #64748B !important;
+}
+
+.main-viewport .notice-bar:hover,
+.main-viewport .notice-bar:hover .notice-bar-text,
+.main-viewport .notice-bar:hover .notice-bar-text strong,
+.main-viewport .notice-bar:hover .notice-bar-sub {
+    color: inherit;
+}
+.main-viewport .notice-bar:hover .notice-bar-text { color: #19263A !important; }
+.main-viewport .notice-bar:hover .notice-bar-text strong { color: #19263A !important; }
+.main-viewport .notice-bar:hover .notice-bar-sub { color: #64748B !important; }
+
 /* Correção específica: tabelas do catálogo, histórico e comparativos.
    As linhas permanecem claras no estado normal e no hover; o texto não depende
    do mouse para ficar legível. */
