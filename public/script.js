@@ -1524,7 +1524,7 @@
             WorkspaceStore.save();
             UI.updateChrome();
             UI.renderCurrentView();
-            UI.toast('Perfil do negócio atualizado.', 'success');
+            UI.toast('Perfil atualizado neste dispositivo.', 'success');
         });
     }
 
