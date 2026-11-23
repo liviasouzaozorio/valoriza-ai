@@ -4,7 +4,9 @@
   "description": "> A inteligência que valoriza seu produto.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test",
+    "start": "node server.js",
+    "check": "node --check server.js"
   },
   "repository": {
     "type": "git",

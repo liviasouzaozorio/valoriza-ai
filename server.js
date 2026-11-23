@@ -11,26 +11,47 @@ const fs = require('fs');
 const { Pool } = require('pg');
 
 // 3. Configuração da conexão com o Supabase
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME,
-  port: 6543, // Mudei para 6543 (Connection Pooler) caso sua rede não suporte IPv6
-  ssl: { rejectUnauthorized: false } 
-});
-
-// Teste rápido para garantir que estamos conectados!
-pool.connect((err, client, release) => {
-  if (err) {
-    return console.error('Erro ao conectar ao banco de dados:', err.stack);
+function databaseSslConfig() {
+  if (process.env.DB_SSL === 'false') return false;
+  const config = { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' };
+  if (process.env.DB_SSL_CA_PATH) {
+    const caPath = path.isAbsolute(process.env.DB_SSL_CA_PATH)
+      ? process.env.DB_SSL_CA_PATH
+      : path.resolve(__dirname, process.env.DB_SSL_CA_PATH);
+    try { config.ca = fs.readFileSync(caPath, 'utf8'); }
+    catch { throw new Error('Não foi possível carregar DB_SSL_CA_PATH.'); }
   }
-  console.log('✅ Conectado ao Supabase (PostgreSQL) com sucesso!');
-  release();
+  return config;
+}
+
+const pool = new Pool({
+  ...(process.env.DATABASE_URL
+    ? { connectionString: process.env.DATABASE_URL }
+    : {
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASS,
+        database: process.env.DB_NAME,
+        port: Number(process.env.DB_PORT) || 5432
+      }),
+  ssl: databaseSslConfig(),
+  max: 10,
+  connectionTimeoutMillis: 5000,
+  idleTimeoutMillis: 30000
 });
+pool.on('error', (err) => console.error('Erro PostgreSQL no pool:', err.code || 'DB_ERROR'));
 
 const app = express();
 app.use(express.json());
+
+app.get('/api/health', async (_req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    return res.json({ success: true, data: { status: 'ok' } });
+  } catch {
+    return res.status(503).json({ success: false, error: { code: 'DEPENDENCY_UNAVAILABLE', message: 'Serviço temporariamente indisponível.' } });
+  }
+});
 app.use(express.static(path.join(__dirname, 'public'))); 
 
 // ROTA  index.html na raiz 
@@ -158,9 +179,12 @@ app.post('/perguntar', async (req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
-});
-
+const PORT = Number(process.env.PORT) || 3000;
+if (require.main === module) {
+  const httpServer = app.listen(PORT, () => console.log(`ValorizAI API escutando na porta ${PORT}`));
+  const shutdown = () => httpServer.close(() => pool.end().finally(() => process.exit(0)));
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
+}
+app.pool = pool;
 module.exports = app;
