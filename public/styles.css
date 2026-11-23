@@ -1670,7 +1670,11 @@ h1, h2, h3, h4, .page-heading, .page-display, .card-title, .modal-title { color:
 .nilo-panel-title { display:flex; align-items:center; gap:10px; color:var(--text-primary); font-weight:700; }
 .nilo-panel-title img { width:34px; height:34px; object-fit:contain; }
 .nilo-panel-content { min-height:0; flex:1; overflow:auto; padding:16px; }
-.nilo-panel-content .page-header, .nilo-panel-content .chat-layout > aside { display:none; }
+.nilo-panel-content .page-header { display:none; }
+.nilo-panel-content .chat-layout > aside { display:block; padding:12px; }
+.nilo-panel-content .chat-layout > aside .nilo-avatar-box-sm { display:none; }
+.nilo-panel-content .chat-layout > aside .form-field { margin-bottom:0 !important; }
+.nilo-panel-content .chat-layout > aside > div:nth-child(3) { display:none; }
 .nilo-panel-content .chat-layout { display:flex; flex-direction:column; gap:12px; height:100%; }
 .nilo-panel-content .chat-panel { min-height:0; flex:1; background:#FFFFFF; border:0; box-shadow:none; }
 .nilo-panel-content .chat-messages { max-height:none; min-height:250px; }
