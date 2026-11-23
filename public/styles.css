@@ -2064,3 +2064,12 @@ body, .app-shell, .main-viewport { color: var(--text-primary); }
     color: #16865A !important;
 }
 
+
+
+/* Reforço de contraste no indicador de lucro da prévia de precificação.
+   O valor fica em card navy e deve permanecer verde-claro, mesmo com regras globais. */
+.main-viewport .pricing-result-metric-card .kpi-value.positive {
+    color: #55D6A0 !important;
+    -webkit-text-fill-color: #55D6A0 !important;
+    opacity: 1 !important;
+}
