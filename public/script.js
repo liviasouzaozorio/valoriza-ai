@@ -3752,36 +3752,89 @@
         WorkspaceStore.load();
 
         const shell = document.getElementById('app-shell');
-        if (localStorage.getItem(STORAGE_KEYS.SIDEBAR) === '1') {
-            shell.classList.add('sidebar-collapsed');
-            document.getElementById('sidebar-collapse-btn').setAttribute('aria-expanded', 'false');
-        }
+        const collapseButton = document.getElementById('sidebar-collapse-btn');
+        const mobileMenuButton = document.getElementById('mobile-menu-btn');
+        const isMobileNavigation = () => window.matchMedia('(max-width: 960px)').matches;
+
+        const setDesktopSidebarCollapsed = (collapsed) => {
+            shell.classList.toggle('sidebar-collapsed', collapsed);
+            localStorage.setItem(STORAGE_KEYS.SIDEBAR, collapsed ? '1' : '0');
+            collapseButton.setAttribute('aria-expanded', String(!collapsed));
+            collapseButton.setAttribute('aria-label', collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral');
+            collapseButton.title = collapsed ? 'Expandir menu' : 'Recolher menu';
+        };
+
+        const setMobileDrawerOpen = (open) => {
+            shell.classList.toggle('mobile-drawer-open', open);
+            mobileMenuButton.setAttribute('aria-expanded', String(open));
+            mobileMenuButton.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+        };
+
+        // Aplica o estado local imediatamente; a preferência da conta sincroniza em seguida.
+        setDesktopSidebarCollapsed(localStorage.getItem(STORAGE_KEYS.SIDEBAR) === '1');
+
+        const getSidebarSession = async () => {
+            const config = window.VALORIZAI_CONFIG || {};
+            if (!window.supabase?.createClient || !config.supabaseUrl || !config.supabaseAnonKey) return null;
+            const client = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+            const { data, error } = await client.auth.getSession();
+            return error ? null : data.session || null;
+        };
+
+        const loadSidebarPreference = async () => {
+            try {
+                const session = await getSidebarSession();
+                if (!session?.access_token) return;
+                const response = await fetch('/api/preferences/sidebar', {
+                    headers: { Authorization: `Bearer ${session.access_token}` }
+                });
+                if (!response.ok) return;
+                const result = await response.json();
+                if (typeof result.data?.collapsed === 'boolean') setDesktopSidebarCollapsed(result.data.collapsed);
+            } catch (error) {
+                console.warn('Não foi possível sincronizar a preferência da navegação.', error);
+            }
+        };
+
+        const saveSidebarPreference = async (collapsed) => {
+            try {
+                const session = await getSidebarSession();
+                if (!session?.access_token) return;
+                await fetch('/api/preferences/sidebar', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${session.access_token}`
+                    },
+                    body: JSON.stringify({ collapsed })
+                });
+            } catch (error) {
+                console.warn('Não foi possível salvar a preferência da navegação.', error);
+            }
+        };
 
         // Navegação Sidebar
         document.querySelectorAll('[data-nav]').forEach(el => {
             el.addEventListener('click', e => {
                 e.preventDefault();
                 UI.navigate(el.dataset.nav);
+                if (isMobileNavigation()) setMobileDrawerOpen(false);
             });
         });
 
-        // Recolher Sidebar Desktop
-        document.getElementById('sidebar-collapse-btn').addEventListener('click', () => {
-            const collapsed = shell.classList.toggle('sidebar-collapsed');
-            localStorage.setItem(STORAGE_KEYS.SIDEBAR, collapsed ? '1' : '0');
-            document.getElementById('sidebar-collapse-btn').setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        // Desktop: controle único de expandir/recolher, com preferência sincronizada na conta.
+        collapseButton.addEventListener('click', () => {
+            const collapsed = !shell.classList.contains('sidebar-collapsed');
+            setDesktopSidebarCollapsed(collapsed);
+            saveSidebarPreference(collapsed);
         });
 
-        // Drawer Mobile
-        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
-            shell.classList.add('mobile-drawer-open');
+        // Mobile: o hamburger alterna abrir/fechar o drawer.
+        mobileMenuButton.addEventListener('click', () => {
+            setMobileDrawerOpen(!shell.classList.contains('mobile-drawer-open'));
         });
-        document.getElementById('sidebar-close-mobile-btn').addEventListener('click', () => {
-            shell.classList.remove('mobile-drawer-open');
-        });
-        document.getElementById('sidebar-backdrop').addEventListener('click', () => {
-            shell.classList.remove('mobile-drawer-open');
-        });
+        document.getElementById('sidebar-backdrop').addEventListener('click', () => setMobileDrawerOpen(false));
+        loadSidebarPreference();
 
         // Nilo é global: abrir o painel preserva a tela atual.
         const niloFab = document.getElementById('nilo-fab');
@@ -3837,7 +3890,7 @@
                 UI.closeModal();
                 notifPop.classList.add('hidden');
                 notifBtn.setAttribute('aria-expanded', 'false');
-                shell.classList.remove('mobile-drawer-open');
+                setMobileDrawerOpen(false);
                 if (UI.niloOpen) closeNilo();
             }
         });
