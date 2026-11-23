@@ -3437,7 +3437,7 @@
                         ${UI.chatSending ? `
                             <div class="chat-bubble assistant" style="display:flex;align-items:center;gap:12px;">
                                 <img src="${NILO_ASSETS.processando}" alt="Processando" style="width:40px;height:auto;">
-                                <span>Analisando seus dados financeiros e estratégia comercial...</span>
+                                <span>Preparando uma resposta para sua pergunta...</span>
                             </div>
                         ` : ''}
                     </div>
@@ -3445,9 +3445,9 @@
                     <form class="chat-composer" id="ai-chat-form">
                         <div class="prompt-suggestions">
                             ${[
-                                'Esse preço está saudável para o meu setor?',
-                                'Onde posso reduzir custos sem perder margem?',
-                                'Como comunicar esse valor ao cliente?'
+                                'O que é margem de contribuição?',
+                                'Como organizar o fluxo de caixa?',
+                                'Como avaliar uma ideia de negócio?'
                             ].map(q => `<button type="button" class="prompt-chip" data-prompt-chip="${Formatter.escapeHtml(q)}">${Formatter.escapeHtml(q)}</button>`).join('')}
                         </div>
                         <div class="chat-composer-row">
