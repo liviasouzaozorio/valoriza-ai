@@ -1815,7 +1815,7 @@
         UI.openModal(
             item.nome,
             `
-            <div class="kv-list" style="margin-bottom:20px;">
+            <div class="kv-list simulation-result-details" style="margin-bottom:20px;">
                 <div class="kv-row"><span class="kv-key">Setor / Tipo</span><span class="kv-val">${SETORES[item.setor]?.nome || item.setor} · ${Formatter.escapeHtml(item.tipo)}</span></div>
                 <div class="kv-row"><span class="kv-key">Categoria</span><span class="kv-val">${Formatter.escapeHtml(item.categoria || 'Não informada')}</span></div>
                 <div class="kv-row"><span class="kv-key">Unidade de comercialização</span><span class="kv-val">${Formatter.escapeHtml(item.unidade)}</span></div>
@@ -2639,19 +2639,19 @@
                     </div>
 
                     <div class="grid-2" style="gap:12px;">
-                        <div style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
+                        <div class="pricing-result-metric-card" style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                             <div class="kpi-label">Custo total unitário</div>
                             <div class="kpi-value" style="font-size:20px;margin-top:4px;">${Formatter.brl(r.custoTotal)}</div>
                         </div>
-                        <div style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
+                        <div class="pricing-result-metric-card" style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                             <div class="kpi-label">Multiplicador (Markup)</div>
                             <div class="kpi-value" style="font-size:20px;color:var(--color-blue);margin-top:4px;">${r.markup.toFixed(2)}x</div>
                         </div>
-                        <div style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
+                        <div class="pricing-result-metric-card" style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                             <div class="kpi-label">Impostos e taxas (${Formatter.percent(r.percentualImpostosTaxas)})</div>
                             <div class="kpi-value warning" style="font-size:20px;margin-top:4px;">${Formatter.brl(r.valorImpostosTaxas)}</div>
                         </div>
-                        <div style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
+                        <div class="pricing-result-metric-card" style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                             <div class="kpi-label">Lucro estimado / unidade (${Formatter.percent(r.margemPlanejada)})</div>
                             <div class="kpi-value positive" style="font-size:20px;margin-top:4px;">${Formatter.brl(r.lucroEstimado)}</div>
                         </div>
