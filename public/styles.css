@@ -1686,3 +1686,124 @@ h1, h2, h3, h4, .page-heading, .page-display, .card-title, .modal-title { color:
  .nilo-panel-content { padding:10px; }
 }
 @media (prefers-reduced-motion: reduce) { .nilo-fab { transition:none; } }
+
+/* --------------------------------------------------------------------------
+   Correções de contraste do tema claro — formulários, setores e chat do Nilo
+   -------------------------------------------------------------------------- */
+body, .app-shell, .main-viewport { color: var(--text-primary); }
+
+/* Cabeçalhos e rótulos em superfícies claras */
+.main-viewport h1,
+.main-viewport h2,
+.main-viewport h3,
+.main-viewport h4,
+.main-viewport .page-heading,
+.main-viewport .page-display,
+.main-viewport .card-title,
+.main-viewport .field-label,
+.main-viewport .wizard-title,
+.main-viewport .section-title {
+    color: var(--text-primary);
+}
+.field-label { color: var(--text-primary); }
+.field-help, .field-req { color: var(--text-secondary); }
+
+/* Campos sempre brancos, inclusive ao focar ou preencher */
+.field-input,
+.field-select,
+.field-textarea,
+.nilo-panel-content input:not([type="checkbox"]):not([type="radio"]),
+.nilo-panel-content select,
+.nilo-panel-content textarea {
+    background-color: #FFFFFF;
+    color: #19263A;
+    caret-color: #19263A;
+}
+.field-input:focus,
+.field-select:focus,
+.field-textarea:focus,
+.nilo-panel-content input:not([type="checkbox"]):not([type="radio"]):focus,
+.nilo-panel-content select:focus,
+.nilo-panel-content textarea:focus {
+    background-color: #FFFFFF;
+    color: #19263A;
+}
+.field-input:disabled,
+.field-select:disabled,
+.field-textarea:disabled {
+    background-color: #F1F5F9;
+    color: #64748B;
+}
+
+/* Os três setores compartilham a mesma cor de texto e superfície */
+.sector-option,
+.sector-option:hover,
+.sector-option.active {
+    color: var(--text-primary);
+}
+.sector-option { background: #FFFFFF; }
+.sector-option:hover { background: #F8FAFC; }
+.sector-option.active {
+    background: #EFF6FF;
+    border-color: #3986D8;
+}
+.sector-option-title,
+.sector-option-desc {
+    color: var(--text-primary);
+}
+.sector-option-desc { color: var(--text-secondary); }
+
+/* Chat: nenhuma mensagem pode herdar texto branco no painel claro */
+.nilo-panel-content .chat-layout,
+.nilo-panel-content .chat-panel,
+.nilo-panel-content .chat-messages {
+    color: var(--text-primary);
+    background: #FFFFFF;
+}
+.chat-bubble.user {
+    background: #EAF2FC;
+    border-color: #C7DCF5;
+    color: #19263A;
+}
+.chat-bubble.assistant {
+    background: #F8FAFC;
+    border-color: #DCE5EF;
+    color: #19263A;
+}
+.chat-bubble.user *,
+.chat-bubble.assistant * {
+    color: inherit;
+}
+.chat-bubble.assistant strong,
+.chat-bubble.user strong {
+    color: #16865A;
+}
+.chat-bubble.error { color: #B42318; }
+.chat-composer {
+    background: #FFFFFF;
+    color: var(--text-primary);
+    border-top: 1px solid var(--border);
+}
+.chat-composer .field-input,
+.chat-composer .field-textarea {
+    background: #FFFFFF;
+    color: #19263A;
+}
+.prompt-chip {
+    background: #F1F5F9;
+    color: #19263A;
+    border-color: #DCE5EF;
+}
+.prompt-chip:hover {
+    background: #E8F0F8;
+    color: #19263A;
+}
+.nilo-panel-content .chat-layout > aside,
+.nilo-panel-content .chat-layout > aside * {
+    color: var(--text-primary);
+}
+.nilo-panel-content .chat-layout > aside .card-title,
+.nilo-panel-content .chat-layout > aside .field-label {
+    color: var(--text-primary);
+}
+
