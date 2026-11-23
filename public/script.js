@@ -959,7 +959,7 @@
             if (!pricings.length) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <p class="empty-state-desc">Nenhuma margem planejada registrada ainda. Salve uma precificação para comparar com a meta de ${Formatter.percent(targetMargin, 0)}.</p>
+                        <p class="empty-state-desc">Nenhuma margem planejada registrada ainda. Salve uma precificação para acompanhar este indicador.</p>
                     </div>`;
                 return;
             }
@@ -970,33 +970,34 @@
                 latestByItem.set(p.catalogItemId || p.itemNome, p);
             });
             const rows = Array.from(latestByItem.values()).slice(-6);
-            const maxMargin = Math.max(targetMargin, ...rows.map(r => r.margemPlanejada), 40);
+            const hasTarget = targetMargin !== null && Number.isFinite(Number(targetMargin));
+            const maxMargin = Math.max(hasTarget ? Number(targetMargin) : 0, ...rows.map(r => r.margemPlanejada), 40);
 
             container.innerHTML = `
                 <div style="display:flex;flex-direction:column;gap:14px;">
                     ${rows.map(r => {
-                        const belowTarget = r.margemPlanejada < targetMargin;
-                        const color = belowTarget ? 'var(--color-warning)' : 'var(--color-emerald)';
+                        const belowTarget = hasTarget && r.margemPlanejada < Number(targetMargin);
+                        const color = !hasTarget ? 'var(--color-blue)' : (belowTarget ? 'var(--color-warning)' : 'var(--color-emerald)');
                         const barW = Math.min(100, Math.max(4, (r.margemPlanejada / maxMargin) * 100));
-                        const targetPos = Math.min(100, (targetMargin / maxMargin) * 100);
+                        const targetPos = hasTarget ? Math.min(100, (Number(targetMargin) / maxMargin) * 100) : null;
                         return `
                             <div>
                                 <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:5px;font-size:13px;">
                                     <span style="color:var(--color-cloud);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${Formatter.escapeHtml(r.itemNome)}</span>
-                                    <span class="mono" style="color:${color};font-weight:600;">${Formatter.percent(r.margemPlanejada)} ${belowTarget ? '· Abaixo da meta' : '· Na meta'}</span>
+                                    <span class="mono" style="color:${color};font-weight:600;">${Formatter.percent(r.margemPlanejada)} ${!hasTarget ? '· Meta não definida' : (belowTarget ? '· Abaixo da meta' : '· Na meta')}</span>
                                 </div>
                                 <div style="position:relative;height:10px;border-radius:999px;background:var(--color-midnight);border:var(--border-hairline);">
                                     <div class="chart-bar-anim" style="width:${barW}%;height:100%;background:${color};border-radius:999px;"></div>
-                                    <div title="Meta: ${Formatter.percent(targetMargin, 0)}" style="position:absolute;top:-3px;bottom:-3px;left:${targetPos}%;width:2px;background:var(--color-cloud);opacity:0.65;"></div>
+                                    ${hasTarget ? `<div title="Meta: ${Formatter.percent(targetMargin, 0)}" style="position:absolute;top:-3px;bottom:-3px;left:${targetPos}%;width:2px;background:var(--color-cloud);opacity:0.65;"></div>` : ''}
                                 </div>
                             </div>
                         `;
                     }).join('')}
                 </div>
-                <div class="chart-legend">
+                ${hasTarget ? `<div class="chart-legend">
                     <span class="chart-legend-entry"><span class="legend-swatch" style="background:#55D6A0"></span> Margem planejada dentro da meta</span>
                     <span class="chart-legend-entry"><span class="legend-swatch" style="background:#F59E0B"></span> Abaixo da meta (${Formatter.percent(targetMargin, 0)})</span>
-                </div>
+                </div>` : '<p class="chart-legend">Defina uma meta de margem em Meu negócio para ativar a comparação.</p>'}
             `;
         }
     };
@@ -1296,11 +1297,11 @@
                     <div class="kpi-meta">${avgMargin === null ? 'Calculada após salvar precificações' : 'Margem planejada média (não realizada)'}</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Margem abaixo da meta (${Formatter.percent(target, 0)})</div>
-                    <div class="kpi-value ${belowTargetCount > 0 ? 'warning' : (pricings.length > 0 ? 'positive' : '')}">
-                        ${pricings.length === 0 ? '—' : belowTargetCount}
+                    <div class="kpi-label">${target === null ? 'Meta de margem' : `Margem abaixo da meta (${Formatter.percent(target, 0)})`}</div>
+                    <div class="kpi-value ${target === null ? '' : (belowTargetCount > 0 ? 'warning' : (pricings.length > 0 ? 'positive' : ''))}">
+                        ${target === null || pricings.length === 0 ? '—' : belowTargetCount}
                     </div>
-                    <div class="kpi-meta">${pricings.length === 0 ? 'Aguardando precificações salvas' : (belowTargetCount === 0 ? 'Todos os itens dentro da meta' : 'Itens que merecem revisão')}</div>
+                    <div class="kpi-meta">${target === null ? 'Defina uma meta em Meu negócio' : (pricings.length === 0 ? 'Aguardando precificações salvas' : (belowTargetCount === 0 ? 'Todos os itens dentro da meta' : 'Itens que merecem revisão'))}</div>
                 </div>
             </div>
 
@@ -1331,7 +1332,7 @@
                     <div class="card-header">
                         <div>
                             <h2 class="card-title">Margem planejada por item</h2>
-                            <p class="card-subtitle">Margem configurada nas precificações comparada à meta de ${Formatter.percent(target, 0)} (não representa venda realizada).</p>
+                            <p class="card-subtitle">${target === null ? 'Margens planejadas por item (não representam vendas realizadas). Defina uma meta em Meu negócio para comparar.' : `Margem planejada comparada à meta de ${Formatter.percent(target, 0)} (não representa venda realizada).`}</p>
                         </div>
                     </div>
                     <div id="dash-chart-margin" class="chart-container"></div>
@@ -1463,6 +1464,11 @@
                 </div>
 
                 <div class="form-grid">
+                    <div class="form-field form-field-full">
+                        <label class="field-label" for="biz-margem-meta">Meta de margem da empresa (%) <span class="field-req">Opcional</span></label>
+                        <input id="biz-margem-meta" class="field-input mono" type="text" inputmode="decimal" value="${b.margemMeta ?? ''}" placeholder="Ex: 25">
+                        <span class="field-help">Use uma meta definida pela sua estratégia. Se deixar vazio, o ValorizAI não classificará margens como acima ou abaixo de uma meta.</span>
+                    </div>
                     <div class="form-field">
                         <label class="field-label" for="biz-nome">Nome do negócio</label>
                         <input id="biz-nome" class="field-input" type="text" value="${Formatter.escapeHtml(b.nomeNegocio)}" placeholder="Ex: Padaria Trigo & Cia ou Studio Silva">
@@ -1533,9 +1539,15 @@
 
         document.getElementById('business-form').addEventListener('submit', e => {
             e.preventDefault();
+            const margemMeta = Formatter.parseNumber(document.getElementById('biz-margem-meta').value);
+            if (margemMeta !== null && (!Number.isFinite(margemMeta) || margemMeta < 0 || margemMeta >= 100)) {
+                UI.toast('Informe uma meta entre 0% e 99%, ou deixe o campo vazio.', 'error');
+                return;
+            }
             WorkspaceStore.state.business = {
                 nomeNegocio: document.getElementById('biz-nome').value.trim(),
                 empreendedor: document.getElementById('biz-empreendedor').value.trim(),
+                margemMeta,
                 segmento: selectedSegment,
                 modeloOperacao: document.getElementById('biz-modelo').value,
                 regimeInformativo: document.getElementById('biz-regime').value.trim(),
@@ -1547,7 +1559,7 @@
             WorkspaceStore.save();
             UI.updateChrome();
             UI.renderCurrentView();
-            UI.toast('Informações do negócio salvas localmente.', 'success');
+            UI.toast('Informações do negócio salvas neste navegador. A sincronização com a conta ainda será integrada.', 'info');
         });
     }
 
@@ -2611,15 +2623,17 @@
             return;
         }
 
-        const targetMargin = Number(WorkspaceStore.state.settings.margemMetaPadrao) || 20;
-        const taxAlertThreshold = Number(WorkspaceStore.state.settings.alertaCargaTributaria) || 35;
-        const healthyMargin = r.margemPlanejada >= targetMargin;
+        const businessTarget = WorkspaceStore.state.business.margemMeta;
+        const targetMargin = businessTarget === null || businessTarget === '' || businessTarget === undefined ? null : Number(businessTarget);
+        const taxAlertThreshold = WorkspaceStore.state.settings.alertaCargaTributaria;
+        const hasTaxThreshold = taxAlertThreshold !== null && taxAlertThreshold !== '' && Number.isFinite(Number(taxAlertThreshold));
+        const healthyMargin = targetMargin !== null && r.margemPlanejada >= targetMargin;
 
         const warnings = [];
-        if (r.margemPlanejada < targetMargin) {
+        if (targetMargin !== null && r.margemPlanejada < targetMargin) {
             warnings.push(`Margem planejada (${Formatter.percent(r.margemPlanejada)}) está abaixo da meta configurada (${Formatter.percent(targetMargin, 0)}).`);
         }
-        if (r.percentualImpostosTaxas >= taxAlertThreshold) {
+        if (hasTaxThreshold && r.percentualImpostosTaxas >= Number(taxAlertThreshold)) {
             warnings.push(`Carga de impostos e taxas sobre o preço (${Formatter.percent(r.percentualImpostosTaxas)}) está elevada.`);
         }
         if (r.markup > 0 && r.markup < 1.3) {
@@ -3090,7 +3104,7 @@
                                     <td class="num">${Formatter.brl(p.custoTotal)}</td>
                                     <td class="num" style="color:var(--color-emerald);font-weight:600;">${Formatter.brl(p.precoSugerido)}</td>
                                     <td class="num">${p.markup.toFixed(2)}x</td>
-                                    <td class="num" style="color:${p.margemPlanejada < target ? 'var(--color-warning)' : 'var(--color-emerald)'};">${Formatter.percent(p.margemPlanejada)}</td>
+                                    <td class="num" style="${target === null ? '' : `color:${p.margemPlanejada < target ? 'var(--color-warning)' : 'var(--color-emerald)'};`}">${Formatter.percent(p.margemPlanejada)}</td>
                                     <td style="text-align:right;white-space:nowrap;">
                                         <div style="display:inline-flex;gap:6px;">
                                             <button type="button" class="btn btn-ghost btn-sm" data-hist-detail="${p.id}">Detalhes</button>
@@ -3166,7 +3180,7 @@
 
     // --- 8.7 ANÁLISES ---
     function renderAnalyses(root) {
-        const { pricings, catalog, settings } = WorkspaceStore.state;
+        const { pricings, catalog, business } = WorkspaceStore.state;
         const target = business.margemMeta === null || business.margemMeta === '' || business.margemMeta === undefined ? null : Number(business.margemMeta);
 
         root.innerHTML = `
@@ -3246,8 +3260,8 @@
                 <section class="surface-card">
                     <div class="card-header">
                         <div>
-                            <h2 class="card-title">Margens planejadas vs. meta</h2>
-                            <p class="card-subtitle">Meta configurada de ${Formatter.percent(target, 0)} sobre o preço de venda.</p>
+                            <h2 class="card-title">${target === null ? 'Margens planejadas' : 'Margens planejadas vs. meta'}</h2>
+                            <p class="card-subtitle">${target === null ? 'Acompanhe as margens registradas. Defina uma meta em Meu negócio para ativar a comparação.' : `Meta definida pela empresa: ${Formatter.percent(target, 0)} sobre o preço de venda.`}</p>
                         </div>
                     </div>
                     <div id="ana-chart-margin"></div>
@@ -3633,8 +3647,7 @@
                     <div class="form-grid">
                         <div class="form-field">
                             <label class="field-label" for="set-margem-meta">Margem mínima de referência (%)</label>
-                            <input id="set-margem-meta" class="field-input mono" type="text" inputmode="decimal" value="${settings.margemMetaPadrao}">
-                            <span class="field-help">Usada no Dashboard e Análises para sinalizar itens abaixo da meta.</span>
+                            <p class="field-help">A meta de margem é definida no perfil da empresa, em Meu negócio.</p>
                         </div>
 
                         <div class="form-field">
@@ -3699,14 +3712,12 @@
 
         document.getElementById('settings-form').addEventListener('submit', e => {
             e.preventDefault();
-            const meta = Formatter.parseNumber(document.getElementById('set-margem-meta').value);
             const carga = Formatter.parseNumber(document.getElementById('set-carga-alerta').value);
-            if (!Number.isFinite(meta) || meta < 0 || meta >= 100 || !Number.isFinite(carga) || carga < 0 || carga >= 100) {
-                UI.toast('Informe percentuais válidos entre 0% e 99%.', 'error');
+            if (carga !== null && (!Number.isFinite(carga) || carga < 0 || carga >= 100)) {
+                UI.toast('Informe um limiar de alerta entre 0% e 99%, ou deixe vazio.', 'error');
                 return;
             }
             WorkspaceStore.state.settings = {
-                margemMetaPadrao: meta,
                 alertaCargaTributaria: carga,
                 mostrarDicasCampos: document.getElementById('set-dicas').checked,
                 salvarRascunhoAutomatico: document.getElementById('set-rascunho').checked
