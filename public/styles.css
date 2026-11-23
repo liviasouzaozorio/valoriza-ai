@@ -1808,6 +1808,40 @@ body, .app-shell, .main-viewport { color: var(--text-primary); }
     color: var(--text-secondary) !important;
 }
 
+
+/* Correção específica: tabelas do catálogo, histórico e comparativos.
+   As linhas permanecem claras no estado normal e no hover; o texto não depende
+   do mouse para ficar legível. */
+.main-viewport .data-table tbody tr,
+.main-viewport .data-table tbody tr:hover {
+    background-color: #FFFFFF;
+}
+
+.main-viewport .data-table tbody tr:hover {
+    background-color: #F1F5F9;
+}
+
+.main-viewport .data-table tbody td,
+.main-viewport .data-table tbody tr:hover td {
+    color: #19263A;
+}
+
+.main-viewport .data-table tbody td [style*="color:var(--color-emerald)"],
+.main-viewport .data-table tbody tr:hover td [style*="color:var(--color-emerald)"] {
+    color: #16865A !important;
+}
+
+.main-viewport .data-table tbody td a,
+.main-viewport .data-table tbody td button,
+.main-viewport .data-table tbody td .icon-btn {
+    color: inherit;
+}
+
+.main-viewport .data-table tbody td .btn-primary,
+.main-viewport .data-table tbody td .btn-primary:hover {
+    color: #FFFFFF;
+}
+
 /* --------------------------------------------------------------------------
    Fase 1 — contraste consistente em todas as superfícies claras
    Inclui conteúdo dinâmico, modais e SVGs gerados pelo JavaScript.
