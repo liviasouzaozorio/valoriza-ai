@@ -50,6 +50,58 @@ app.get('/api/health', async (_req, res) => {
     return res.status(503).json({ success: false, error: { code: 'DEPENDENCY_UNAVAILABLE', message: 'Serviço temporariamente indisponível.' } });
   }
 });
+
+async function authenticateSupabaseRequest(req) {
+  const authorization = req.headers.authorization || '';
+  const tokenMatch = authorization.match(/^Bearer\s+(.+)$/i);
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+  if (!tokenMatch || !supabaseUrl || !anonKey) return null;
+
+  const response = await fetch(`${supabaseUrl.replace(/\/$/, '')}/auth/v1/user`, {
+    headers: { apikey: anonKey, Authorization: `Bearer ${tokenMatch[1]}` }
+  });
+  if (!response.ok) return null;
+  const user = await response.json();
+  return typeof user.id === 'string' ? user : null;
+}
+
+app.get('/api/preferences/sidebar', async (req, res) => {
+  try {
+    const user = await authenticateSupabaseRequest(req);
+    if (!user) return res.status(401).json({ success: false, error: { code: 'UNAUTHENTICATED', message: 'Sessão inválida ou expirada.' } });
+    const result = await pool.query(
+      'SELECT sidebar_collapsed FROM user_preferences WHERE user_id = $1 LIMIT 1',
+      [user.id]
+    );
+    return res.json({ success: true, data: { collapsed: result.rows[0]?.sidebar_collapsed ?? false } });
+  } catch (error) {
+    console.error('Erro ao carregar preferência da navegação:', error?.code || 'PREFERENCES_READ_ERROR');
+    return res.status(503).json({ success: false, error: { code: 'PREFERENCE_UNAVAILABLE', message: 'Não foi possível carregar sua preferência.' } });
+  }
+});
+
+app.put('/api/preferences/sidebar', async (req, res) => {
+  try {
+    const user = await authenticateSupabaseRequest(req);
+    if (!user) return res.status(401).json({ success: false, error: { code: 'UNAUTHENTICATED', message: 'Sessão inválida ou expirada.' } });
+    if (typeof req.body?.collapsed !== 'boolean') {
+      return res.status(400).json({ success: false, error: { code: 'INVALID_PREFERENCE', message: 'Informe collapsed como verdadeiro ou falso.' } });
+    }
+    const result = await pool.query(
+      `INSERT INTO user_preferences (user_id, sidebar_collapsed, updated_at)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (user_id) DO UPDATE
+       SET sidebar_collapsed = EXCLUDED.sidebar_collapsed, updated_at = NOW()
+       RETURNING sidebar_collapsed`,
+      [user.id, req.body.collapsed]
+    );
+    return res.json({ success: true, data: { collapsed: result.rows[0].sidebar_collapsed } });
+  } catch (error) {
+    console.error('Erro ao salvar preferência da navegação:', error?.code || 'PREFERENCES_WRITE_ERROR');
+    return res.status(503).json({ success: false, error: { code: 'PREFERENCE_UNAVAILABLE', message: 'Não foi possível salvar sua preferência.' } });
+  }
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (_req, res) => {
