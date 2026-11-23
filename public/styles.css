@@ -159,10 +159,6 @@ a {
     gap: 6px;
 }
 
-.sidebar-close-mobile {
-    display: none;
-}
-
 .sidebar-nav {
     flex: 1;
     overflow-y: auto;
@@ -1546,11 +1542,7 @@ a {
         display: none;
     }
 
-    .sidebar-close-mobile {
-        display: inline-flex;
-    }
-
-    .workspace-main,
+.workspace-main,
     .app-shell.sidebar-collapsed .workspace-main {
         margin-left: 0;
     }
