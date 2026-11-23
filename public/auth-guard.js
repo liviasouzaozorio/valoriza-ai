@@ -7,7 +7,7 @@
     window.supabase?.createClient &&
     config.supabaseUrl &&
     config.supabaseAnonKey &&
-    !config.supabaseAnonKey.includes('COLE_AQUI')
+    !config.supabaseAnonKey.includes('sb_publishable_s3GhLyuyfkSj7YgEV9auWw_XBnlZY9_')
   );
 
   if (!configured) {
