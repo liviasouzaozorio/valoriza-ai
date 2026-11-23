@@ -7,7 +7,7 @@ Esta etapa usa o Supabase Auth no navegador. O arquivo `public/auth-config.js` c
 Abra `public/auth-config.js` e substitua:
 
 ```js
-supabaseAnonKey: 'COLE_AQUI_SUA_SUPABASE_PUBLISHABLE_KEY'
+supabaseAnonKey: 'sb_publishable_s3GhLyuyfkSj7YgEV9auWw_XBnlZY9_'
 ```
 
 pela **publishable key** (ou anon key legada) do projeto Supabase.
