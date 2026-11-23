@@ -109,13 +109,6 @@
                     <span class="nav-label">Custos e rentabilidade</span>
                 </button>
 
-                <button type="button" class="nav-item" data-nav="consultor" data-tooltip="Nilo">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                    <span class="nav-label">Nilo</span>
-                </button>
-
                 <button type="button" class="nav-item" data-nav="negocio" data-tooltip="Perfil da empresa">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M3 21h18"></path>
@@ -224,6 +217,21 @@
             <div id="modal-body" class="modal-body"></div>
         </div>
     </div>
+
+    <!-- Nilo flutuante global -->
+    <button type="button" id="nilo-fab" class="nilo-fab" aria-label="Abrir conversa com Nilo" aria-expanded="false" aria-controls="nilo-panel">
+        <img src="/img-valorizaai/nilo/nilo-apresentacao.svg" alt="">
+    </button>
+    <section id="nilo-panel" class="nilo-panel" role="dialog" aria-label="Assistente Nilo" hidden>
+        <header class="nilo-panel-header">
+            <div class="nilo-panel-title">
+                <img src="/img-valorizaai/nilo/nilo-apresentacao.svg" alt="">
+                <span>Nilo <small style="display:block;font-size:11px;font-weight:400;color:#64748B;">Assistente ValorizAI</small></span>
+            </div>
+            <button type="button" id="nilo-panel-close" class="icon-btn" aria-label="Fechar Nilo">×</button>
+        </header>
+        <div id="nilo-panel-content" class="nilo-panel-content"></div>
+    </section>
 
     <!-- Toast Feedback Region -->
     <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
