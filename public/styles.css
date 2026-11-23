@@ -2013,3 +2013,47 @@ body, .app-shell, .main-viewport { color: var(--text-primary); }
     color: #55D6A0 !important;
 }
 
+/* Resultado da precificação: contraste para o painel escuro de indicadores */
+.pricing-result-metrics .kpi-label,
+.pricing-result-metrics .card-subtitle,
+.pricing-result-metrics .composition-legend,
+.pricing-result-metrics .legend-item,
+.pricing-result-metrics .legend-label {
+    color: #F1F5F9 !important;
+}
+
+.pricing-result-metrics .kpi-value {
+    color: #F8FAFC !important;
+}
+
+.pricing-result-metrics .kpi-value.positive {
+    color: #55D6A0 !important;
+}
+
+.pricing-result-metrics .kpi-value.warning {
+    color: #FBBF24 !important;
+}
+
+.pricing-result-metrics .kpi-value.danger {
+    color: #FCA5A5 !important;
+}
+
+.pricing-result-metrics .composition-legend .mono {
+    color: #F8FAFC !important;
+}
+
+.pricing-result-metrics .card-title {
+    color: #F8FAFC !important;
+}
+
+.pricing-result-metrics .notice,
+.pricing-result-metrics li {
+    color: #E2E8F0 !important;
+}
+
+.pricing-result-metrics .kpi-label,
+.pricing-result-metrics .legend-label,
+.pricing-result-metrics .card-subtitle {
+    opacity: 1;
+}
+
