@@ -2013,47 +2013,54 @@ body, .app-shell, .main-viewport { color: var(--text-primary); }
     color: #55D6A0 !important;
 }
 
-/* Resultado da precificação: contraste para o painel escuro de indicadores */
-.pricing-result-metrics .kpi-label,
-.pricing-result-metrics .card-subtitle,
-.pricing-result-metrics .composition-legend,
-.pricing-result-metrics .legend-item,
-.pricing-result-metrics .legend-label {
-    color: #F1F5F9 !important;
+/* Resultado da precificação: cada superfície usa sua própria escala de contraste.
+   O cabeçalho fica no card claro; somente os quatro indicadores ficam em cards navy. */
+.pricing-result-metrics > div:first-child .kpi-label {
+    color: #64748B !important;
 }
-
-.pricing-result-metrics .kpi-value {
+.pricing-result-metrics > div:first-child .mono {
+    color: #16865A !important;
+}
+.pricing-result-metrics > div:first-child > div > div[style*="color:var(--color-silver)"] {
+    color: #64748B !important;
+}
+.pricing-result-metrics > div:first-child strong {
+    color: #19263A !important;
+}
+.pricing-result-metric-card .kpi-label {
+    color: #F1F5F9 !important;
+    opacity: 1;
+}
+.pricing-result-metric-card .kpi-value {
     color: #F8FAFC !important;
 }
-
-.pricing-result-metrics .kpi-value.positive {
+.pricing-result-metric-card .kpi-value.positive {
     color: #55D6A0 !important;
 }
-
-.pricing-result-metrics .kpi-value.warning {
+.pricing-result-metric-card .kpi-value.warning {
     color: #FBBF24 !important;
 }
-
-.pricing-result-metrics .kpi-value.danger {
+.pricing-result-metric-card .kpi-value.danger {
     color: #FCA5A5 !important;
 }
 
-.pricing-result-metrics .composition-legend .mono {
-    color: #F8FAFC !important;
+/* Resultado da simulação: painel claro, portanto rótulos e valores escuros. */
+.simulation-result-content .kpi-label {
+    color: #64748B !important;
 }
-
-.pricing-result-metrics .card-title {
-    color: #F8FAFC !important;
+.simulation-result-content > div:first-child > div[style*="color:var(--color-silver)"] {
+    color: #64748B !important;
 }
-
-.pricing-result-metrics .notice,
-.pricing-result-metrics li {
-    color: #E2E8F0 !important;
+.simulation-result-details .kv-key {
+    color: #64748B !important;
 }
-
-.pricing-result-metrics .kpi-label,
-.pricing-result-metrics .legend-label,
-.pricing-result-metrics .card-subtitle {
-    opacity: 1;
+.simulation-result-details .kv-val {
+    color: #19263A !important;
+}
+.simulation-result-details .kv-val[style*="color:var(--color-warning)"] {
+    color: #B77912 !important;
+}
+.simulation-result-details .kv-val[style*="color:var(--color-emerald)"] {
+    color: #16865A !important;
 }
 
