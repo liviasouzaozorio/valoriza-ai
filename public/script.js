@@ -1105,6 +1105,7 @@
         analysisSelectedItemId: 'all',
         simulacaoResult: null,
         chatSending: false,
+        niloOpen: false,
 
         toast(message, type = 'info') {
             const region = document.getElementById('toast-region');
@@ -3373,7 +3374,7 @@
             <div class="page-header">
                 <div>
                     <h1 class="page-heading">Consultor IA ValorizAI</h1>
-                    <p class="page-subtitle">Análise comercial e operacional conectada ao endpoint oficial do servidor com os dados da sua precificação.</p>
+                    <p class="page-subtitle">Pergunte sobre negócios, mercado, gestão, tecnologia ou seu próprio negócio.</p>
                 </div>
                 <div class="page-header-actions">
                     <button type="button" class="btn btn-ghost btn-sm" id="ai-clear-chat" ${chatMsgs.length === 0 ? 'disabled' : ''}>Limpar conversa</button>
@@ -3418,8 +3419,8 @@
                                 <div class="empty-state-nilo" style="width:100px;">
                                     <img src="${NILO_ASSETS.apresentacao}" alt="Nilo" class="nilo-figure nilo-float">
                                 </div>
-                                <h2 class="empty-state-title">Faça uma pergunta sobre sua precificação</h2>
-                                <p class="empty-state-desc">Selecione um item ao lado para enviar seus custos e margens em tempo real ao Consultor IA e receber recomendações práticas.</p>
+                                <h2 class="empty-state-title">O que você gostaria de entender?</h2>
+                                <p class="empty-state-desc">Pode perguntar sobre gestão, mercado, empreendedorismo, tecnologia ou custos. Se houver dados financeiros selecionados, o Nilo poderá usá-los quando forem relevantes.</p>
                             </div>
                         ` : chatMsgs.map((m, idx) => `
                             <div class="chat-bubble ${m.role}">
@@ -3448,7 +3449,7 @@
                             ].map(q => `<button type="button" class="prompt-chip" data-prompt-chip="${Formatter.escapeHtml(q)}">${Formatter.escapeHtml(q)}</button>`).join('')}
                         </div>
                         <div class="chat-composer-row">
-                            <input type="text" id="ai-question-input" class="field-input" placeholder="Digite sua dúvida sobre custos, markup, margem ou posicionamento..." ${UI.chatSending ? 'disabled' : ''}>
+                            <input type="text" id="ai-question-input" class="field-input" placeholder="Pergunte sobre negócios, mercado, gestão, tecnologia..." ${UI.chatSending ? 'disabled' : ''}>
                             <button type="submit" class="btn btn-primary" ${UI.chatSending ? 'disabled' : ''}>${UI.chatSending ? 'Analisando...' : 'Enviar'}</button>
                         </div>
                     </form>
@@ -3525,6 +3526,9 @@
                 WorkspaceStore.save();
                 if (UI.currentView === 'consultor') {
                     renderConsultor(document.getElementById('main-viewport'));
+                }
+                if (UI.niloOpen) {
+                    renderConsultor(document.getElementById('nilo-panel-content'));
                 }
             }
         }
@@ -3777,6 +3781,24 @@
             shell.classList.remove('mobile-drawer-open');
         });
 
+        // Nilo é global: abrir o painel preserva a tela atual.
+        const niloFab = document.getElementById('nilo-fab');
+        const niloPanel = document.getElementById('nilo-panel');
+        const niloPanelContent = document.getElementById('nilo-panel-content');
+        const closeNilo = () => {
+            UI.niloOpen = false;
+            niloPanel.hidden = true;
+            niloFab.setAttribute('aria-expanded', 'false');
+        };
+        niloFab.addEventListener('click', () => {
+            UI.niloOpen = true;
+            niloPanel.hidden = false;
+            niloFab.setAttribute('aria-expanded', 'true');
+            renderConsultor(niloPanelContent);
+            document.getElementById('ai-question-input')?.focus();
+        });
+        document.getElementById('nilo-panel-close').addEventListener('click', closeNilo);
+
         // Ação Topbar Nova Precificação
         document.getElementById('topbar-new-pricing-btn').addEventListener('click', () => {
             UI.navigate('precificacao');
@@ -3808,6 +3830,7 @@
                 notifPop.classList.add('hidden');
                 notifBtn.setAttribute('aria-expanded', 'false');
                 shell.classList.remove('mobile-drawer-open');
+                if (UI.niloOpen) closeNilo();
             }
         });
 
