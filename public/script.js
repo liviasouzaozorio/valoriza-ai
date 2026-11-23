@@ -2626,7 +2626,7 @@
             </div>
 
             <div class="grid-2" style="margin-bottom:20px;">
-                <section class="surface-card">
+                <section class="surface-card pricing-result-metrics">
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;">
                         <div>
                             <div class="kpi-label">Preço de venda sugerido · ${Formatter.escapeHtml(w.unidade)}</div>
