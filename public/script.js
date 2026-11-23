@@ -3515,7 +3515,7 @@
             } catch (err) {
                 WorkspaceStore.state.chatHistory.push({
                     role: 'error',
-                    text: err.message || 'Erro ao comunicar com o endpoint /perguntar.',
+                    text: 'Não foi possível responder agora. Verifique sua conexão e tente novamente em instantes.',
                     at: new Date().toISOString()
                 });
             } finally {
