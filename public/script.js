@@ -983,11 +983,40 @@
     /* =========================================================================
        6. NOTIFICAÇÕES E INSIGHTS DERIVADOS DE DADOS REAIS
        ========================================================================= */
+    function getPricingItemKey(pricing) {
+        if (pricing.catalogItemId) return `id:${pricing.catalogItemId}`;
+        return `name:${String(pricing.itemNome || '').trim().toLocaleLowerCase('pt-BR')}`;
+    }
+
+    function getActivePricingRecords(pricings, catalog) {
+        const catalogById = new Map(catalog.filter(item => item.id).map(item => [item.id, item]));
+        return pricings.filter(pricing => {
+            if (!pricing.catalogItemId) return true;
+            const catalogItem = catalogById.get(pricing.catalogItemId);
+            // Registros históricos sem vínculo no catálogo continuam visíveis;
+            // itens explicitamente arquivados saem dos indicadores atuais.
+            return !catalogItem || catalogItem.status !== 'Arquivado';
+        });
+    }
+
+    function getLatestPricingPerItem(pricings) {
+        const latestByItem = new Map();
+        [...pricings].sort((a, b) => {
+            const dateA = new Date(a.criadoEm).getTime();
+            const dateB = new Date(b.criadoEm).getTime();
+            const safeA = Number.isFinite(dateA) ? dateA : 0;
+            const safeB = Number.isFinite(dateB) ? dateB : 0;
+            if (safeA !== safeB) return safeA - safeB;
+            return (Number(a.versao) || 0) - (Number(b.versao) || 0);
+        }).forEach(pricing => latestByItem.set(getPricingItemKey(pricing), pricing));
+        return Array.from(latestByItem.values());
+    }
+
     function computeDerivedInsights() {
         const { catalog, pricings, business } = WorkspaceStore.state;
-        const target = business.margemMeta === null || business.margemMeta === '' || business.margemMeta === undefined
-            ? null
-            : Number(business.margemMeta);
+        const rawTarget = business.margemMeta;
+        const parsedTarget = rawTarget === null || rawTarget === '' || rawTarget === undefined ? null : Number(rawTarget);
+        const target = Number.isFinite(parsedTarget) && parsedTarget >= 0 && parsedTarget < 100 ? parsedTarget : null;
         const insights = [];
         const notifications = [];
 
@@ -1008,30 +1037,20 @@
             });
         }
 
-        if (pricings.length === 0) {
-            return { insights, notifications, belowTargetCount: null, avgMargin: null };
-        }
-
-        // Última versão por item
-        const latestByItem = new Map();
-        const versionsByItem = new Map();
-        [...pricings].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm)).forEach(p => {
-            const key = p.catalogItemId || p.itemNome;
-            latestByItem.set(key, p);
-            if (!versionsByItem.has(key)) versionsByItem.set(key, []);
-            versionsByItem.get(key).push(p);
-        });
-
-        const latestList = Array.from(latestByItem.values());
-        const avgMargin = latestList.reduce((acc, p) => acc + p.margemPlanejada, 0) / latestList.length;
-        const belowTarget = target === null ? null : latestList.filter(p => p.margemPlanejada < target);
+        const activePricingRecords = getActivePricingRecords(pricings, catalog);
+        const latestPricings = getLatestPricingPerItem(activePricingRecords);
+        const validMarginPricings = latestPricings.filter(p => Number.isFinite(Number(p.margemPlanejada)));
+        const avgMargin = validMarginPricings.length
+            ? validMarginPricings.reduce((sum, p) => sum + Number(p.margemPlanejada), 0) / validMarginPricings.length
+            : null;
+        const belowTarget = target === null ? null : validMarginPricings.filter(p => Number(p.margemPlanejada) < target);
 
         if (belowTarget && belowTarget.length > 0) {
-            const lowest = [...belowTarget].sort((a, b) => a.margemPlanejada - b.margemPlanejada)[0];
+            const lowest = [...belowTarget].sort((a, b) => Number(a.margemPlanejada) - Number(b.margemPlanejada))[0];
             insights.push({
                 tone: 'warning',
                 title: `${belowTarget.length} ${belowTarget.length === 1 ? 'item com margem planejada abaixo da meta' : 'itens com margem planejada abaixo da meta'}`,
-                desc: `"${lowest.itemNome}" está com ${Formatter.percent(lowest.margemPlanejada)} frente à meta de ${Formatter.percent(target, 0)}. Avalie custos ou reposicionamento.`
+                desc: `"${lowest.itemNome}" está com ${Formatter.percent(lowest.margemPlanejada)} frente à meta de ${Formatter.percent(target, 0)}. Avalie os custos e as condições de venda antes de decidir uma alteração.`
             });
             notifications.push({
                 title: 'Margem abaixo da meta configurada',
@@ -1040,40 +1059,47 @@
             });
         }
 
-        const highestCost = [...latestList].sort((a, b) => b.custoTotal - a.custoTotal)[0];
+        const validCostPricings = latestPricings.filter(p => Number.isFinite(Number(p.custoTotal)));
+        const highestCost = [...validCostPricings].sort((a, b) => Number(b.custoTotal) - Number(a.custoTotal))[0];
         if (highestCost) {
             insights.push({
                 tone: 'info',
-                title: 'Maior custo unitário registrado',
-                desc: `"${highestCost.itemNome}" possui custo de ${Formatter.brl(highestCost.custoTotal)} e preço sugerido de ${Formatter.brl(highestCost.precoSugerido)} (markup ${highestCost.markup.toFixed(2)}x).`
+                title: 'Maior custo unitário registrado entre os itens ativos',
+                desc: `"${highestCost.itemNome}" possui custo de ${Formatter.brl(highestCost.custoTotal)} e preço sugerido de ${Formatter.brl(highestCost.precoSugerido)}. Esse é o maior custo por unidade/atendimento entre os itens ativos; não significa, por si só, maior gasto total do negócio.`
             });
         }
 
-        // Variação relevante de custo entre versões
+        // Compara somente as duas versões mais recentes de cada item ativo.
+        const versionsByItem = new Map();
+        [...activePricingRecords].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm)).forEach(p => {
+            const key = getPricingItemKey(p);
+            if (!versionsByItem.has(key)) versionsByItem.set(key, []);
+            versionsByItem.get(key).push(p);
+        });
         versionsByItem.forEach(list => {
-            if (list.length >= 2) {
-                const prev = list[list.length - 2];
-                const curr = list[list.length - 1];
-                if (prev.custoTotal > 0) {
-                    const diffPct = ((curr.custoTotal - prev.custoTotal) / prev.custoTotal) * 100;
-                    if (Math.abs(diffPct) >= 5) {
-                        insights.push({
-                            tone: diffPct > 0 ? 'warning' : 'success',
-                            title: `Variação de custo em "${curr.itemNome}"`,
-                            desc: `O custo unitário variou ${diffPct > 0 ? '+' : ''}${Formatter.percent(diffPct)} entre a v${prev.versao} (${Formatter.brl(prev.custoTotal)}) e a v${curr.versao} (${Formatter.brl(curr.custoTotal)}).`
-                        });
-                    }
-                }
+            if (list.length < 2) return;
+            const prev = list[list.length - 2];
+            const curr = list[list.length - 1];
+            const previousCost = Number(prev.custoTotal);
+            const currentCost = Number(curr.custoTotal);
+            if (!Number.isFinite(previousCost) || !Number.isFinite(currentCost) || previousCost <= 0) return;
+            const diffPct = ((currentCost - previousCost) / previousCost) * 100;
+            if (Math.abs(diffPct) >= 5) {
+                insights.push({
+                    tone: diffPct > 0 ? 'warning' : 'success',
+                    title: `Variação de custo em "${curr.itemNome}"`,
+                    desc: `O custo unitário/por atendimento variou ${diffPct > 0 ? '+' : ''}${Formatter.percent(diffPct)} entre a v${prev.versao} (${Formatter.brl(previousCost)}) e a v${curr.versao} (${Formatter.brl(currentCost)}). A comparação mostra a diferença, mas não identifica sua causa.`
+                });
             }
         });
 
-        // Itens no catálogo ainda sem precificação
-        const unpriced = catalog.filter(c => c.status !== 'Arquivado' && !latestByItem.has(c.id));
+        const latestKeys = new Set(latestPricings.map(getPricingItemKey));
+        const unpriced = catalog.filter(c => c.status !== 'Arquivado' && !latestKeys.has(c.id ? `id:${c.id}` : `name:${String(c.nome || '').trim().toLocaleLowerCase('pt-BR')}`));
         if (unpriced.length > 0) {
             insights.push({
                 tone: 'info',
                 title: `${unpriced.length} ${unpriced.length === 1 ? 'item aguardando precificação' : 'itens aguardando precificação'}`,
-                desc: `"${unpriced[0].nome}" está no catálogo, mas ainda não possui histórico de preço calculado.`
+                desc: `"${unpriced[0].nome}" está no catálogo, mas ainda não possui uma precificação salva.`
             });
         }
 
@@ -1081,7 +1107,9 @@
             insights,
             notifications,
             belowTargetCount: belowTarget === null ? null : belowTarget.length,
-            avgMargin
+            avgMargin,
+            latestPricings,
+            activePricingCount: validMarginPricings.length
         };
     }
 
@@ -1217,16 +1245,20 @@
     // --- 8.1 DASHBOARD ---
     function renderDashboard(root) {
         const { business, catalog, pricings, settings, isDemo } = WorkspaceStore.state;
-        const { insights, belowTargetCount, avgMargin } = computeDerivedInsights();
+        const { insights, belowTargetCount, avgMargin, latestPricings, activePricingCount } = computeDerivedInsights();
         const activeItems = catalog.filter(c => c.status !== 'Arquivado');
-        const target = business.margemMeta === null || business.margemMeta === '' || business.margemMeta === undefined
-            ? null
-            : Number(business.margemMeta);
+        const rawTarget = business.margemMeta;
+        const parsedTarget = rawTarget === null || rawTarget === '' || rawTarget === undefined ? null : Number(rawTarget);
+        const target = Number.isFinite(parsedTarget) && parsedTarget >= 0 && parsedTarget < 100 ? parsedTarget : null;
+        const archivedItemsCount = catalog.length - activeItems.length;
 
         const saudacaoNome = business.empreendedor?.trim() || business.nomeNegocio?.trim();
         const saudacaoTitulo = saudacaoNome ? `${Formatter.greeting()}, ${Formatter.escapeHtml(saudacaoNome)}` : `${Formatter.greeting()}!`;
 
-        const latestPricing = pricings.length
+        const latestPricing = latestPricings.length
+            ? [...latestPricings].sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm))[0]
+            : null;
+        const latestSavedPricing = pricings.length
             ? [...pricings].sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm))[0]
             : null;
 
@@ -1260,26 +1292,26 @@
                 <div class="kpi-card">
                     <div class="kpi-label">Produtos e serviços cadastrados</div>
                     <div class="kpi-value">${activeItems.length}</div>
-                    <div class="kpi-meta">${activeItems.length === 0 ? 'Nenhum item ativo no catálogo' : `${catalog.length} no total incluindo arquivados`}</div>
+                    <div class="kpi-meta">${activeItems.length === 0 ? 'Nenhum item ativo no catálogo' : `${archivedItemsCount} arquivado(s)`}</div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-label">Precificações realizadas</div>
                     <div class="kpi-value">${pricings.length}</div>
-                    <div class="kpi-meta">${pricings.length === 0 ? 'Salve uma precificação para iniciar o histórico' : `Última em ${Formatter.dateShort(latestPricing.criadoEm)}`}</div>
+                    <div class="kpi-meta">${pricings.length === 0 ? 'Salve uma precificação para iniciar o histórico' : `Última em ${Formatter.dateShort(latestSavedPricing.criadoEm)}`}</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Margem média registrada</div>
+                    <div class="kpi-label">Margem planejada média</div>
                     <div class="kpi-value ${avgMargin === null || target === null ? '' : (avgMargin >= target ? 'positive' : 'warning')}">
                         ${avgMargin === null ? '—' : Formatter.percent(avgMargin)}
                     </div>
-                    <div class="kpi-meta">${avgMargin === null ? 'Calculada após salvar precificações' : 'Margem planejada média (não realizada)'}</div>
+                    <div class="kpi-meta">${avgMargin === null ? 'Aguardando precificações de itens ativos' : 'Média das últimas versões dos itens ativos · não representa vendas'}</div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-label">${target === null ? 'Meta de margem' : `Margem abaixo da meta (${Formatter.percent(target, 0)})`}</div>
-                    <div class="kpi-value ${target === null ? '' : (belowTargetCount > 0 ? 'warning' : (pricings.length > 0 ? 'positive' : ''))}">
-                        ${target === null || pricings.length === 0 ? '—' : belowTargetCount}
+                    <div class="kpi-value ${target === null ? '' : (belowTargetCount > 0 ? 'warning' : (activePricingCount > 0 ? 'positive' : ''))}">
+                        ${target === null || activePricingCount === 0 ? '—' : belowTargetCount}
                     </div>
-                    <div class="kpi-meta">${target === null ? 'Defina uma meta em Meu negócio' : (pricings.length === 0 ? 'Aguardando precificações salvas' : (belowTargetCount === 0 ? 'Todos os itens dentro da meta' : 'Itens que merecem revisão'))}</div>
+                    <div class="kpi-meta">${target === null ? 'Defina uma meta em Meu negócio' : (activePricingCount === 0 ? 'Aguardando precificações de itens ativos' : (belowTargetCount === 0 ? 'Todos os itens precificados estão na meta ou acima' : 'Itens que merecem revisão'))}</div>
                 </div>
             </div>
 
@@ -1334,10 +1366,10 @@
             latestPricing ? latestPricing.categoriasCusto : [],
             latestPricing ? latestPricing.custoTotal : 0
         );
-        ChartRenderer.renderPlannedMarginChart(document.getElementById('dash-chart-margin'), pricings, target);
+        ChartRenderer.renderPlannedMarginChart(document.getElementById('dash-chart-margin'), latestPricings, target);
 
         const insightsContainer = document.getElementById('dash-insights-content');
-        if (pricings.length === 0) {
+        if (activePricingCount === 0) {
             insightsContainer.innerHTML = `
                 <div class="nilo-spotlight" style="border:0;padding:8px 0;background:transparent;">
                     <div class="nilo-avatar-box">
@@ -1365,7 +1397,7 @@
                     <p style="font-size:13px;color:var(--color-silver);padding-top:6px;">
                         ${belowTargetCount > 0
                             ? 'Identifiquei pontos de atenção nas suas margens planejadas. Vale revisar os itens destacados antes de atualizar sua tabela de vendas.'
-                            : (belowTargetCount === null ? 'As margens planejadas estão disponíveis para acompanhamento. Defina uma meta em Meu negócio se quiser compará-las.' : 'Suas precificações salvas estão consistentes com a meta definida. Use o Consultor IA se quiser validar competitividade.')}
+                            : (belowTargetCount === null ? 'As margens planejadas dos itens ativos estão disponíveis para acompanhamento. Defina uma meta em Meu negócio se quiser compará-las.' : 'As margens planejadas dos itens ativos estão na meta ou acima dela. Isso não representa vendas realizadas.')}
                     </p>
                 </div>
                 <div class="insights-list">
