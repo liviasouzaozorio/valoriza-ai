@@ -3646,9 +3646,9 @@
 
                     <div class="form-grid">
                         <div class="form-field">
-                            <label class="field-label" for="set-carga-alerta">Alerta de impostos + taxas (%)</label>
-                            <input id="set-carga-alerta" class="field-input mono" type="text" inputmode="decimal" value="${settings.alertaCargaTributaria}">
-                            <span class="field-help">Destaca quando a soma percentual sobre o preço atingir este limiar.</span>
+                            <label class="field-label" for="set-carga-alerta">Alerta de impostos + taxas (%) <span class="field-req">Opcional</span></label>
+                            <input id="set-carga-alerta" class="field-input mono" type="text" inputmode="decimal" value="${settings.alertaCargaTributaria ?? ''}">
+                            <span class="field-help">Destaca quando a soma percentual sobre o preço atingir este limiar. Deixe vazio para não ativar esse alerta.</span>
                         </div>
 
                         <div class="form-field form-field-full">
