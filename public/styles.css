@@ -1985,3 +1985,31 @@ body, .app-shell, .main-viewport { color: var(--text-primary); }
     color: #16865A !important;
 }
 
+/* Revisão da precificação: títulos claros sobre os cards navy */
+.review-summary-card,
+.review-summary-card h3,
+.review-summary-card .kv-key,
+.review-summary-card .kv-val {
+    color: #F1F5F9;
+}
+
+.review-summary-card .kv-key {
+    color: #A8B5C7;
+}
+
+.review-summary-card .kv-val {
+    color: #F8FAFC;
+}
+
+.review-summary-card .kv-row {
+    border-bottom-color: rgba(220, 229, 239, 0.18);
+}
+
+.review-summary-card h3 {
+    color: #F8FAFC !important;
+}
+
+.review-summary-card .kv-val[style*="color:var(--color-emerald)"] {
+    color: #55D6A0 !important;
+}
+
