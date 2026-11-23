@@ -1394,7 +1394,7 @@
                     <p style="font-size:13px;color:var(--color-silver);padding-top:6px;">
                         ${belowTargetCount > 0
                             ? 'Identifiquei pontos de atenção nas suas margens planejadas. Vale revisar os itens destacados antes de atualizar sua tabela de vendas.'
-                            : 'Suas precificações salvas estão consistentes com a meta definida. Use o Consultor IA se quiser validar competitividade.'}
+                            : (belowTargetCount === null ? 'As margens planejadas estão disponíveis para acompanhamento. Defina uma meta em Meu negócio se quiser compará-las.' : 'Suas precificações salvas estão consistentes com a meta definida. Use o Consultor IA se quiser validar competitividade.')}
                     </p>
                 </div>
                 <div class="insights-list">
@@ -3645,11 +3645,6 @@
                     <p class="card-subtitle" style="margin-bottom:18px;">Ajuste os parâmetros de leitura de margem e exibição de ajudas nos formulários.</p>
 
                     <div class="form-grid">
-                        <div class="form-field">
-                            <label class="field-label" for="set-margem-meta">Margem mínima de referência (%)</label>
-                            <p class="field-help">A meta de margem é definida no perfil da empresa, em Meu negócio.</p>
-                        </div>
-
                         <div class="form-field">
                             <label class="field-label" for="set-carga-alerta">Alerta de impostos + taxas (%)</label>
                             <input id="set-carga-alerta" class="field-input mono" type="text" inputmode="decimal" value="${settings.alertaCargaTributaria}">
