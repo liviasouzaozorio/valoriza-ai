@@ -325,8 +325,18 @@
         renderMarkdown(text) {
             const raw = String(text || '');
             if (window.marked && typeof window.marked.parse === 'function') {
-                const escaped = raw.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
-                return window.marked.parse(escaped);
+                const parsed = window.marked.parse(raw);
+                const template = document.createElement('template');
+                template.innerHTML = parsed;
+                template.content.querySelectorAll('script, style, iframe, object, embed, form').forEach(node => node.remove());
+                template.content.querySelectorAll('*').forEach(node => {
+                    [...node.attributes].forEach(attr => {
+                        if (/^on/i.test(attr.name) || ((attr.name === 'href' || attr.name === 'src') && /^\s*javascript:/i.test(attr.value))) {
+                            node.removeAttribute(attr.name);
+                        }
+                    });
+                });
+                return template.innerHTML;
             }
             return `<p>${Formatter.escapeHtml(raw).replace(/\n+/g, '</p><p>')}</p>`;
         },
@@ -654,11 +664,21 @@
          * Mantém integralmente o contrato esperado.
          */
         async enviarPerguntaIA(payload) {
+            const config = window.VALORIZAI_CONFIG || {};
+            const supabaseLib = window.supabase;
+            const headers = { 'Content-Type': 'application/json' };
+            if (supabaseLib?.createClient && config.supabaseUrl && config.supabaseAnonKey) {
+                const client = supabaseLib.createClient(config.supabaseUrl, config.supabaseAnonKey, {
+                    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+                });
+                const { data } = await client.auth.getSession();
+                if (data?.session?.access_token) {
+                    headers.Authorization = `Bearer ${data.session.access_token}`;
+                }
+            }
             const response = await fetch('/perguntar', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers,
                 body: JSON.stringify(payload)
             });
 
@@ -3320,18 +3340,12 @@
             };
         }
 
-        const fallbackSetor = WorkspaceStore.state.business.segmento || 'comercio';
+        const fallbackSetor = WorkspaceStore.state.business.segmento || null;
         return {
-            label: 'Sem precificação selecionada (consulta geral)',
+            label: 'Consulta geral sem dados financeiros',
             setor: fallbackSetor,
-            resumoFinanceiro: {
-                precoSugerido: 'R$ 0,00',
-                totalCustos: 'R$ 0,00',
-                markup: '1.00x',
-                taxaPercentual: '0%',
-                margemPercentual: '0%'
-            },
-            detalhesCustos: {}
+            resumoFinanceiro: null,
+            detalhesCustos: null
         };
     }
 
@@ -3482,11 +3496,17 @@
             renderConsultor(targetRoot);
 
             try {
+                const historico = WorkspaceStore.state.chatHistory
+                    .slice(0, -1)
+                    .filter(m => ['user', 'assistant'].includes(m.role))
+                    .slice(-12)
+                    .map(m => ({ role: m.role, text: m.text }));
                 const data = await ApiService.enviarPerguntaIA({
                     pergunta,
                     setor: ctx.setor,
                     resumoFinanceiro: ctx.resumoFinanceiro,
-                    detalhesCustos: ctx.detalhesCustos
+                    detalhesCustos: ctx.detalhesCustos,
+                    historico
                 });
 
                 WorkspaceStore.state.chatHistory.push({
