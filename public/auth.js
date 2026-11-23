@@ -126,7 +126,7 @@
       if (error) throw error;
 
       if (!data.session || !data.user) {
-        feedback('register-feedback', 'A conta foi recebida, mas o Supabase não iniciou uma sessão. Para este MVP, desative a confirmação de e-mail nas configurações de autenticação e tente novamente.');
+        feedback('register-feedback', 'Recebemos seu cadastro, mas não foi possível concluir o acesso agora. Tente novamente mais tarde.');
         return;
       }
 
