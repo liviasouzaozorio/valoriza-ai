@@ -2881,7 +2881,7 @@
             }
 
             panel.innerHTML = `
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px;">
+                <div class="simulation-result-content" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px;">
                     <div>
                         <div class="kpi-label">Resultado temporário da simulação</div>
                         <div class="mono" style="font-size:32px;font-weight:700;color:var(--color-emerald);margin-top:4px;">${Formatter.brl(res.precoSugerido)}</div>
