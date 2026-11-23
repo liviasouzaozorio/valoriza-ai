@@ -4,5 +4,5 @@
  */
 window.VALORIZAI_CONFIG = Object.freeze({
     supabaseUrl: 'https://jgxcntyarlfucicpfacc.supabase.co',
-    supabaseAnonKey: 'COLE_AQUI_SUA_SUPABASE_PUBLISHABLE_KEY'
+    supabaseAnonKey: 'sb_publishable_s3GhLyuyfkSj7YgEV9auWw_XBnlZY9_'
 });
