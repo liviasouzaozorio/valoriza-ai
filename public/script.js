@@ -2492,7 +2492,7 @@
                 </div>
 
                 <div class="grid-2" style="margin-bottom:20px;">
-                    <div style="padding:18px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
+                    <div class="review-summary-card" style="padding:18px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                             <h3 style="font-size:15px;font-weight:600;">Identificação</h3>
                             <button type="button" class="btn btn-ghost btn-sm" data-goto-step="1">Editar</button>
@@ -2505,7 +2505,7 @@
                         </div>
                     </div>
 
-                    <div style="padding:18px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
+                    <div class="review-summary-card" style="padding:18px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                             <h3 style="font-size:15px;font-weight:600;">Impostos, taxas e margem</h3>
                             <button type="button" class="btn btn-ghost btn-sm" data-goto-step="3">Editar</button>
@@ -2520,7 +2520,7 @@
                     </div>
                 </div>
 
-                <div style="padding:18px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
+                <div class="review-summary-card" style="padding:18px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
                         <h3 style="font-size:15px;font-weight:600;">Custos declarados por categoria</h3>
                         <button type="button" class="btn btn-ghost btn-sm" data-goto-step="2">Editar custos</button>
