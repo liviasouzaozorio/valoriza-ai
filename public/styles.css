@@ -1622,7 +1622,6 @@ body, .app-shell { background: var(--app-background); color: var(--text-primary)
 h1, h2, h3, h4, .page-heading, .page-display, .card-title, .modal-title { color: var(--text-primary); }
 .sidebar { background: var(--color-navy); border-right: 1px solid rgba(255,255,255,.08); box-shadow: 4px 0 18px rgba(16,24,39,.08); }
 .sidebar-header, .sidebar-footer { border-color: rgba(255,255,255,.10); background: var(--color-navy); }
-.sidebar .brand-logo-full { filter: brightness(0) invert(1); }
 .nav-item { color: #C1CCDA; }
 .nav-item:hover { background: rgba(255,255,255,.08); color: #FFFFFF; }
 .nav-item.active { background: rgba(85,214,160,.13); border-color: rgba(85,214,160,.24); color: #72E2B1; }
