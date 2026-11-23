@@ -374,11 +374,11 @@
                 regimeInformativo: '',
                 cidadeUf: '',
                 observacoes: '',
+                margemMeta: null,
                 atualizadoEm: null
             },
             settings: {
-                margemMetaPadrao: 20,
-                alertaCargaTributaria: 35,
+                alertaCargaTributaria: null,
                 mostrarDicasCampos: true,
                 salvarRascunhoAutomatico: true
             },
@@ -429,6 +429,17 @@
                     pricings: Array.isArray(parsed.pricings) ? parsed.pricings : [],
                     chatHistory: Array.isArray(parsed.chatHistory) ? parsed.chatHistory : []
                 };
+                // Migra metas personalizadas antigas; 20% era apenas o padrão legado.
+                if (!Object.prototype.hasOwnProperty.call(parsed.business || {}, 'margemMeta')) {
+                    const legacyTarget = parsed.settings?.margemMetaPadrao;
+                    this.state.business.margemMeta =
+                        Number.isFinite(Number(legacyTarget)) && legacyTarget !== null &&
+                        Number(legacyTarget) >= 0 && Number(legacyTarget) < 100 && Number(legacyTarget) !== 20
+                            ? Number(legacyTarget)
+                            : null;
+                }
+                delete this.state.settings.margemMetaPadrao;
+                if (this.state.settings.alertaCargaTributaria === 35) this.state.settings.alertaCargaTributaria = null;
             } catch {
                 this.state = defaultWorkspaceState();
             }
@@ -994,8 +1005,10 @@
        6. NOTIFICAÇÕES E INSIGHTS DERIVADOS DE DADOS REAIS
        ========================================================================= */
     function computeDerivedInsights() {
-        const { catalog, pricings, settings, business } = WorkspaceStore.state;
-        const target = Number(settings.margemMetaPadrao) || 20;
+        const { catalog, pricings, business } = WorkspaceStore.state;
+        const target = business.margemMeta === null || business.margemMeta === '' || business.margemMeta === undefined
+            ? null
+            : Number(business.margemMeta);
         const insights = [];
         const notifications = [];
 
@@ -1017,7 +1030,7 @@
         }
 
         if (pricings.length === 0) {
-            return { insights, notifications, belowTargetCount: 0, avgMargin: null };
+            return { insights, notifications, belowTargetCount: null, avgMargin: null };
         }
 
         // Última versão por item
@@ -1032,9 +1045,9 @@
 
         const latestList = Array.from(latestByItem.values());
         const avgMargin = latestList.reduce((acc, p) => acc + p.margemPlanejada, 0) / latestList.length;
-        const belowTarget = latestList.filter(p => p.margemPlanejada < target);
+        const belowTarget = target === null ? null : latestList.filter(p => p.margemPlanejada < target);
 
-        if (belowTarget.length > 0) {
+        if (belowTarget && belowTarget.length > 0) {
             const lowest = [...belowTarget].sort((a, b) => a.margemPlanejada - b.margemPlanejada)[0];
             insights.push({
                 tone: 'warning',
@@ -1088,7 +1101,7 @@
         return {
             insights,
             notifications,
-            belowTargetCount: belowTarget.length,
+            belowTargetCount: belowTarget === null ? null : belowTarget.length,
             avgMargin
         };
     }
@@ -1227,7 +1240,9 @@
         const { business, catalog, pricings, settings, isDemo } = WorkspaceStore.state;
         const { insights, belowTargetCount, avgMargin } = computeDerivedInsights();
         const activeItems = catalog.filter(c => c.status !== 'Arquivado');
-        const target = Number(settings.margemMetaPadrao) || 20;
+        const target = business.margemMeta === null || business.margemMeta === '' || business.margemMeta === undefined
+            ? null
+            : Number(business.margemMeta);
 
         const saudacaoNome = business.empreendedor?.trim() || business.nomeNegocio?.trim();
         const saudacaoTitulo = saudacaoNome ? `${Formatter.greeting()}, ${Formatter.escapeHtml(saudacaoNome)}` : `${Formatter.greeting()}!`;
@@ -1275,7 +1290,7 @@
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-label">Margem média registrada</div>
-                    <div class="kpi-value ${avgMargin === null ? '' : (avgMargin >= target ? 'positive' : 'warning')}">
+                    <div class="kpi-value ${avgMargin === null || target === null ? '' : (avgMargin >= target ? 'positive' : 'warning')}">
                         ${avgMargin === null ? '—' : Formatter.percent(avgMargin)}
                     </div>
                     <div class="kpi-meta">${avgMargin === null ? 'Calculada após salvar precificações' : 'Margem planejada média (não realizada)'}</div>
@@ -3047,7 +3062,8 @@
         } else if (filtered.length === 0) {
             region.innerHTML = `<div class="empty-state"><h2 class="empty-state-title">Nenhum registro encontrado</h2><p class="empty-state-desc">Altere os filtros aplicados acima.</p></div>`;
         } else {
-            const target = Number(WorkspaceStore.state.settings.margemMetaPadrao) || 20;
+            const businessTarget = WorkspaceStore.state.business.margemMeta;
+            const target = businessTarget === null || businessTarget === '' || businessTarget === undefined ? null : Number(businessTarget);
             region.innerHTML = `
                 <div class="table-wrap">
                     <table class="data-table">
@@ -3151,7 +3167,7 @@
     // --- 8.7 ANÁLISES ---
     function renderAnalyses(root) {
         const { pricings, catalog, settings } = WorkspaceStore.state;
-        const target = Number(settings.margemMetaPadrao) || 20;
+        const target = business.margemMeta === null || business.margemMeta === '' || business.margemMeta === undefined ? null : Number(business.margemMeta);
 
         root.innerHTML = `
             <div class="page-header">
