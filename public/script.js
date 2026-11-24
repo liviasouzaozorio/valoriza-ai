@@ -27,6 +27,12 @@
         };
     }
 
+    function nullableFiniteNumber(value) {
+        if (value === null || value === undefined || value === '') return null;
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+
     function mapPricingFromApi(row) {
         const input = row.input_snapshot || {};
         const result = row.result_snapshot || {};
@@ -39,13 +45,13 @@
             setor: row.setor === 'servicos' ? 'servico' : (row.setor || input.sector || 'comercio'),
             unidade: row.unit || '',
             criadoEm: row.data_criacao,
-            custoTotal: Number(row.custo_total ?? extra.custoTotal ?? 0),
-            precoSugerido: Number(row.preco_sugerido ?? extra.precoSugerido ?? 0),
-            markup: Number(row.markup ?? extra.markup ?? 0),
-            margemPlanejada: Number(row.margem_lucro ?? extra.margemPlanejada ?? 0),
-            percentualImpostosTaxas: Number(row.impostos ?? extra.percentualImpostosTaxas ?? 0),
-            valorImpostosTaxas: Number(extra.valorImpostosTaxas ?? 0),
-            lucroEstimado: Number(extra.lucroEstimado ?? 0),
+            custoTotal: nullableFiniteNumber(row.custo_total ?? extra.custoTotal),
+            precoSugerido: nullableFiniteNumber(row.preco_sugerido ?? extra.precoSugerido),
+            markup: nullableFiniteNumber(row.markup ?? extra.markup),
+            margemPlanejada: nullableFiniteNumber(row.margem_lucro ?? extra.margemPlanejada),
+            percentualImpostosTaxas: nullableFiniteNumber(row.impostos ?? extra.percentualImpostosTaxas),
+            valorImpostosTaxas: nullableFiniteNumber(extra.valorImpostosTaxas),
+            lucroEstimado: nullableFiniteNumber(extra.lucroEstimado),
             fonteCalculo: extra.fonteCalculo || 'persistido',
             categoriasCusto: Array.isArray(extra.categoriasCusto) ? extra.categoriasCusto : [],
             detalhesCustos: input.costs || {},
@@ -307,8 +313,9 @@
        ========================================================================= */
     const Formatter = {
         brl(value) {
+            if (value === null || value === undefined || value === '') return '—';
             const num = Number(value);
-            if (!Number.isFinite(num)) return 'R$ 0,00';
+            if (!Number.isFinite(num)) return '—';
             return num.toLocaleString('pt-BR', {
                 style: 'currency',
                 currency: 'BRL',
@@ -317,16 +324,18 @@
             });
         },
         num(value, decimals = 2) {
+            if (value === null || value === undefined || value === '') return '—';
             const n = Number(value);
-            if (!Number.isFinite(n)) return '0';
+            if (!Number.isFinite(n)) return '—';
             return n.toLocaleString('pt-BR', {
                 minimumFractionDigits: decimals,
                 maximumFractionDigits: decimals
             });
         },
         percent(value, decimals = 1) {
+            if (value === null || value === undefined || value === '') return '—';
             const n = Number(value);
-            if (!Number.isFinite(n)) return '0,0%';
+            if (!Number.isFinite(n)) return '—';
             return `${n.toLocaleString('pt-BR', {
                 minimumFractionDigits: decimals,
                 maximumFractionDigits: decimals
@@ -1122,7 +1131,7 @@
 
         const activePricingRecords = getActivePricingRecords(pricings, catalog);
         const latestPricings = getLatestPricingPerItem(activePricingRecords);
-        const validMarginPricings = latestPricings.filter(p => Number.isFinite(Number(p.margemPlanejada)));
+        const validMarginPricings = latestPricings.filter(p => nullableFiniteNumber(p.margemPlanejada) !== null);
         const avgMargin = validMarginPricings.length
             ? validMarginPricings.reduce((sum, p) => sum + Number(p.margemPlanejada), 0) / validMarginPricings.length
             : null;
@@ -1142,7 +1151,7 @@
             });
         }
 
-        const validCostPricings = latestPricings.filter(p => Number.isFinite(Number(p.custoTotal)));
+        const validCostPricings = latestPricings.filter(p => nullableFiniteNumber(p.custoTotal) !== null);
         const highestCost = [...validCostPricings].sort((a, b) => Number(b.custoTotal) - Number(a.custoTotal))[0];
         if (highestCost) {
             insights.push({
@@ -1163,9 +1172,9 @@
             if (list.length < 2) return;
             const prev = list[list.length - 2];
             const curr = list[list.length - 1];
-            const previousCost = Number(prev.custoTotal);
-            const currentCost = Number(curr.custoTotal);
-            if (!Number.isFinite(previousCost) || !Number.isFinite(currentCost) || previousCost <= 0) return;
+            const previousCost = nullableFiniteNumber(prev.custoTotal);
+            const currentCost = nullableFiniteNumber(curr.custoTotal);
+            if (previousCost === null || currentCost === null || previousCost <= 0) return;
             const diffPct = ((currentCost - previousCost) / previousCost) * 100;
             if (Math.abs(diffPct) >= 5) {
                 insights.push({
