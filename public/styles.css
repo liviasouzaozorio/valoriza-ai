@@ -155,8 +155,25 @@ a {
 
 .app-shell.sidebar-collapsed .sidebar-header {
     justify-content: center;
-    padding: 0 10px;
-    gap: 6px;
+    padding: 0 8px;
+    gap: 2px;
+}
+
+.app-shell.sidebar-collapsed .sidebar-brand {
+    flex: 0 0 26px;
+    width: 26px;
+    justify-content: center;
+}
+
+.app-shell.sidebar-collapsed .brand-logo-symbol {
+    width: 26px;
+    height: 26px;
+}
+
+.app-shell.sidebar-collapsed .sidebar-collapse-btn {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
 }
 
 .sidebar-nav {
