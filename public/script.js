@@ -4104,12 +4104,19 @@
         }
 
         configureUserStorage(session.user.id);
+        // Mostra primeiro o cache local: a navegação não deve esperar a rede.
+        WorkspaceStore.load();
+        UI.updateChrome();
+        UI.renderCurrentView();
+
         let remoteBusinessProfile = null;
         let remoteProducts = null;
         let remotePricings = null;
         let profileLoadError = null;
         let operationalLoadError = null;
-        try {
+
+        // O perfil depende do ensure; catálogo e precificações não dependem dele.
+        const profilePromise = (async () => {
             const ensureResponse = await fetch('/api/business/ensure', {
                 method: 'POST',
                 headers: {
@@ -4130,41 +4137,33 @@
             if (!profileResponse.ok || !profileResult.success || !profileResult.data?.business) {
                 throw new Error(profileResult.error?.message || 'Não foi possível carregar o perfil.');
             }
-            remoteBusinessProfile = profileResult.data.business;
-        } catch (error) {
-            profileLoadError = error;
-            console.error('Não foi possível sincronizar o perfil do negócio.', error);
+            return profileResult.data.business;
+        })();
+
+        const operationsPromise = Promise.all([
+            ApiService.listProducts(),
+            ApiService.listPricings()
+        ]);
+
+        const [profileResult, operationsResult] = await Promise.allSettled([
+            profilePromise,
+            operationsPromise
+        ]);
+
+        if (profileResult.status === 'fulfilled') {
+            remoteBusinessProfile = profileResult.value;
+        } else {
+            profileLoadError = profileResult.reason;
+            console.error('Não foi possível sincronizar o perfil do negócio.', profileLoadError);
         }
 
-        try {
-            const [products, pricings] = await Promise.all([
-                ApiService.listProducts(),
-                ApiService.listPricings()
-            ]);
+        if (operationsResult.status === 'fulfilled') {
+            const [products, pricings] = operationsResult.value;
             remoteProducts = products.map(mapProductFromApi);
             remotePricings = pricings.map(mapPricingFromApi);
-        } catch (error) {
-            operationalLoadError = error;
-            console.error('Não foi possível sincronizar catálogo e histórico.', error);
-        }
-
-        WorkspaceStore.load();
-        // O histórico do Nilo é recuperado do banco; localStorage é apenas cache da interface.
-        try {
-            const remoteChat = WorkspaceStore.state.niloConversationId
-                ? await ApiService.getNiloConversation(WorkspaceStore.state.niloConversationId)
-                : await ApiService.getLatestNiloConversation();
-            if (remoteChat.conversation?.id) {
-                WorkspaceStore.state.niloConversationId = remoteChat.conversation.id;
-                WorkspaceStore.state.chatHistory = (remoteChat.messages || []).map(message => ({
-                    role: message.role,
-                    text: message.content,
-                    at: message.created_at
-                }));
-                WorkspaceStore.save();
-            }
-        } catch (error) {
-            console.warn('Não foi possível sincronizar o histórico do Nilo.', error);
+        } else {
+            operationalLoadError = operationsResult.reason;
+            console.error('Não foi possível sincronizar catálogo e histórico.', operationalLoadError);
         }
         if (remoteProducts !== null) WorkspaceStore.state.catalog = remoteProducts;
         if (remotePricings !== null) WorkspaceStore.state.pricings = remotePricings;
@@ -4185,6 +4184,8 @@
             };
             WorkspaceStore.save();
         }
+
+        if (UI.currentView === 'dashboard') UI.renderCurrentView();
 
         const shell = document.getElementById('app-shell');
         const collapseButton = document.getElementById('sidebar-collapse-btn');
@@ -4286,12 +4287,39 @@
             niloFab.setAttribute('aria-expanded', 'false');
             niloHelpBubble.hidden = false;
         };
+        let niloHistoryLoaded = false;
+        let niloHistoryLoading = false;
+        const loadNiloHistory = async () => {
+            if (niloHistoryLoaded || niloHistoryLoading) return;
+            niloHistoryLoading = true;
+            try {
+                const remoteChat = WorkspaceStore.state.niloConversationId
+                    ? await ApiService.getNiloConversation(WorkspaceStore.state.niloConversationId)
+                    : await ApiService.getLatestNiloConversation();
+                if (remoteChat.conversation?.id) {
+                    WorkspaceStore.state.niloConversationId = remoteChat.conversation.id;
+                    WorkspaceStore.state.chatHistory = (remoteChat.messages || []).map(message => ({
+                        role: message.role,
+                        text: message.content,
+                        at: message.created_at
+                    }));
+                    WorkspaceStore.save();
+                }
+                niloHistoryLoaded = true;
+            } catch (error) {
+                console.warn('Não foi possível sincronizar o histórico do Nilo.', error);
+            } finally {
+                niloHistoryLoading = false;
+                if (UI.niloOpen) renderConsultor(niloPanelContent);
+            }
+        };
         const openNilo = () => {
             UI.niloOpen = true;
             niloPanel.hidden = false;
             niloFab.setAttribute('aria-expanded', 'true');
             niloHelpBubble.hidden = true;
             renderConsultor(niloPanelContent);
+            loadNiloHistory();
             document.getElementById('ai-question-input')?.focus();
         };
         niloFab.addEventListener('click', () => {
