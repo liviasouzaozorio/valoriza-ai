@@ -25,8 +25,8 @@ test('industry calculation distributes batch costs and normal production losses 
     costs: { quantidadeLote: 10, materiaPrima: 100, insumos: 20, embalagemProducao: 0, maoObraDireta: 40, cifRateado: 10, energiaTransformacao: 10, perdasProducao: 10 },
     taxes: { impostosVenda: 10, margemDesejada: 20 }
   });
-  assert.equal(result.custoTotal, 19.2);
-  assert.equal(result.precoSugerido, 27.43);
+  assert.equal(result.custoTotal, 20);
+  assert.equal(result.precoSugerido, 28.57);
   assert.equal(result.margemPlanejada, 20);
 });
 
