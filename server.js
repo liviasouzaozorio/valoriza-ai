@@ -431,9 +431,70 @@ function normalizarHistorico(historico) {
     }));
 }
 
-app.post('/perguntar', async (req, res) => {
-  const { pergunta, setor, resumoFinanceiro, detalhesCustos, historico, conversation_id } = req.body || {};
+app.get('/api/nilo/conversations/latest', async (req, res) => {
+  try {
+    const user = await authenticateSupabaseRequest(req);
+    if (!user) return res.status(401).json({ success: false, error: { code: 'UNAUTHENTICATED', message: 'Sessão inválida ou expirada.' } });
 
+    const result = await pool.query(
+      `SELECT id, business_id, title, created_at, updated_at
+       FROM public.nilo_conversations
+       WHERE owner_user_id = $1
+       ORDER BY updated_at DESC, created_at DESC
+       LIMIT 1`,
+      [user.id]
+    );
+    const conversation = result.rows[0];
+    if (!conversation) return res.json({ success: true, data: { conversation: null, messages: [] } });
+
+    const messages = await pool.query(
+      `SELECT id, role, content, metadata, created_at
+       FROM public.nilo_messages
+       WHERE conversation_id = $1
+       ORDER BY created_at ASC, id ASC`,
+      [conversation.id]
+    );
+    return res.json({ success: true, data: { conversation, messages: messages.rows } });
+  } catch (error) {
+    console.error('Erro ao recuperar histórico do Nilo:', error?.code || 'NILO_HISTORY_ERROR');
+    return res.status(503).json({ success: false, error: { code: 'NILO_HISTORY_UNAVAILABLE', message: 'Não foi possível carregar o histórico do Nilo.' } });
+  }
+});
+
+app.get('/api/nilo/conversations/:id', async (req, res) => {
+  try {
+    const user = await authenticateSupabaseRequest(req);
+    if (!user) return res.status(401).json({ success: false, error: { code: 'UNAUTHENTICATED', message: 'Sessão inválida ou expirada.' } });
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(req.params.id)) {
+      return res.status(400).json({ success: false, error: { code: 'INVALID_CONVERSATION_ID', message: 'Identificador de conversa inválido.' } });
+    }
+
+    const result = await pool.query(
+      `SELECT id, business_id, title, created_at, updated_at
+       FROM public.nilo_conversations
+       WHERE id = $1 AND owner_user_id = $2
+       LIMIT 1`,
+      [req.params.id, user.id]
+    );
+    const conversation = result.rows[0];
+    if (!conversation) return res.status(404).json({ success: false, error: { code: 'CONVERSATION_NOT_FOUND', message: 'Conversa não encontrada.' } });
+
+    const messages = await pool.query(
+      `SELECT id, role, content, metadata, created_at
+       FROM public.nilo_messages
+       WHERE conversation_id = $1
+       ORDER BY created_at ASC, id ASC`,
+      [conversation.id]
+    );
+    return res.json({ success: true, data: { conversation, messages: messages.rows } });
+  } catch (error) {
+    console.error('Erro ao recuperar conversa do Nilo:', error?.code || 'NILO_CONVERSATION_READ_ERROR');
+    return res.status(503).json({ success: false, error: { code: 'NILO_HISTORY_UNAVAILABLE', message: 'Não foi possível carregar esta conversa.' } });
+  }
+});
+
+app.post('/perguntar', async (req, res) => {
+  const { pergunta, setor, resumoFinanceiro, detalhesCustos, conversation_id } = req.body || {};
   if (typeof pergunta !== 'string' || !pergunta.trim()) {
     return res.status(400).json({ resposta: 'Escreva uma pergunta para o Nilo.' });
   }
@@ -447,26 +508,52 @@ app.post('/perguntar', async (req, res) => {
   try {
     const user = await authenticateSupabaseRequest(req);
     if (!user) return res.status(401).json({ resposta: 'Sua sessão expirou. Entre novamente para conversar com o Nilo.' });
-    const businessId = await getOwnedBusinessId(user.id);
-    if (!businessId) return res.status(404).json({ resposta: 'Não encontramos o negócio associado à sua conta.' });
 
+    // O Nilo pode existir sem empresa: business_id é apenas contexto opcional.
+    const businessId = await getOwnedBusinessId(user.id);
     let conversation;
     if (conversation_id) {
-      const ownedConversation = await pool.query(
-        `SELECT c.id FROM public.nilo_conversations c
-         WHERE c.id = $1 AND c.business_id = $2 LIMIT 1`,
-        [conversation_id, businessId]
+      if (typeof conversation_id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(conversation_id)) {
+        return res.status(400).json({ resposta: 'Identificador de conversa inválido.' });
+      }
+      const owned = await pool.query(
+        `SELECT id, business_id
+         FROM public.nilo_conversations
+         WHERE id = $1 AND owner_user_id = $2
+         LIMIT 1`,
+        [conversation_id, user.id]
       );
-      if (!ownedConversation.rows[0]) return res.status(404).json({ resposta: 'Esta conversa não foi encontrada.' });
-      conversation = ownedConversation.rows[0];
+      if (!owned.rows[0]) return res.status(404).json({ resposta: 'Esta conversa não foi encontrada.' });
+      conversation = owned.rows[0];
     } else {
       const created = await pool.query(
-        `INSERT INTO public.nilo_conversations (business_id, title)
-         VALUES ($1, $2) RETURNING id`,
-        [businessId, pergunta.trim().slice(0, 120)]
+        `INSERT INTO public.nilo_conversations (owner_user_id, business_id, title)
+         VALUES ($1, $2, $3)
+         RETURNING id, business_id`,
+        [user.id, businessId, pergunta.trim().slice(0, 120)]
       );
       conversation = created.rows[0];
     }
+
+    // O histórico vem do banco e é sempre limitado à conversa pertencente ao usuário.
+    const previousMessages = await pool.query(
+      `SELECT role, content
+       FROM (
+         SELECT role, content, created_at, id
+         FROM public.nilo_messages
+         WHERE conversation_id = $1
+         ORDER BY created_at DESC, id DESC
+         LIMIT 12
+       ) recent
+       ORDER BY created_at ASC, id ASC`,
+      [conversation.id]
+    );
+    const history = previousMessages.rows
+      .filter(message => ['user', 'assistant'].includes(message.role) && typeof message.content === 'string')
+      .map(message => ({
+        role: message.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: message.content.slice(0, 4000) }]
+      }));
 
     await pool.query(
       `INSERT INTO public.nilo_messages (conversation_id, role, content, metadata)
@@ -489,31 +576,32 @@ REGRAS DE ATENDIMENTO:
 - Seja gentil, claro, objetivo e respeitoso. Use listas quando melhorarem a compreensão; não force respostas em texto corrido. ${GUIAS_SETOR[setorValido] || ''}`;
 
     const contexto = {};
-    if (resumoFinanceiro && typeof resumoFinanceiro === 'object') contexto.resumoFinanceiro = resumoFinanceiro;
-    if (detalhesCustos && typeof detalhesCustos === 'object' && Object.keys(detalhesCustos).length) contexto.detalhesCustos = detalhesCustos;
-
-    const prompt = contexto.resumoFinanceiro || contexto.detalhesCustos
-      ? `Contexto opcional do negócio (use somente se for relevante; campos ausentes não foram informados):\n${JSON.stringify(contexto, null, 2)}\n\nPergunta do usuário:\n${pergunta.trim()}`
+    if (resumoFinanceiro && typeof resumoFinanceiro === 'object' && !Array.isArray(resumoFinanceiro)) contexto.resumoFinanceiro = resumoFinanceiro;
+    if (detalhesCustos && typeof detalhesCustos === 'object' && !Array.isArray(detalhesCustos)) contexto.detalhesCustos = detalhesCustos;
+    const prompt = Object.keys(contexto).length
+      ? `Contexto opcional do negócio (use somente se for relevante; campos ausentes não foram informados):\\n${JSON.stringify(contexto, null, 2)}\\n\\nPergunta do usuário:\\n${pergunta.trim()}`
       : pergunta.trim();
 
-    // O histórico é enviado pelo próprio cliente e limitado a esta requisição.
-    // Não existe memória global por setor, evitando misturar conversas de pessoas diferentes.
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
       systemInstruction: instrucaoSistema
     });
-    const chat = model.startChat({ history: normalizarHistorico(historico) });
+    const chat = model.startChat({ history });
     const result = await chat.sendMessage(prompt);
     const answer = result.response.text();
+
     await pool.query(
       `INSERT INTO public.nilo_messages (conversation_id, role, content, metadata)
        VALUES ($1, 'assistant', $2, $3::jsonb)`,
       [conversation.id, answer, JSON.stringify({ model: 'gemini-2.5-flash' })]
     );
-    await pool.query('UPDATE public.nilo_conversations SET updated_at = NOW() WHERE id = $1 AND business_id = $2', [conversation.id, businessId]);
+    await pool.query(
+      'UPDATE public.nilo_conversations SET updated_at = NOW() WHERE id = $1 AND owner_user_id = $2',
+      [conversation.id, user.id]
+    );
     return res.json({ resposta: answer, conversation_id: conversation.id });
   } catch (error) {
-    console.error('Erro ao consultar Nilo:', error?.message || 'AI_ERROR');
+    console.error('Erro ao consultar Nilo:', error?.code || 'AI_ERROR');
     return res.status(500).json({ resposta: 'Não consegui responder agora. Tente novamente em alguns instantes.' });
   }
 });
