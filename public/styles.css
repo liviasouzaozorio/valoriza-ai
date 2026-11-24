@@ -2814,3 +2814,185 @@ body {
         min-height: 250px;
     }
 }
+
+/* Typography accessibility refinement — comfortable reading sizes */
+html {
+    font-size: 16px;
+}
+
+body {
+    font-size: 16px;
+}
+
+.nav-item,
+.sidebar-business-name,
+.topbar-title,
+.field-label,
+.data-table,
+.chat-bubble,
+.toast,
+.kv-row,
+.insight-desc,
+.notice-bar-text,
+.empty-state-desc,
+.page-subtitle,
+.card-subtitle,
+.kpi-meta,
+.field-help,
+.field-error,
+.sector-option-desc,
+.wizard-step-label,
+.legend-label,
+.chart-legend,
+.prompt-chip {
+    font-size: 14px;
+}
+
+.sidebar-business-meta,
+.topbar-date,
+.field-req,
+.field-required,
+.status-label,
+.notice-bar-sub,
+.data-table th,
+.chart-tooltip {
+    font-size: 12px;
+}
+
+.btn,
+.btn-sm,
+.segmented-tab,
+.field-input,
+.field-select,
+.field-textarea,
+.input-prefix,
+.input-suffix {
+    font-size: 15px;
+}
+
+.page-heading,
+.empty-state-title {
+    font-size: 24px;
+}
+
+.page-display {
+    font-size: 32px;
+}
+
+.card-title,
+.modal-title,
+.insight-title {
+    font-size: 18px;
+}
+
+.kpi-label,
+.sector-option-title,
+.notification-item-title {
+    font-size: 14px;
+}
+
+.kpi-value {
+    font-size: 26px;
+}
+
+.notification-item-desc,
+.simulation-result-explainer,
+.nilo-profile-copy p,
+.nilo-profile-copy > span {
+    font-size: 14px;
+}
+
+.nilo-profile-copy h2 {
+    font-size: 20px;
+}
+
+#main-viewport .page-heading {
+    font-size: 24px;
+}
+
+#main-viewport .page-display {
+    font-size: 32px;
+}
+
+#main-viewport .page-subtitle,
+#main-viewport .card-subtitle,
+#main-viewport .kpi-meta,
+#main-viewport .field-help,
+#main-viewport .field-req,
+#main-viewport .field-error,
+#main-viewport .notice-bar-sub,
+#main-viewport .status-label,
+#main-viewport .sector-option-desc,
+#main-viewport .empty-state-desc,
+#main-viewport .table-description,
+#main-viewport .simulation-result-explainer {
+    font-size: 14px;
+}
+
+#main-viewport .card-title {
+    font-size: 18px;
+}
+
+#main-viewport .kpi-label,
+#main-viewport .field-label,
+#main-viewport .kv-key,
+#main-viewport .kv-val,
+#main-viewport .data-table,
+#main-viewport .sector-option-title {
+    font-size: 14px;
+}
+
+#main-viewport .kpi-value {
+    font-size: 26px;
+}
+
+#main-viewport .field-input,
+#main-viewport .field-select,
+#main-viewport .field-textarea {
+    font-size: 16px;
+}
+
+#main-viewport .btn {
+    font-size: 15px;
+}
+
+#main-viewport .btn-sm,
+#main-viewport .data-table th {
+    font-size: 13px;
+}
+
+@media (max-width: 680px) {
+    body {
+        font-size: 16px;
+    }
+
+    .page-display,
+    #main-viewport .page-display {
+        font-size: 28px;
+    }
+
+    .page-heading,
+    #main-viewport .page-heading {
+        font-size: 22px;
+    }
+
+    .field-input,
+    .field-select,
+    .field-textarea,
+    #main-viewport .field-input,
+    #main-viewport .field-select,
+    #main-viewport .field-textarea {
+        font-size: 16px;
+    }
+
+    .btn,
+    #main-viewport .btn {
+        font-size: 15px;
+    }
+
+    .data-table,
+    #main-viewport .data-table {
+        font-size: 13px;
+    }
+}
+
