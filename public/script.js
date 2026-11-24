@@ -809,78 +809,24 @@
          * para permitir simulação na interface sem substituir o motor oficial futuro.
          */
         async calcularPreviaPrecificacao(payload) {
-            const { setor, costs, taxes } = payload;
-            const categoriasCusto = [];
-            let custoTotal = 0;
-
-            if (setor === 'comercio') {
-                const aquisicao = (costs.custoAquisicao || 0) + (costs.freteEntrada || 0) + (costs.seguroDespesasAquisicao || 0);
-                const variaveis = (costs.embalagem || 0) + (costs.outrosVariaveis || 0);
-                const operacional = costs.custosOperacionaisRateados || 0;
-                custoTotal = aquisicao + variaveis + operacional;
-
-                if (aquisicao > 0) categoriasCusto.push({ nome: 'Aquisição e logística', valor: aquisicao });
-                if (variaveis > 0) categoriasCusto.push({ nome: 'Embalagem e variáveis', valor: variaveis });
-                if (operacional > 0) categoriasCusto.push({ nome: 'Rateio operacional', valor: operacional });
-            } else if (setor === 'industria') {
-                const lote = Math.max(1, costs.quantidadeLote || 1);
-                const perdaFator = 1 + ((costs.perdasProducao || 0) / 100);
-                const insumosLote = ((costs.materiaPrima || 0) + (costs.insumos || 0) + (costs.embalagemProducao || 0)) * perdaFator;
-                const modLote = costs.maoObraDireta || 0;
-                const transfLote = (costs.cifRateado || 0) + (costs.energiaTransformacao || 0);
-
-                const insumosUnit = insumosLote / lote;
-                const modUnit = modLote / lote;
-                const transfUnit = transfLote / lote;
-                custoTotal = insumosUnit + modUnit + transfUnit;
-
-                if (insumosUnit > 0) categoriasCusto.push({ nome: 'Matéria-prima e insumos (c/ perdas)', valor: insumosUnit });
-                if (modUnit > 0) categoriasCusto.push({ nome: 'Mão de obra direta', valor: modUnit });
-                if (transfUnit > 0) categoriasCusto.push({ nome: 'Transformação e CIF rateado', valor: transfUnit });
-            } else if (setor === 'servico') {
-                const horas = (costs.tempoExecucao || 0) * (costs.custoHoraProdutiva || 0);
-                const terceiros = costs.maoObraContratada || 0;
-                const diretas = (costs.deslocamento || 0) + (costs.materiaisUtilizados || 0);
-                const estrutura = (costs.ferramentasLicencas || 0) + (costs.outrosEspecificos || 0);
-                custoTotal = horas + terceiros + diretas + estrutura;
-
-                if (horas + terceiros > 0) categoriasCusto.push({ nome: 'Tempo técnico e execução', valor: horas + terceiros });
-                if (diretas > 0) categoriasCusto.push({ nome: 'Deslocamento e materiais', valor: diretas });
-                if (estrutura > 0) categoriasCusto.push({ nome: 'Ferramentas e despesas específicas', valor: estrutura });
-            }
-
-            if (categoriasCusto.length === 0) {
-                categoriasCusto.push({ nome: 'Custos informados', valor: custoTotal });
-            }
-
-            const imposto = taxes.impostosVenda || 0;
-            const taxaPag = taxes.taxaPagamento || 0;
-            const comissao = taxes.comissao || 0;
-            const mkt = taxes.taxaMarketplace || 0;
-            const margem = taxes.margemDesejada || 0;
-
-            const percentualImpostosTaxas = imposto + taxaPag + comissao + mkt;
-            const somaPercentuais = percentualImpostosTaxas + margem;
-            const divisor = 1 - (somaPercentuais / 100);
-
-            const precoSugerido = divisor > 0 ? custoTotal / divisor : 0;
-            const markup = custoTotal > 0 && precoSugerido > 0 ? precoSugerido / custoTotal : 0;
-            const valorImpostos = precoSugerido * (imposto / 100);
-            const valorTaxasComissoes = precoSugerido * ((taxaPag + comissao + mkt) / 100);
-            const lucroEstimado = precoSugerido * (margem / 100);
-
+            const response = await this.authenticatedRequest('/api/pricings/calculate', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
             return {
-                fonteCalculo: 'preview-local',
-                custoTotal: Number(custoTotal.toFixed(2)),
-                precoSugerido: Number(precoSugerido.toFixed(2)),
-                markup: Number(markup.toFixed(2)),
-                margemPlanejada: Number(margem.toFixed(2)),
-                percentualImpostosTaxas: Number(percentualImpostosTaxas.toFixed(2)),
-                valorImpostos: Number(valorImpostos.toFixed(2)),
-                valorTaxasComissoes: Number(valorTaxasComissoes.toFixed(2)),
-                valorImpostosTaxas: Number((valorImpostos + valorTaxasComissoes).toFixed(2)),
-                lucroEstimado: Number(lucroEstimado.toFixed(2)),
-                categoriasCusto
+                fonteCalculo: 'server-preview',
+                custoTotal: response.result.custoTotal,
+                precoSugerido: response.result.precoSugerido,
+                markup: response.result.markup,
+                margemPlanejada: response.result.margemPlanejada,
+                margemEfetivaCalculada: response.result.margemEfetivaCalculada,
+                percentualImpostosTaxas: response.result.percentualImpostosTaxas,
+                valorImpostosTaxas: response.result.valorImpostosTaxas,
+                lucroEstimado: response.result.lucroEstimado,
+                categoriasCusto: response.result.categoriasCusto,
+                calculationVersion: response.result.calculationVersion,
+                costsNormalized: payload.costs,
+                taxesNormalized: payload.taxes
             };
         },
 
@@ -2770,17 +2716,18 @@
             btn.disabled = true;
             btn.textContent = 'Processando...';
 
-            const { costs, taxes } = normalizeNumericInputsForCalculation(w.setor, w.costs, w.taxes);
-            const result = await ApiService.calcularPreviaPrecificacao({
-                setor: w.setor,
-                costs,
-                taxes
-            });
-
-            w.previewResult = { ...result, costsNormalized: costs, taxesNormalized: taxes };
-            w.step = 5;
-            DraftStore.save(w);
-            renderWizard(document.getElementById('main-viewport'));
+            try {
+                const { costs, taxes } = normalizeNumericInputsForCalculation(w.setor, w.costs, w.taxes);
+                const result = await ApiService.calcularPreviaPrecificacao({ setor: w.setor, costs, taxes });
+                w.previewResult = { ...result, costsNormalized: costs, taxesNormalized: taxes };
+                w.step = 5;
+                DraftStore.save(w);
+                renderWizard(document.getElementById('main-viewport'));
+            } catch (error) {
+                UI.toast(error.message || 'Não foi possível calcular a precificação.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Calcular recomendação de preço';
+            }
         });
     }
 
@@ -3209,9 +3156,18 @@
                 taxaMarketplace: 0,
                 margemDesejada: margemVal
             };
-            const res = await ApiService.calcularPreviaPrecificacao({ setor: sim.setor, costs, taxes });
-            UI.simulacaoResult = { ...res, costsNormalized: costs, taxesNormalized: taxes };
-            renderSimResult();
+            const runButton = document.getElementById('sim-run-btn');
+            runButton.disabled = true;
+            try {
+                const res = await ApiService.calcularPreviaPrecificacao({ setor: sim.setor, costs, taxes });
+                UI.simulacaoResult = { ...res, costsNormalized: costs, taxesNormalized: taxes };
+                renderSimResult();
+            } catch (error) {
+                UI.toast(error.message || 'Não foi possível calcular a simulação.', 'error');
+            } finally {
+                const currentButton = document.getElementById('sim-run-btn');
+                if (currentButton) currentButton.disabled = false;
+            }
         });
     }
 
