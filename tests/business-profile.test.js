@@ -79,6 +79,10 @@ test('POST ensure recupera negócio existente sem substituir o perfil', async ()
   let calls = 0;
   app.pool.query = async (sql, params) => {
     calls += 1;
+    if (sql.includes('INSERT INTO public.businesses')) {
+      assert.deepEqual(params, [userId, 'Negócio de teste', 'servicos']);
+      return { rows: [] };
+    }
     assert.deepEqual(params, [userId]);
     return { rows: [{ id: 'business-existing', name: 'Nome já salvo', sector: 'industria' }] };
   };
