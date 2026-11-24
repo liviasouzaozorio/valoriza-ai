@@ -807,14 +807,18 @@
         },
 
         /**
-         * Adaptador preparado para o futuro motor oficial de precificação no backend.
-         * Enquanto o endpoint dedicado não existir, executa uma prévia transparente
-         * para permitir simulação na interface sem substituir o motor oficial futuro.
+         * Normaliza o contrato da interface para o formato esperado pelo motor server-side.
+         * A interface mantém "setor"; a API de cálculo recebe "sector".
          */
         async calcularPreviaPrecificacao(payload) {
+            const requestPayload = {
+                sector: payload.setor || payload.sector,
+                costs: payload.costs,
+                taxes: payload.taxes
+            };
             const response = await this.authenticatedRequest('/api/pricings/calculate', {
                 method: 'POST',
-                body: JSON.stringify(payload)
+                body: JSON.stringify(requestPayload)
             });
             return {
                 fonteCalculo: 'server-preview',
