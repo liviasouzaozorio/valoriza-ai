@@ -893,14 +893,6 @@
                 return;
             }
 
-            if (!pricings.length) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <p class="empty-state-desc">Ainda não há precificações salvas para traçar a evolução ao longo do tempo.</p>
-                    </div>`;
-                return;
-            }
-
             const ordered = [...pricings].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm));
             const priceValues = ordered.map(p => nullableFiniteNumber(p.precoSugerido));
             const costValues = ordered.map(p => nullableFiniteNumber(p.custoTotal));
