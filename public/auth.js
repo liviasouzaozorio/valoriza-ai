@@ -45,24 +45,21 @@
     button.addEventListener('click', () => switchView(button.dataset.authView));
   });
 
-  async function ensureBusiness(user, metadata = user.user_metadata || {}) {
-    const { data: existing, error: readError } = await client
-      .from('businesses')
-      .select('id')
-      .eq('owner_user_id', user.id)
-      .maybeSingle();
-
-    if (readError) throw readError;
-    if (existing) return existing;
-
-    const business = {
-      owner_user_id: user.id,
-      name: metadata.company_name || 'Meu negócio',
-      sector: metadata.sector || 'comercio'
-    };
-    const { data, error } = await client.from('businesses').insert(business).select('id').single();
-    if (error) throw error;
-    return data;
+  async function ensureBusiness(session) {
+    if (!session?.access_token) throw new Error('Sua sessão não está disponível. Entre novamente.');
+    const response = await fetch('/api/business/ensure', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({})
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.success || !result.data?.business?.id) {
+      throw new Error(result.error?.message || 'Não foi possível preparar o perfil do seu negócio.');
+    }
+    return result.data.business;
   }
 
   function friendlyError(error) {
@@ -88,7 +85,7 @@
         password: String(form.get('password'))
       });
       if (error) throw error;
-      await ensureBusiness(data.user);
+      await ensureBusiness(data.session);
       window.location.replace('/index.html');
     } catch (error) {
       feedback('login-feedback', friendlyError(error));
@@ -125,12 +122,14 @@
       });
       if (error) throw error;
 
-      if (!data.session || !data.user) {
-        feedback('register-feedback', 'Recebemos seu cadastro, mas não foi possível concluir o acesso agora. Tente novamente mais tarde.');
+      if (!data.user) throw new Error('Não foi possível confirmar a criação da conta.');
+      if (!data.session) {
+        feedback('register-feedback', 'Conta criada. Confirme seu e-mail, se solicitado, e depois entre para configurar seu negócio.', true);
+        switchView('login');
         return;
       }
 
-      await ensureBusiness(data.user, { full_name: name, company_name: company, sector });
+      await ensureBusiness(data.session);
 
       // O cadastro termina na tela de login: a pessoa entra usando as credenciais recém-criadas.
       const { error: signOutError } = await client.auth.signOut();
