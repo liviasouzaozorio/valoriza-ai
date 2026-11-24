@@ -3967,7 +3967,10 @@
 
         configureUserStorage(session.user.id);
         let remoteBusinessProfile = null;
+        let remoteProducts = null;
+        let remotePricings = null;
         let profileLoadError = null;
+        let operationalLoadError = null;
         try {
             const ensureResponse = await fetch('/api/business/ensure', {
                 method: 'POST',
@@ -3995,7 +3998,21 @@
             console.error('Não foi possível sincronizar o perfil do negócio.', error);
         }
 
+        try {
+            const [products, pricings] = await Promise.all([
+                ApiService.listProducts(),
+                ApiService.listPricings()
+            ]);
+            remoteProducts = products.map(mapProductFromApi);
+            remotePricings = pricings.map(mapPricingFromApi);
+        } catch (error) {
+            operationalLoadError = error;
+            console.error('Não foi possível sincronizar catálogo e histórico.', error);
+        }
+
         WorkspaceStore.load();
+        if (remoteProducts !== null) WorkspaceStore.state.catalog = remoteProducts;
+        if (remotePricings !== null) WorkspaceStore.state.pricings = remotePricings;
         if (remoteBusinessProfile) {
             const additional = remoteBusinessProfile.additional_data || {};
             WorkspaceStore.state.business = {
@@ -4159,6 +4176,9 @@
         UI.renderCurrentView();
         if (profileLoadError) {
             UI.toast('Não foi possível sincronizar o perfil com sua conta. Suas informações locais foram preservadas; tente novamente mais tarde.', 'error');
+        }
+        if (operationalLoadError) {
+            UI.toast('Não foi possível atualizar catálogo e histórico. Os dados locais foram preservados.', 'error');
         }
     }
 
