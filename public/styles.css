@@ -2646,3 +2646,60 @@ body {
         gap: 16px;
     }
 }
+
+
+/* Escala de leitura — ampliação adicional de aproximadamente 20% no conteúdo principal.
+   Mantém navegação global e estrutura dos cards estáveis; não altera Custos e rentabilidade. */
+#main-viewport .page-heading { font-size: 31px; }
+#main-viewport .page-display { font-size: 41px; }
+#main-viewport .page-subtitle { font-size: 18px; }
+#main-viewport .card-title { font-size: 24px; }
+#main-viewport .card-subtitle { font-size: 17.5px; }
+#main-viewport .kpi-label { font-size: 17px; }
+#main-viewport .kpi-value { font-size: 31px; }
+#main-viewport .kpi-meta { font-size: 16.5px; }
+#main-viewport .field-label { font-size: 18px; }
+#main-viewport .field-input,
+#main-viewport .field-select,
+#main-viewport .field-textarea { font-size: 18.5px; }
+#main-viewport .field-help,
+#main-viewport .field-req,
+#main-viewport .field-error { font-size: 15.5px; }
+#main-viewport .btn { font-size: 17.5px; }
+#main-viewport .btn-sm { font-size: 16px; }
+#main-viewport .data-table { font-size: 18.5px; }
+#main-viewport .data-table th { font-size: 16px; }
+#main-viewport .kv-key,
+#main-viewport .kv-val { font-size: 17px; }
+#main-viewport .notice-bar-text { font-size: 16px; }
+#main-viewport .notice-bar-sub { font-size: 15px; }
+#main-viewport .status-label { font-size: 15px; }
+#main-viewport .sector-option-title { font-size: 18px; }
+#main-viewport .sector-option-desc { font-size: 15px; }
+#main-viewport .empty-state-desc,
+#main-viewport .table-description { font-size: 16px; }
+#main-viewport .simulation-result-explainer { font-size: 16px; }
+#main-viewport[data-view="dashboard"] .kpi-label { font-size: 17.5px; }
+#main-viewport[data-view="dashboard"] .kpi-value { font-size: 34px; }
+#main-viewport[data-view="dashboard"] .kpi-meta { font-size: 16.8px; }
+#main-viewport[data-view="precificacao"] .pricing-result-metric-card .kpi-value { font-size: 26px !important; }
+#main-viewport[data-view="simulacao"] .simulation-result-content .mono { font-size: 42px !important; }
+#main-viewport[data-view="simulacao"] .simulation-result-details .kv-key,
+#main-viewport[data-view="simulacao"] .simulation-result-details .kv-val { font-size: 18.5px; }
+#main-viewport[data-view="catalogo"] .data-table,
+#main-viewport[data-view="historico"] .data-table { font-size: 18.5px; }
+#main-viewport[data-view="negocio"] .field-label { font-size: 18.5px; }
+#main-viewport[data-view="negocio"] .field-input,
+#main-viewport[data-view="negocio"] .field-select,
+#main-viewport[data-view="negocio"] .field-textarea { font-size: 19.5px; }
+
+@media (max-width: 680px) {
+    #main-viewport .page-heading { font-size: 28px; }
+    #main-viewport .page-display { font-size: 35px; }
+    #main-viewport .card-title { font-size: 21px; }
+    #main-viewport .kpi-value { font-size: 28px; }
+    #main-viewport .data-table { font-size: 16px; }
+    #main-viewport .field-input,
+    #main-viewport .field-select,
+    #main-viewport .field-textarea { font-size: 17px; }
+}
