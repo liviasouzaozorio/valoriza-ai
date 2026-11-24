@@ -421,7 +421,9 @@
 
     const WorkspaceStore = {
         state: defaultWorkspaceState(),
+        storageWriteBlocked: false,
         load() {
+            this.storageWriteBlocked = false;
             try {
                 const raw = localStorage.getItem(STORAGE_KEYS.WORKSPACE);
                 if (!raw) {
@@ -450,12 +452,14 @@
                 delete this.state.settings.margemMetaPadrao;
                 if (this.state.settings.alertaCargaTributaria === 35) this.state.settings.alertaCargaTributaria = null;
             } catch {
+                // Preserva a cópia original se o conteúdo estiver corrompido ou inacessível.
+                this.storageWriteBlocked = true;
                 this.state = defaultWorkspaceState();
             }
         },
         save() {
             try {
-                if (!STORAGE_KEYS.WORKSPACE) return false;
+                if (!STORAGE_KEYS.WORKSPACE || this.storageWriteBlocked) return false;
                 localStorage.setItem(STORAGE_KEYS.WORKSPACE, JSON.stringify(this.state));
                 return true;
             } catch {
@@ -465,6 +469,7 @@
         resetAll() {
             this.state = defaultWorkspaceState();
             if (STORAGE_KEYS.WORKSPACE) localStorage.removeItem(STORAGE_KEYS.WORKSPACE);
+            this.storageWriteBlocked = false;
         },
         loadDemoScenario() {
             const now = Date.now();
