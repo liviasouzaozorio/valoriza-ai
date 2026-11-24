@@ -122,6 +122,25 @@ test('POST product persists an allowlisted item under the authenticated business
   assert.equal(insert.params.at(-1), JSON.stringify({ subtype: 'Produzido' }));
 });
 
+
+test('PATCH product uses parameter placeholders for values and JSON metadata', async () => {
+  let seen;
+  app.pool.query = async (sql, params) => {
+    if (sql.includes('SELECT id FROM public.businesses')) return { rows: [{ id: businessId }] };
+    seen = { sql, params };
+    return { rows: [{ id: productId, name: 'Bolo atualizado' }] };
+  };
+  const response = await request(`/api/products/${productId}`, {
+    method: 'PATCH',
+    body: { name: 'Bolo atualizado', additional_data: { subtype: 'Artesanal' } }
+  });
+  assert.equal(response.status, 200);
+  assert.match(seen.sql, /name = \$1/);
+  assert.match(seen.sql, /additional_data = \$2::jsonb/);
+  assert.match(seen.sql, /WHERE id = \$3 AND business_id = \$4/);
+  assert.deepEqual(seen.params, ['Bolo atualizado', JSON.stringify({ subtype: 'Artesanal' }), productId, businessId]);
+});
+
 test('PATCH product scopes updates by both item and authenticated business', async () => {
   let seen;
   app.pool.query = async (sql, params) => {
