@@ -2237,8 +2237,20 @@ body, .app-shell, .main-viewport { color: var(--text-primary); }
 label.field-label {
     display: flex;
     align-items: center;
+    justify-content: flex-start !important;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 4px;
+}
+
+/* Mantém o ícone junto ao texto do campo, sem distribuir os elementos pela linha. */
+.field-label > .field-info,
+.field-label > .field-required {
+    flex: 0 0 auto;
+    margin-left: 0;
+}
+
+.field-label > .field-info {
+    margin-inline-start: 1px;
 }
 
 .field-info {
