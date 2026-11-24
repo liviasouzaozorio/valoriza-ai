@@ -8,6 +8,7 @@ const express = require('express');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
 const { Pool } = require('pg');
+const { calculatePricing, PricingInputError } = require('./lib/pricing-engine');
 
 function databaseSslConfig() {
   if (process.env.DB_SSL === 'false') return false;
@@ -473,6 +474,21 @@ app.get('/api/pricings', async (req,res) => {
   }
 });
 
+app.post('/api/pricings/calculate', async (req, res) => {
+  try {
+    const user = await authenticateSupabaseRequest(req);
+    if (!user) return res.status(401).json({ success: false, error: { code: 'UNAUTHENTICATED', message: 'Sessão inválida ou expirada.' } });
+    const businessId = await getOwnedBusinessId(user.id);
+    if (!businessId) return res.status(404).json({ success: false, error: { code: 'BUSINESS_NOT_FOUND', message: 'Negócio não encontrado.' } });
+    const result = calculatePricing(req.body || {});
+    return res.json({ success: true, data: { result } });
+  } catch (error) {
+    if (error instanceof PricingInputError) return res.status(400).json({ success: false, error: { code: error.code, message: error.message } });
+    console.error('Erro ao calcular prévia:', error?.code || 'PRICING_CALCULATION_ERROR');
+    return res.status(503).json({ success: false, error: { code: 'PRICING_CALCULATION_UNAVAILABLE', message: 'Não foi possível calcular a precificação.' } });
+  }
+});
+
 app.post('/api/pricings', async (req,res) => {
   try {
     const user=await authenticateSupabaseRequest(req);
@@ -480,6 +496,32 @@ app.post('/api/pricings', async (req,res) => {
     const businessId=await getOwnedBusinessId(user.id);
     if(!businessId) return res.status(404).json({success:false,error:{code:'BUSINESS_NOT_FOUND',message:'Negócio não encontrado.'}});
     const b=req.body||{};
+    const snapshot = b.input_snapshot;
+    if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot) ||
+        !snapshot.costs || typeof snapshot.costs !== 'object' || Array.isArray(snapshot.costs) ||
+        !snapshot.taxes || typeof snapshot.taxes !== 'object' || Array.isArray(snapshot.taxes)) {
+      return res.status(400).json({success:false,error:{code:'INVALID_PRICING_SNAPSHOT',message:'Os custos e percentuais originais são necessários para validar o cálculo.'}});
+    }
+    let authoritative;
+    try {
+      authoritative = calculatePricing({ sector: snapshot.sector || b.setor, costs: snapshot.costs, taxes: snapshot.taxes });
+    } catch (error) {
+      if (error instanceof PricingInputError) return res.status(400).json({success:false,error:{code:error.code,message:error.message}});
+      throw error;
+    }
+    b.custo_total = authoritative.custoTotal;
+    b.preco_sugerido = authoritative.precoSugerido;
+    b.markup = authoritative.markup;
+    b.margem_lucro = authoritative.margemPlanejada;
+    b.impostos = authoritative.percentualImpostosTaxas;
+    b.desired_margin_percent = authoritative.margemPlanejada;
+    b.effective_margin_percent = authoritative.margemEfetivaCalculada;
+    b.direct_cost = authoritative.custoTotal;
+    b.allocated_fixed_cost = null;
+    b.variable_expenses_percent = authoritative.percentualImpostosTaxas;
+    b.setor = authoritative.sector === 'servico' ? 'servicos' : authoritative.sector;
+    b.result_snapshot = { ...b.result_snapshot, server_calculation: authoritative };
+    b.calculation_version = authoritative.calculationVersion;
     const numeric=['custo_total','preco_sugerido','markup','margem_lucro','impostos','quantity','direct_cost','allocated_fixed_cost','variable_expenses_percent','desired_margin_percent','effective_margin_percent'];
     for(const key of numeric) if(b[key]!==undefined && b[key]!==null && (typeof b[key]!=='number'||!Number.isFinite(b[key]))) {
       return res.status(400).json({success:false,error:{code:'INVALID_PRICING_NUMBER',message:'Um dos valores numéricos da precificação é inválido.'}});
