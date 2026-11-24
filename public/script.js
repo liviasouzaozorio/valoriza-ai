@@ -1568,10 +1568,9 @@
                     <div class="form-field form-field-full">
                         <label class="field-label" for="biz-margem-meta"><span>Meta de margem da empresa (%)</span>${fieldInfoIcon('Defina uma meta de margem para acompanhar seus resultados. Se não tiver uma meta, deixe em branco.')}</label>
                         <input id="biz-margem-meta" class="field-input mono" type="text" inputmode="decimal" value="${b.margemMeta ?? ''}" placeholder="Ex: 25">
-                        <span class="field-help">Use uma meta definida pela sua estratégia. Se deixar vazio, o ValorizAI não classificará margens como acima ou abaixo de uma meta.</span>
-                    </div>
+                                            </div>
                     <div class="form-field">
-                        <label class="field-label" for="biz-nome">Nome do negócio</label>
+                        <label class="field-label" for="biz-nome">Nome do negócio ${fieldRequiredMark(true)}</label>
                         <input id="biz-nome" class="field-input" type="text" required maxlength="160" value="${Formatter.escapeHtml(b.nomeNegocio)}" placeholder="Ex: Padaria Trigo & Cia ou Studio Silva">
                     </div>
 
@@ -1599,9 +1598,8 @@
                     </div>
 
                     <div class="form-field">
-                        <label class="field-label" for="biz-regime">Enquadramento / Regime (informativo)</label>
+                        <label class="field-label" for="biz-regime"><span>Enquadramento / Regime (informativo)</span>${fieldInfoIcon('Informe seu enquadramento apenas para referência. O ValorizAI não presume alíquotas nem substitui orientação contábil.')}</label>
                         <input id="biz-regime" class="field-input" type="text" value="${Formatter.escapeHtml(b.regimeInformativo)}" placeholder="Ex: MEI, Simples Nacional, Autônomo">
-                        <span class="field-help">Apenas referência organizacional; nenhuma alíquota automática é presumida.</span>
                     </div>
 
                     <div class="form-field form-field-full">
@@ -3890,8 +3888,7 @@
                         <div class="form-field">
                             <label class="field-label" for="set-carga-alerta"><span>Alerta de impostos + taxas (%)</span>${fieldInfoIcon('Destaca quando a soma percentual sobre o preço atingir este limiar. Deixe vazio para não ativar esse alerta.')}</label>
                             <input id="set-carga-alerta" class="field-input mono" type="text" inputmode="decimal" value="${settings.alertaCargaTributaria ?? ''}">
-                            <span class="field-help">Destaca quando a soma percentual sobre o preço atingir este limiar. Deixe vazio para não ativar esse alerta.</span>
-                        </div>
+                                                    </div>
 
                         <div class="form-field form-field-full">
                             <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;">
