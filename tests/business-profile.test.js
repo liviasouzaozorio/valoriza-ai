@@ -123,7 +123,7 @@ test('PATCH atualiza parcialmente e mescla JSONB preservando propriedades omitid
     }
   });
   assert.equal(response.status, 200);
-  assert.match(querySeen.sql, /additional_data = COALESCE(additional_data, '{}'::jsonb) || $3::jsonb/);
+  assert.ok(querySeen.sql.includes("additional_data = COALESCE(additional_data, '{}'::jsonb) || $3::jsonb"));
   assert.deepEqual(querySeen.params, ['Ateliê atualizado', 25, JSON.stringify({ location_text: 'Guarulhos - SP' }), userId]);
   assert.equal(response.body.data.business.additional_data.tax_regime, 'MEI');
 });
