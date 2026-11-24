@@ -2486,3 +2486,154 @@ body {
         font-size: 13.5px;
     }
 }
+
+
+/* Ajuste fino de escala e posicionamento das telas principais.
+   Custos e rentabilidade permanece intencionalmente fora deste escopo. */
+#main-viewport[data-view="precificacao"],
+#main-viewport[data-view="simulacao"],
+#main-viewport[data-view="catalogo"],
+#main-viewport[data-view="dashboard"],
+#main-viewport[data-view="historico"],
+#main-viewport[data-view="negocio"] {
+    padding-top: 42px;
+}
+
+#main-viewport[data-view="precificacao"] #wiz-step-container,
+#main-viewport[data-view="precificacao"] .wizard-stepper {
+    width: min(100%, 1180px);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#main-viewport[data-view="precificacao"] .surface-card {
+    padding: 27px;
+}
+
+#main-viewport[data-view="precificacao"] .pricing-result-metrics .mono {
+    font-size: 1.08em;
+}
+
+#main-viewport[data-view="precificacao"] .pricing-result-metric-card {
+    padding: 16px !important;
+}
+
+#main-viewport[data-view="precificacao"] .pricing-result-metric-card .kpi-value {
+    font-size: 22px !important;
+}
+
+#main-viewport[data-view="simulacao"] > .grid-2 {
+    width: min(100%, 1200px);
+    margin-left: auto;
+    margin-right: auto;
+    gap: 22px;
+}
+
+#main-viewport[data-view="simulacao"] > .grid-2 > .surface-card {
+    padding: 27px;
+}
+
+#main-viewport[data-view="simulacao"] .simulation-result-content .mono {
+    font-size: 35px !important;
+}
+
+#main-viewport[data-view="simulacao"] .simulation-result-details .kv-key,
+#main-viewport[data-view="simulacao"] .simulation-result-details .kv-val {
+    font-size: 15.5px;
+}
+
+#main-viewport[data-view="catalogo"] > .surface-card,
+#main-viewport[data-view="historico"] > .surface-card {
+    width: min(100%, 1240px);
+    margin: 0 auto;
+    padding: 27px;
+}
+
+#main-viewport[data-view="catalogo"] .data-table,
+#main-viewport[data-view="historico"] .data-table {
+    font-size: 15.5px;
+}
+
+#main-viewport[data-view="catalogo"] .data-table td,
+#main-viewport[data-view="historico"] .data-table td {
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
+#main-viewport[data-view="dashboard"] > .page-header,
+#main-viewport[data-view="dashboard"] > .kpi-grid,
+#main-viewport[data-view="dashboard"] > .dashboard-bottom-grid {
+    width: min(100%, 1240px);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#main-viewport[data-view="dashboard"] .kpi-card {
+    padding: 23px;
+}
+
+#main-viewport[data-view="dashboard"] .kpi-label {
+    font-size: 14.5px;
+}
+
+#main-viewport[data-view="dashboard"] .kpi-value {
+    font-size: 28px;
+}
+
+#main-viewport[data-view="dashboard"] .kpi-meta {
+    font-size: 14px;
+}
+
+#main-viewport[data-view="dashboard"] .surface-card {
+    padding: 27px;
+}
+
+#main-viewport[data-view="dashboard"] .data-table {
+    font-size: 15px;
+}
+
+#main-viewport[data-view="negocio"] > .page-header,
+#main-viewport[data-view="negocio"] #business-form {
+    width: min(100%, 1120px);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#main-viewport[data-view="negocio"] #business-form {
+    padding: 28px;
+}
+
+#main-viewport[data-view="negocio"] .field-label {
+    font-size: 15.5px;
+}
+
+#main-viewport[data-view="negocio"] .field-input,
+#main-viewport[data-view="negocio"] .field-select,
+#main-viewport[data-view="negocio"] .field-textarea {
+    font-size: 16.5px;
+    min-height: 46px;
+}
+
+@media (max-width: 680px) {
+    #main-viewport[data-view="precificacao"],
+    #main-viewport[data-view="simulacao"],
+    #main-viewport[data-view="catalogo"],
+    #main-viewport[data-view="dashboard"],
+    #main-viewport[data-view="historico"],
+    #main-viewport[data-view="negocio"] {
+        padding-top: 24px;
+    }
+
+    #main-viewport[data-view="precificacao"] .surface-card,
+    #main-viewport[data-view="simulacao"] > .grid-2 > .surface-card,
+    #main-viewport[data-view="catalogo"] > .surface-card,
+    #main-viewport[data-view="historico"] > .surface-card,
+    #main-viewport[data-view="dashboard"] .surface-card,
+    #main-viewport[data-view="negocio"] #business-form {
+        padding: 20px;
+    }
+
+    #main-viewport[data-view="simulacao"] > .grid-2 {
+        gap: 16px;
+    }
+}
