@@ -747,6 +747,12 @@
         async createProduct(product) { return (await this.authenticatedRequest('/api/products', { method: 'POST', body: JSON.stringify(product) })).product; },
         async updateProduct(id, product) { return (await this.authenticatedRequest(`/api/products/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(product) })).product; },
         async createPricing(pricing) { return (await this.authenticatedRequest('/api/pricings', { method: 'POST', body: JSON.stringify(pricing) })).pricing; },
+        async getLatestNiloConversation() {
+            return await this.authenticatedRequest('/api/nilo/conversations/latest');
+        },
+        async getNiloConversation(id) {
+            return await this.authenticatedRequest(`/api/nilo/conversations/${encodeURIComponent(id)}`);
+        },
         /**
          * Endpoint REAL existente no backend (server.js -> POST /perguntar).
          * Mantém integralmente o contrato esperado.
@@ -3728,17 +3734,11 @@
             renderConsultor(targetRoot);
 
             try {
-                const historico = WorkspaceStore.state.chatHistory
-                    .slice(0, -1)
-                    .filter(m => ['user', 'assistant'].includes(m.role))
-                    .slice(-12)
-                    .map(m => ({ role: m.role, text: m.text }));
                 const data = await ApiService.enviarPerguntaIA({
                     pergunta,
                     setor: ctx.setor,
                     resumoFinanceiro: ctx.resumoFinanceiro,
                     detalhesCustos: ctx.detalhesCustos,
-                    historico,
                     conversation_id: WorkspaceStore.state.niloConversationId
                 });
                 if (data.conversation_id) WorkspaceStore.state.niloConversationId = data.conversation_id;
@@ -4011,6 +4011,23 @@
         }
 
         WorkspaceStore.load();
+        // O histórico do Nilo é recuperado do banco; localStorage é apenas cache da interface.
+        try {
+            const remoteChat = WorkspaceStore.state.niloConversationId
+                ? await ApiService.getNiloConversation(WorkspaceStore.state.niloConversationId)
+                : await ApiService.getLatestNiloConversation();
+            if (remoteChat.conversation?.id) {
+                WorkspaceStore.state.niloConversationId = remoteChat.conversation.id;
+                WorkspaceStore.state.chatHistory = (remoteChat.messages || []).map(message => ({
+                    role: message.role,
+                    text: message.content,
+                    at: message.created_at
+                }));
+                WorkspaceStore.save();
+            }
+        } catch (error) {
+            console.warn('Não foi possível sincronizar o histórico do Nilo.', error);
+        }
         if (remoteProducts !== null) WorkspaceStore.state.catalog = remoteProducts;
         if (remotePricings !== null) WorkspaceStore.state.pricings = remotePricings;
         if (remoteBusinessProfile) {
