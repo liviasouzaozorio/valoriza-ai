@@ -224,7 +224,12 @@ test('POST pricing persists a version under the authenticated business and owned
       custo_total: 18.5,
       preco_sugerido: 32,
       margem_lucro: 25,
-      input_snapshot: { costs: { materials: 18.5 } },
+      setor: 'comercio',
+      input_snapshot: {
+        sector: 'comercio',
+        costs: { custoAquisicao: 18.5, freteEntrada: 0, seguroDespesasAquisicao: 0, embalagem: 0, outrosVariaveis: 0, custosOperacionaisRateados: 0 },
+        taxes: { impostosVenda: 0, taxaPagamento: 0, comissao: 0, taxaMarketplace: 0, margemDesejada: 25 }
+      },
       result_snapshot: { price: 32 },
       calculation_version: 'test-v1'
     }
