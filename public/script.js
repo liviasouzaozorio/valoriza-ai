@@ -1121,8 +1121,8 @@
         }).length;
         if (missingMarginCount > 0 || missingCostCount > 0) {
             const gaps = [];
-            if (missingCostCount > 0) gaps.push(`${missingCostCount} ${missingCostCount === 1 ? 'sem custo total válido' : 'sem custo total válido'}`);
-            if (missingMarginCount > 0) gaps.push(`${missingMarginCount} ${missingMarginCount === 1 ? 'sem margem planejada válida' : 'sem margem planejada válida'}`);
+            if (missingCostCount > 0) gaps.push(`${missingCostCount} ${missingCostCount === 1 ? 'item sem custo total válido' : 'itens sem custo total válido'}`);
+            if (missingMarginCount > 0) gaps.push(`${missingMarginCount} ${missingMarginCount === 1 ? 'item sem margem planejada válida' : 'itens sem margem planejada válida'}`);
             insights.push({
                 tone: 'warning',
                 title: 'Há indicadores incompletos nas últimas versões',
@@ -1448,7 +1448,7 @@
             </div>
         `;
 
-        ChartRenderer.renderPriceEvolutionChart(document.getElementById('dash-chart-evolution'), pricings);
+        ChartRenderer.renderPriceEvolutionChart(document.getElementById('dash-chart-evolution'), activePricingRecords);
         ChartRenderer.renderCostDistributionChart(
             document.getElementById('dash-chart-costs'),
             latestPricing ? latestPricing.categoriasCusto : [],
