@@ -11,6 +11,48 @@
         SIDEBAR: null
     };
 
+    function mapProductFromApi(row) {
+        const extra = row.additional_data || {};
+        return {
+            id: row.id,
+            nome: row.name,
+            descricao: row.description || '',
+            categoria: row.category || '',
+            tipo: extra.subtype || (row.item_type === 'servico' ? 'Serviço' : 'Produto'),
+            setor: row.sector === 'servicos' ? 'servico' : row.sector,
+            unidade: row.unit || 'Unidade',
+            status: row.status === 'archived' ? 'Arquivado' : (extra.status_label || 'Ativo'),
+            criadoEm: row.created_at,
+            atualizadoEm: row.updated_at
+        };
+    }
+
+    function mapPricingFromApi(row) {
+        const input = row.input_snapshot || {};
+        const result = row.result_snapshot || {};
+        const extra = result.ui_record || result;
+        return {
+            id: String(row.id),
+            catalogItemId: row.product_id || '',
+            itemNome: row.product_name || input.item_name || 'Item sem nome',
+            versao: Number(result.version || 1),
+            setor: row.setor === 'servicos' ? 'servico' : (row.setor || input.sector || 'comercio'),
+            unidade: row.unit || '',
+            criadoEm: row.data_criacao,
+            custoTotal: Number(row.custo_total ?? extra.custoTotal ?? 0),
+            precoSugerido: Number(row.preco_sugerido ?? extra.precoSugerido ?? 0),
+            markup: Number(row.markup ?? extra.markup ?? 0),
+            margemPlanejada: Number(row.margem_lucro ?? extra.margemPlanejada ?? 0),
+            percentualImpostosTaxas: Number(row.impostos ?? extra.percentualImpostosTaxas ?? 0),
+            valorImpostosTaxas: Number(extra.valorImpostosTaxas ?? 0),
+            lucroEstimado: Number(extra.lucroEstimado ?? 0),
+            fonteCalculo: extra.fonteCalculo || 'persistido',
+            categoriasCusto: Array.isArray(extra.categoriasCusto) ? extra.categoriasCusto : [],
+            detalhesCustos: input.costs || {},
+            taxas: input.taxes || {}
+        };
+    }
+
     function configureUserStorage(userId) {
         if (!userId || typeof userId !== 'string') throw new Error('Conta autenticada inválida.');
         const suffix = userId;
@@ -1888,8 +1930,9 @@
                 });
 
                 body.querySelector('#modal-cancel-btn').addEventListener('click', () => UI.closeModal());
-                body.querySelector('#cat-item-form').addEventListener('submit', e => {
+                body.querySelector('#cat-item-form').addEventListener('submit', async e => {
                     e.preventDefault();
+                    const submit = body.querySelector('button[type="submit"]');
                     const nome = body.querySelector('#modal-item-nome').value.trim();
                     const errEl = body.querySelector('#err-item-nome');
                     if (!nome) {
@@ -1898,36 +1941,42 @@
                         body.querySelector('#modal-item-nome').classList.add('has-error');
                         return;
                     }
-
-                    if (isEdit) {
-                        Object.assign(existing, {
-                            nome,
-                            setor: setorSelect.value,
-                            tipo: tipoInput.value.trim() || SETORES[setorSelect.value].itemTipoPadrao,
-                            categoria: body.querySelector('#modal-item-categoria').value.trim(),
-                            unidade: unidadeInput.value.trim() || SETORES[setorSelect.value].unidadePadrao,
-                            status: body.querySelector('#modal-item-status').value,
-                            descricao: body.querySelector('#modal-item-desc').value.trim()
-                        });
-                        UI.toast('Item atualizado no catálogo.', 'success');
-                    } else {
-                        WorkspaceStore.state.catalog.unshift({
-                            id: Formatter.uid('item'),
-                            nome,
-                            setor: setorSelect.value,
-                            tipo: tipoInput.value.trim() || SETORES[setorSelect.value].itemTipoPadrao,
-                            categoria: body.querySelector('#modal-item-categoria').value.trim(),
-                            unidade: unidadeInput.value.trim() || SETORES[setorSelect.value].unidadePadrao,
-                            status: body.querySelector('#modal-item-status').value,
-                            descricao: body.querySelector('#modal-item-desc').value.trim(),
-                            criadoEm: new Date().toISOString()
-                        });
-                        UI.toast('Item adicionado ao catálogo.', 'success');
+                    const statusLabel = body.querySelector('#modal-item-status').value;
+                    const payload = {
+                        name: nome,
+                        sector: setorSelect.value === 'servico' ? 'servicos' : setorSelect.value,
+                        item_type: setorSelect.value === 'servico' ? 'servico' : 'produto',
+                        category: body.querySelector('#modal-item-categoria').value.trim() || null,
+                        unit: unidadeInput.value.trim() || SETORES[setorSelect.value].unidadePadrao,
+                        description: body.querySelector('#modal-item-desc').value.trim() || null,
+                        status: statusLabel === 'Arquivado' ? 'archived' : 'active',
+                        additional_data: {
+                            subtype: tipoInput.value.trim() || SETORES[setorSelect.value].itemTipoPadrao,
+                            status_label: statusLabel === 'Em revisão' ? 'Em revisão' : (statusLabel === 'Arquivado' ? 'Arquivado' : 'Ativo')
+                        }
+                    };
+                    submit.disabled = true;
+                    try {
+                        const saved = isEdit
+                            ? await ApiService.updateProduct(existing.id, payload)
+                            : await ApiService.createProduct(payload);
+                        const item = mapProductFromApi(saved);
+                        if (isEdit) {
+                            Object.assign(existing, item);
+                            UI.toast('Item atualizado no catálogo.', 'success');
+                        } else {
+                            WorkspaceStore.state.catalog.unshift(item);
+                            UI.toast('Item adicionado ao catálogo.', 'success');
+                        }
+                        WorkspaceStore.save();
+                        UI.closeModal();
+                        UI.updateChrome();
+                        UI.renderCurrentView();
+                    } catch (error) {
+                        UI.toast(error.message || 'Não foi possível salvar o item. Seus dados locais foram preservados.', 'error');
+                    } finally {
+                        submit.disabled = false;
                     }
-                    WorkspaceStore.save();
-                    UI.closeModal();
-                    UI.updateChrome();
-                    UI.renderCurrentView();
                 });
             }
         );
@@ -2857,8 +2906,11 @@
             UI.navigate('consultor', { consultorContextId: 'wizard_preview' });
         });
 
-        document.getElementById('wiz-s5-save').addEventListener('click', () => {
-            const savedPricing = persistPricingToWorkspace({
+        document.getElementById('wiz-s5-save').addEventListener('click', async () => {
+            const saveButton = document.getElementById('wiz-s5-save');
+            saveButton.disabled = true;
+            try {
+            const savedPricing = await persistPricingToWorkspace({
                 catalogItemId: w.catalogItemId,
                 itemNome: w.itemNome,
                 setor: w.setor,
@@ -2871,40 +2923,38 @@
             UI.updateChrome();
             UI.toast(`Precificação v${savedPricing.versao} salva no catálogo e no histórico.`, 'success');
             UI.navigate('historico');
+            } catch (error) {
+                UI.toast(error.message || 'Não foi possível salvar a precificação. O histórico local foi preservado.', 'error');
+            } finally {
+                saveButton.disabled = false;
+            }
         });
     }
 
-    function persistPricingToWorkspace({ catalogItemId, itemNome, setor, unidade, descricao, result }) {
+    async function persistPricingToWorkspace({ catalogItemId, itemNome, setor, unidade, descricao, result, pricingType = 'full' }) {
         let item = catalogItemId
             ? WorkspaceStore.state.catalog.find(c => c.id === catalogItemId)
             : null;
 
         if (!item) {
-            item = {
-                id: Formatter.uid('item'),
-                nome: itemNome,
-                descricao: descricao || '',
-                categoria: 'Geral',
-                tipo: SETORES[setor]?.itemTipoPadrao || 'Item',
-                setor,
-                unidade: unidade || SETORES[setor]?.unidadePadrao || 'Unidade',
-                status: 'Ativo',
-                criadoEm: new Date().toISOString()
-            };
-            WorkspaceStore.state.catalog.unshift(item);
+            const created = await ApiService.createProduct({
+                name: itemNome,
+                description: descricao || null,
+                category: 'Geral',
+                item_type: setor === 'servico' ? 'servico' : 'produto',
+                sector: setor === 'servico' ? 'servicos' : setor,
+                unit: unidade || SETORES[setor]?.unidadePadrao || 'Unidade',
+                status: 'active',
+                additional_data: { subtype: SETORES[setor]?.itemTipoPadrao || 'Item', status_label: 'Ativo' }
+            });
+            item = mapProductFromApi(created);
         }
 
         const existingVersions = WorkspaceStore.state.pricings.filter(p => p.catalogItemId === item.id);
         const nextVersion = existingVersions.length ? Math.max(...existingVersions.map(p => p.versao)) + 1 : 1;
-
-        const record = {
-            id: Formatter.uid('prec'),
-            catalogItemId: item.id,
-            itemNome: item.nome,
+        const createdAt = new Date().toISOString();
+        const uiRecord = {
             versao: nextVersion,
-            setor,
-            unidade: item.unidade,
-            criadoEm: new Date().toISOString(),
             custoTotal: result.custoTotal,
             precoSugerido: result.precoSugerido,
             markup: result.markup,
@@ -2913,11 +2963,43 @@
             valorImpostosTaxas: result.valorImpostosTaxas,
             lucroEstimado: result.lucroEstimado,
             fonteCalculo: result.fonteCalculo,
-            categoriasCusto: result.categoriasCusto,
+            categoriasCusto: result.categoriasCusto
+        };
+        const saved = await ApiService.createPricing({
+            product_id: item.id,
+            pricing_type: pricingType,
+            unit: item.unidade,
+            quantity: 1,
+            custo_total: result.custoTotal,
+            preco_sugerido: result.precoSugerido,
+            markup: result.markup,
+            margem_lucro: result.margemPlanejada,
+            impostos: result.percentualImpostosTaxas,
+            setor: setor === 'servico' ? 'servicos' : setor,
+            desired_margin_percent: result.taxesNormalized?.margemDesejada ?? null,
+            input_snapshot: {
+                item_name: item.nome,
+                sector: setor,
+                costs: result.costsNormalized || {},
+                taxes: result.taxesNormalized || {},
+                created_at: createdAt
+            },
+            result_snapshot: { ui_record: uiRecord },
+            calculation_version: 'frontend-preview-v1'
+        });
+        if (!WorkspaceStore.state.catalog.some(c => c.id === item.id)) WorkspaceStore.state.catalog.unshift(item);
+        const record = {
+            id: String(saved.id),
+            catalogItemId: item.id,
+            itemNome: item.nome,
+            versao: nextVersion,
+            setor,
+            unidade: item.unidade,
+            criadoEm: saved.data_criacao || createdAt,
+            ...uiRecord,
             detalhesCustos: result.costsNormalized,
             taxas: result.taxesNormalized
         };
-
         WorkspaceStore.state.pricings.unshift(record);
         WorkspaceStore.save();
         return record;
@@ -3035,19 +3117,28 @@
                 </div>
             `;
 
-            document.getElementById('sim-promote-btn').addEventListener('click', () => {
+            document.getElementById('sim-promote-btn').addEventListener('click', async () => {
+                const promoteButton = document.getElementById('sim-promote-btn');
+                promoteButton.disabled = true;
                 const nomeFinal = sim.nome.trim() || `Item simulado (${SETORES[sim.setor].nome})`;
-                const saved = persistPricingToWorkspace({
-                    catalogItemId: '',
-                    itemNome: nomeFinal,
-                    setor: sim.setor,
-                    unidade: SETORES[sim.setor].unidadePadrao,
-                    descricao: 'Originado de simulação rápida.',
-                    result: res
-                });
-                UI.updateChrome();
-                UI.toast(`"${saved.itemNome}" adicionado ao catálogo e salvo no histórico.`, 'success');
-                UI.navigate('historico');
+                try {
+                    const saved = await persistPricingToWorkspace({
+                        catalogItemId: '',
+                        itemNome: nomeFinal,
+                        setor: sim.setor,
+                        unidade: SETORES[sim.setor].unidadePadrao,
+                        descricao: 'Originado de simulação rápida.',
+                        result: res,
+                        pricingType: 'quick'
+                    });
+                    UI.updateChrome();
+                    UI.toast(`"${saved.itemNome}" adicionado ao catálogo e salvo no histórico.`, 'success');
+                    UI.navigate('historico');
+                } catch (error) {
+                    UI.toast(error.message || 'Não foi possível salvar a simulação.', 'error');
+                } finally {
+                    promoteButton.disabled = false;
+                }
             });
 
             document.getElementById('sim-ai-btn').addEventListener('click', () => {
