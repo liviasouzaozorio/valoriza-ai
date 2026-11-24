@@ -2112,3 +2112,121 @@ body, .app-shell, .main-viewport { color: var(--text-primary); }
     -webkit-text-fill-color: #55D6A0 !important;
     opacity: 1 !important;
 }
+
+
+/* ValorizAI — refinamentos de usabilidade da rodada de validação */
+.simulation-result-details .kv-key {
+    color: #475569 !important;
+}
+
+.simulation-result-details .kv-val {
+    color: #19263A !important;
+}
+
+.simulation-result-details .kv-val[style*="color:var(--color-warning)"] {
+    color: #A16207 !important;
+}
+
+.simulation-result-details .kv-val[style*="color:var(--color-emerald)"] {
+    color: #16865A !important;
+}
+
+.simulation-result-explainer {
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    border: 1px solid #DCE5EF;
+    border-radius: 10px;
+    background: #F8FAFC;
+    color: #475569;
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.nilo-profile-card {
+    padding: 22px;
+}
+
+.nilo-profile-heading {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 20px;
+}
+
+.nilo-profile-avatar {
+    display: grid;
+    place-items: center;
+    width: 112px;
+    min-width: 112px;
+    height: 112px;
+    padding: 8px;
+    overflow: hidden;
+    border: 1px solid #DCE8F5;
+    border-radius: 18px;
+    background: linear-gradient(145deg, #F0F7FF, #E7F1FC);
+}
+
+.nilo-profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.nilo-profile-copy h2 {
+    margin: 0 0 3px;
+    color: #19263A;
+    font-size: 19px;
+    line-height: 1.25;
+}
+
+.nilo-profile-copy > span {
+    display: block;
+    color: #3986D8;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.nilo-profile-copy p {
+    color: #52647A;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.nilo-profile-card .field-help {
+    color: #64748B;
+}
+
+.sidebar-collapse-btn .sidebar-icon-collapse {
+    display: block;
+}
+
+.sidebar-collapse-btn .sidebar-icon-expand {
+    display: none;
+}
+
+.app-shell.sidebar-collapsed .sidebar-collapse-btn .sidebar-icon-collapse {
+    display: none;
+}
+
+.app-shell.sidebar-collapsed .sidebar-collapse-btn .sidebar-icon-expand {
+    display: block;
+}
+
+@media (max-width: 680px) {
+    .nilo-profile-heading {
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .nilo-profile-avatar {
+        width: 84px;
+        min-width: 84px;
+        height: 84px;
+        border-radius: 14px;
+    }
+
+    .nilo-profile-card {
+        padding: 16px;
+    }
+}
