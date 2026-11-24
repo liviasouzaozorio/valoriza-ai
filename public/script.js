@@ -4198,7 +4198,13 @@
             renderConsultor(niloPanelContent);
             document.getElementById('ai-question-input')?.focus();
         };
-        niloFab.addEventListener('click', openNilo);
+        niloFab.addEventListener('click', () => {
+            if (UI.niloOpen) {
+                closeNilo();
+            } else {
+                openNilo();
+            }
+        });
         niloHelpBubble.addEventListener('click', openNilo);
         document.getElementById('nilo-panel-close').addEventListener('click', closeNilo);
         document.getElementById('nilo-clear-chat').addEventListener('click', () => {
