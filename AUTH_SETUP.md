@@ -1,51 +1,74 @@
-# Configuração do cadastro e login do ValorizAI
+# Configuração do cadastro, login e perfil do ValorizAI
 
-Esta etapa usa o Supabase Auth no navegador. O arquivo `public/auth-config.js` contém somente configuração pública.
+O Supabase Auth gerencia a identidade e a sessão no navegador. A persistência do perfil do negócio é realizada pelo backend Node.js, que valida o token e usa a conexão PostgreSQL do servidor.
 
-## 1. Configurar a chave pública
+## 1. Configuração pública do Supabase
 
-Abra `public/auth-config.js` e substitua:
+O arquivo `public/auth-config.js` contém somente a URL e a publishable/anon key do projeto Supabase.
 
-```js
-supabaseAnonKey: 'sb_publishable_s3GhLyuyfkSj7YgEV9auWw_XBnlZY9_'
-```
+- A chave pública pode ser utilizada no navegador.
+- Nunca coloque `service_role`, senha do banco, `GEMINI_API_KEY`, JWT de usuário ou `DATABASE_URL` nesse arquivo.
 
-pela **publishable key** (ou anon key legada) do projeto Supabase.
+## 2. Configuração do servidor
 
-- É esperado que essa chave pública seja utilizada no navegador.
-- Nunca coloque `service_role`, senha do banco, `GEMINI_API_KEY`, JWT de usuário ou qualquer segredo nesse arquivo.
-- As tabelas precisam continuar protegidas por RLS.
+Configure no ambiente do servidor, sem versionar o arquivo `.env`:
 
-## 2. Desativar confirmação de e-mail
+- `SUPABASE_URL`: URL do mesmo projeto Supabase usado pelo frontend.
+- `SUPABASE_ANON_KEY` ou `SUPABASE_PUBLISHABLE_KEY`: chave pública utilizada para validar a sessão com Supabase Auth.
+- `DATABASE_URL`: conexão PostgreSQL do projeto.
+- `DB_SSL` e parâmetros TLS necessários ao ambiente.
+- `GEMINI_API_KEY`: chave do serviço de IA, exclusivamente no servidor.
 
-No painel Supabase, abra as configurações de Authentication e desative a confirmação de e-mail para novos usuários. O cadastro foi desenhado para iniciar uma sessão imediatamente, sem etapa de confirmação.
+A conexão PostgreSQL do backend pode possuir privilégios elevados e, por isso, as rotas privadas validam a sessão e incluem a propriedade do usuário nas consultas. Não confie em `owner_user_id` ou `business_id` enviados pelo navegador.
 
-A aplicação não implementa recuperação de senha, conforme o escopo atual do MVP.
+## 3. Confirmação de e-mail
 
-## 3. URLs de redirecionamento
+O fluxo suporta os dois cenários:
 
-Em Authentication > URL Configuration, configure a URL principal do ambiente em que a aplicação será executada e permita os redirecionamentos desse ambiente. Em desenvolvimento local, use a origem local correta do projeto (por exemplo, `http://localhost:3000` se esse for o endereço utilizado).
+- Se o Supabase criar uma sessão imediatamente, o cadastro prepara o negócio pela API.
+- Se a confirmação de e-mail estiver habilitada e não houver sessão, a pessoa conclui a confirmação e o primeiro login prepara o negócio.
 
-## 4. Tabelas e políticas necessárias
+A aplicação não implementa recuperação de senha nesta etapa.
 
-O cadastro cria o usuário pelo Supabase Auth e, em seguida, cria uma linha em `public.businesses` com:
+## 4. Migration do perfil
 
-- `owner_user_id`: UUID do usuário autenticado;
-- `name`: nome da empresa informado no cadastro;
-- `sector`: `comercio`, `industria` ou `servicos`.
+A migration `supabase/migrations/202611230002_business_profile_persistence.sql` adiciona:
 
-A tabela `businesses` precisa permitir INSERT e SELECT para o usuário autenticado somente quando `owner_user_id = auth.uid()`. A restrição UNIQUE em `owner_user_id` mantém o modelo atual de uma empresa por usuário.
+- `target_margin_percent`: meta opcional de margem, inicialmente `NULL`.
+- `additional_data`: informações complementares em JSONB.
 
-## 5. Teste manual após configurar
+**A migration não é executada automaticamente pela aplicação.** Antes de aplicá-la, confirme que o projeto Supabase e o schema são os esperados e faça backup adequado. Não execute a migration em produção sem conferir o tipo real de `currency_code` e o estado atual das colunas/constraints.
 
-1. Abra `/auth.html`.
-2. Crie uma conta com nome, empresa, segmento, e-mail e senha de pelo menos 8 caracteres.
-3. Confirme que o Supabase cria a sessão sem pedir confirmação de e-mail.
-4. Confirme que a linha da empresa foi criada em `businesses`.
-5. Saia da conta pelo sistema (o logout do painel será integrado na próxima etapa) ou encerre a sessão pelo painel Supabase durante os testes.
-6. Faça login com e-mail e senha.
-7. Abra `/index.html` sem sessão e confirme que a aplicação redireciona para `/auth.html`.
+A migration anterior `202611230001_user_preferences.sql` cria a tabela de preferências da navegação. Confirme também se ela já foi aplicada no ambiente correto.
 
-## Limite desta entrega
+## 5. Contratos de perfil
 
-O guard protege a entrada da interface. Ele **não substitui a autenticação e autorização das rotas de backend**. Antes de liberar operações de dados e o Nilo, o servidor deverá validar o access token em cada rota protegida e garantir isolamento por usuário/RLS. Essa integração será feita na próxima etapa.
+Após autenticação, o frontend chama:
+
+- `POST /api/business/ensure`: cria o negócio uma única vez ou recupera o já existente.
+- `GET /api/business/profile`: recupera o perfil do usuário autenticado.
+- `PATCH /api/business/profile`: atualiza somente os campos enviados.
+
+A API deriva a identidade do token validado. O cliente não escolhe o proprietário. Campos omitidos são preservados; `target_margin_percent: null` remove a meta; propriedades omitidas de `additional_data` permanecem inalteradas.
+
+O segmento `servico` utilizado na interface é normalizado para `servicos` no banco.
+
+## 6. Teste manual após configuração
+
+1. Confirme que as variáveis do servidor apontam para o mesmo projeto Supabase do frontend.
+2. Aplique as migrations somente após revisar o schema e autorizar a execução.
+3. Abra `/auth.html` e crie uma conta.
+4. Se a confirmação de e-mail estiver habilitada, conclua essa etapa e faça login.
+5. Confirme que existe somente um negócio associado ao usuário em `businesses`.
+6. Abra Meu negócio, altere o perfil e salve.
+7. Faça logout e login novamente; confirme que o perfil é recuperado do banco.
+8. Confirme que uma segunda conta não consegue consultar ou alterar o perfil da primeira.
+9. Abra `/index.html` sem sessão e confirme o redirecionamento para `/auth.html`.
+
+## 7. Limites desta entrega
+
+A Entrega 1 integra somente autenticação, criação/recuperação do negócio, perfil e workspace local individualizado. Catálogo, precificações, histórico do Nilo, importação do backup legado e dashboards continuam fora do escopo.
+
+A chave antiga `valorizai_workspace_v1` é preservada como backup independente e não é importada automaticamente para nenhuma conta.
+
+A rota `/perguntar` ainda precisa receber autenticação obrigatória e validação de propriedade antes da integração do histórico do Nilo com o banco.
