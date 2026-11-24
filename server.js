@@ -435,7 +435,7 @@ app.patch('/api/products/:id', async (req,res) => {
     const values=[], assignments=[];
     for(const [key,value] of Object.entries(patch)) {
       values.push(key==='additional_data'?JSON.stringify(value):value);
-      assignments.push(`${key} = ${values.length}${key==='additional_data'?'::jsonb':''}`);
+      assignments.push(`${key} = $${values.length}${key==='additional_data'?'::jsonb':''}`);
     }
     if(!assignments.length) return res.status(400).json({success:false,error:{code:'EMPTY_PRODUCT_PATCH',message:'Nenhuma alteração informada.'}});
     assignments.push('updated_at = NOW()');
