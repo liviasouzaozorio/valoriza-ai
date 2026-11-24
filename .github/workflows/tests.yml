@@ -24,3 +24,5 @@ jobs:
         run: npm run check
       - name: Run automated tests
         run: npm test
+      - name: Report dependency advisories
+        run: npm audit --json || true
