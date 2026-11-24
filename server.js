@@ -496,11 +496,33 @@ app.post('/api/pricings', async (req,res) => {
     const businessId=await getOwnedBusinessId(user.id);
     if(!businessId) return res.status(404).json({success:false,error:{code:'BUSINESS_NOT_FOUND',message:'Negócio não encontrado.'}});
     const b=req.body||{};
+    const numeric=['custo_total','preco_sugerido','markup','margem_lucro','impostos','quantity','direct_cost','allocated_fixed_cost','variable_expenses_percent','desired_margin_percent','effective_margin_percent'];
+    for(const key of numeric) if(b[key]!==undefined && b[key]!==null && (typeof b[key]!=='number'||!Number.isFinite(b[key]))) {
+      return res.status(400).json({success:false,error:{code:'INVALID_PRICING_NUMBER',message:'Um dos valores numéricos da precificação é inválido.'}});
+    }
+    const nonNegative=['custo_total','preco_sugerido','markup','direct_cost','allocated_fixed_cost'];
+    if(nonNegative.some(key => b[key] !== undefined && b[key] !== null && b[key] < 0) ||
+       (b.quantity !== undefined && b.quantity !== null && b.quantity <= 0)) {
+      return res.status(400).json({success:false,error:{code:'INVALID_PRICING_RANGE',message:'Custos, preço e markup não podem ser negativos; a quantidade deve ser maior que zero.'}});
+    }
+    const percentages=['impostos','margem_lucro','variable_expenses_percent','desired_margin_percent'];
+    if(percentages.some(key => b[key] !== undefined && b[key] !== null && (b[key] < 0 || b[key] >= 100))) {
+      return res.status(400).json({success:false,error:{code:'INVALID_PRICING_PERCENTAGE',message:'Percentuais de taxas e margem devem estar entre 0% e menos de 100%.'}});
+    }
+    if(b.setor !== undefined && b.setor !== null && !['comercio','industria','servicos'].includes(b.setor)) {
+      return res.status(400).json({success:false,error:{code:'INVALID_PRICING_SECTOR',message:'O segmento informado para a precificação é inválido.'}});
+    }
+    if(!['full','quick'].includes(b.pricing_type)) return res.status(400).json({success:false,error:{code:'INVALID_PRICING_TYPE',message:'Tipo de precificação inválido.'}});
+    if(b.product_id) {
+      const product=await pool.query('SELECT id FROM public.products WHERE id=$1 AND business_id=$2 AND status=\'active\'',[b.product_id,businessId]);
+      if(!product.rows[0]) return res.status(400).json({success:false,error:{code:'PRODUCT_NOT_OWNED',message:'O item selecionado não pertence a este negócio ou está arquivado.'}});
+    }
     const snapshot = b.input_snapshot;
     if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot) ||
         !snapshot.costs || typeof snapshot.costs !== 'object' || Array.isArray(snapshot.costs) ||
-        !snapshot.taxes || typeof snapshot.taxes !== 'object' || Array.isArray(snapshot.taxes)) {
-      return res.status(400).json({success:false,error:{code:'INVALID_PRICING_SNAPSHOT',message:'Os custos e percentuais originais são necessários para validar o cálculo.'}});
+        !snapshot.taxes || typeof snapshot.taxes !== 'object' || Array.isArray(snapshot.taxes) ||
+        !b.result_snapshot || typeof b.result_snapshot !== 'object' || Array.isArray(b.result_snapshot)) {
+      return res.status(400).json({success:false,error:{code:'INVALID_PRICING_SNAPSHOT',message:'Os custos, percentuais e resultado original são necessários para registrar o histórico.'}});
     }
     let authoritative;
     try {
@@ -522,31 +544,6 @@ app.post('/api/pricings', async (req,res) => {
     b.setor = authoritative.sector === 'servico' ? 'servicos' : authoritative.sector;
     b.result_snapshot = { ...b.result_snapshot, server_calculation: authoritative };
     b.calculation_version = authoritative.calculationVersion;
-    const numeric=['custo_total','preco_sugerido','markup','margem_lucro','impostos','quantity','direct_cost','allocated_fixed_cost','variable_expenses_percent','desired_margin_percent','effective_margin_percent'];
-    for(const key of numeric) if(b[key]!==undefined && b[key]!==null && (typeof b[key]!=='number'||!Number.isFinite(b[key]))) {
-      return res.status(400).json({success:false,error:{code:'INVALID_PRICING_NUMBER',message:'Um dos valores numéricos da precificação é inválido.'}});
-    }
-    const nonNegative=['custo_total','preco_sugerido','markup','direct_cost','allocated_fixed_cost'];
-    if(nonNegative.some(key => b[key] !== undefined && b[key] !== null && b[key] < 0) ||
-       (b.quantity !== undefined && b.quantity !== null && b.quantity <= 0)) {
-      return res.status(400).json({success:false,error:{code:'INVALID_PRICING_RANGE',message:'Custos, preço e markup não podem ser negativos; a quantidade deve ser maior que zero.'}});
-    }
-    const percentages=['impostos','margem_lucro','variable_expenses_percent','desired_margin_percent'];
-    if(percentages.some(key => b[key] !== undefined && b[key] !== null && (b[key] < 0 || b[key] >= 100))) {
-      return res.status(400).json({success:false,error:{code:'INVALID_PRICING_PERCENTAGE',message:'Percentuais de taxas e margem devem estar entre 0% e menos de 100%.'}});
-    }
-    if(b.setor !== undefined && b.setor !== null && !['comercio','industria','servicos'].includes(b.setor)) {
-      return res.status(400).json({success:false,error:{code:'INVALID_PRICING_SECTOR',message:'O segmento informado para a precificação é inválido.'}});
-    }
-    if(!['full','quick'].includes(b.pricing_type)) return res.status(400).json({success:false,error:{code:'INVALID_PRICING_TYPE',message:'Tipo de precificação inválido.'}});
-    if(!b.input_snapshot||typeof b.input_snapshot!=='object'||Array.isArray(b.input_snapshot)||
-       !b.result_snapshot||typeof b.result_snapshot!=='object'||Array.isArray(b.result_snapshot)) {
-      return res.status(400).json({success:false,error:{code:'INVALID_PRICING_SNAPSHOT',message:'Os dados da precificação estão incompletos.'}});
-    }
-    if(b.product_id) {
-      const product=await pool.query('SELECT id FROM public.products WHERE id=$1 AND business_id=$2 AND status=\'active\'',[b.product_id,businessId]);
-      if(!product.rows[0]) return res.status(400).json({success:false,error:{code:'PRODUCT_NOT_OWNED',message:'O item selecionado não pertence a este negócio ou está arquivado.'}});
-    }
     const result=await pool.query(
       `INSERT INTO public.precificacoes
        (business_id,product_id,pricing_type,status,unit,quantity,direct_cost,allocated_fixed_cost,
@@ -555,11 +552,10 @@ app.post('/api/pricings', async (req,res) => {
         input_snapshot,result_snapshot,calculation_version)
        VALUES ($1,$2,$3,'completed',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17::jsonb,$18::jsonb,$19)
        RETURNING *`,
-      [businessId,b.product_id||null,b.pricing_type,b.unit||null,b.quantity??null,b.direct_cost??null,
-       b.allocated_fixed_cost??null,b.variable_expenses_percent??null,b.desired_margin_percent??null,
-       b.effective_margin_percent??null,b.custo_total??null,b.preco_sugerido??null,b.markup??null,
-       b.margem_lucro??null,b.impostos??null,b.setor||null,JSON.stringify(b.input_snapshot),
-       JSON.stringify(b.result_snapshot),typeof b.calculation_version==='string'?b.calculation_version.slice(0,80):'frontend-preview-v1']
+      [businessId,b.product_id||null,b.pricing_type,b.unit||null,b.quantity??null,b.direct_cost,
+       null,b.variable_expenses_percent,b.desired_margin_percent,b.effective_margin_percent,
+       b.custo_total,b.preco_sugerido,b.markup,b.margem_lucro,b.impostos,b.setor,
+       JSON.stringify(b.input_snapshot),JSON.stringify(b.result_snapshot),b.calculation_version]
     );
     return res.status(201).json({success:true,data:{pricing:result.rows[0]}});
   } catch(error) {
