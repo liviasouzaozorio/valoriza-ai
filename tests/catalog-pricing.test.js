@@ -259,3 +259,68 @@ test('POST pricing rejects non-finite numeric values before inserting', async ()
   assert.equal(response.body.error.code, 'INVALID_PRICING_NUMBER');
   assert.equal(insertAttempted, false);
 });
+
+test('POST pricing rejects negative costs and zero quantity', async () => {
+  let insertAttempted = false;
+  app.pool.query = async (sql) => {
+    if (sql.includes('SELECT id FROM public.businesses')) return { rows: [{ id: businessId }] };
+    if (sql.includes('INSERT INTO public.precificacoes')) insertAttempted = true;
+    return { rows: [] };
+  };
+  const response = await request('/api/pricings', {
+    method: 'POST',
+    body: {
+      pricing_type: 'full',
+      direct_cost: -1,
+      quantity: 1,
+      input_snapshot: {},
+      result_snapshot: {}
+    }
+  });
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error.code, 'INVALID_PRICING_RANGE');
+  assert.equal(insertAttempted, false);
+});
+
+test('POST pricing rejects margin and tax percentages outside the valid range', async () => {
+  let insertAttempted = false;
+  app.pool.query = async (sql) => {
+    if (sql.includes('SELECT id FROM public.businesses')) return { rows: [{ id: businessId }] };
+    if (sql.includes('INSERT INTO public.precificacoes')) insertAttempted = true;
+    return { rows: [] };
+  };
+  const response = await request('/api/pricings', {
+    method: 'POST',
+    body: {
+      pricing_type: 'full',
+      margem_lucro: 100,
+      impostos: 10,
+      input_snapshot: {},
+      result_snapshot: {}
+    }
+  });
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error.code, 'INVALID_PRICING_PERCENTAGE');
+  assert.equal(insertAttempted, false);
+});
+
+test('POST pricing rejects unknown business sectors', async () => {
+  let insertAttempted = false;
+  app.pool.query = async (sql) => {
+    if (sql.includes('SELECT id FROM public.businesses')) return { rows: [{ id: businessId }] };
+    if (sql.includes('INSERT INTO public.precificacoes')) insertAttempted = true;
+    return { rows: [] };
+  };
+  const response = await request('/api/pricings', {
+    method: 'POST',
+    body: {
+      pricing_type: 'quick',
+      setor: 'unknown',
+      input_snapshot: {},
+      result_snapshot: {}
+    }
+  });
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error.code, 'INVALID_PRICING_SECTOR');
+  assert.equal(insertAttempted, false);
+});
