@@ -2209,7 +2209,7 @@
                     <p class="page-subtitle">Estruture custos por setor, revise impostos e gere uma prévia transparente antes de salvar no histórico.</p>
                 </div>
                 <div class="page-header-actions">
-                    <button type="button" class="btn btn-ghost btn-sm" id="wiz-reset-btn">Reiniciar assistente</button>
+                    <button type="button" class="btn btn-ghost btn-sm" id="wiz-reset-btn" title="Limpa o rascunho atual e volta à primeira etapa. Não altera precificações salvas." aria-label="Limpar e recomeçar a precificação">Limpar e recomeçar</button>
                 </div>
             </div>
 
@@ -2242,10 +2242,12 @@
         `;
 
         document.getElementById('wiz-reset-btn').addEventListener('click', () => {
+            const confirmed = window.confirm('Deseja limpar os dados desta precificação e começar novamente? O rascunho atual será descartado, mas as precificações já salvas no histórico não serão alteradas.');
+            if (!confirmed) return;
             UI.wizard = defaultWizardDraft();
             DraftStore.clear();
             renderWizard(root);
-            UI.toast('Assistente reiniciado.', 'info');
+            UI.toast('Formulário limpo. Você pode começar uma nova precificação.', 'info');
         });
 
         document.getElementById('wiz-resume-draft')?.addEventListener('click', () => {
