@@ -66,6 +66,235 @@ async function authenticateSupabaseRequest(req) {
   return typeof user.id === 'string' ? user : null;
 }
 
+
+const BUSINESS_SECTORS = new Set(['comercio', 'industria', 'servicos']);
+const BUSINESS_ADDITIONAL_FIELDS = new Set(['entrepreneur_name', 'tax_regime', 'location_text', 'notes']);
+const BUSINESS_PROFILE_COLUMNS = 'id, name, sector, description, operating_model, currency_code, target_margin_percent, additional_data, created_at, updated_at';
+
+function normalizeBusinessSector(value) {
+  return value === 'servico' ? 'servicos' : value;
+}
+
+function nullableProfileText(value, maxLength, fieldName) {
+  if (value === null) return null;
+  if (typeof value !== 'string') {
+    const error = new Error(`O campo ${fieldName} deve ser um texto ou nulo.`);
+    error.statusCode = 400;
+    error.code = 'INVALID_PROFILE_FIELD';
+    throw error;
+  }
+  const normalized = value.trim();
+  if (normalized.length > maxLength) {
+    const error = new Error(`O campo ${fieldName} excede o limite permitido.`);
+    error.statusCode = 400;
+    error.code = 'INVALID_PROFILE_FIELD';
+    throw error;
+  }
+  return normalized || null;
+}
+
+function validateBusinessProfilePatch(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    const error = new Error('Envie os dados do perfil em formato válido.');
+    error.statusCode = 400;
+    error.code = 'INVALID_PROFILE_PAYLOAD';
+    throw error;
+  }
+
+  const allowedFields = new Set([
+    'name', 'sector', 'description', 'operating_model',
+    'currency_code', 'target_margin_percent', 'additional_data'
+  ]);
+  if (Object.keys(body).some((key) => !allowedFields.has(key))) {
+    const error = new Error('A atualização contém campos não permitidos.');
+    error.statusCode = 400;
+    error.code = 'UNKNOWN_PROFILE_FIELD';
+    throw error;
+  }
+  if (!Object.keys(body).length) {
+    const error = new Error('Informe ao menos um campo para atualizar.');
+    error.statusCode = 400;
+    error.code = 'EMPTY_PROFILE_PATCH';
+    throw error;
+  }
+
+  const patch = {};
+  if (Object.prototype.hasOwnProperty.call(body, 'name')) {
+    const name = nullableProfileText(body.name, 160, 'name');
+    if (!name) {
+      const error = new Error('Informe o nome do negócio.');
+      error.statusCode = 400;
+      error.code = 'BUSINESS_NAME_REQUIRED';
+      throw error;
+    }
+    patch.name = name;
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'sector')) {
+    const sector = body.sector === null ? null : normalizeBusinessSector(body.sector);
+    if (sector !== null && (typeof sector !== 'string' || !BUSINESS_SECTORS.has(sector))) {
+      const error = new Error('Selecione um segmento válido.');
+      error.statusCode = 400;
+      error.code = 'INVALID_BUSINESS_SECTOR';
+      throw error;
+    }
+    patch.sector = sector;
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'description')) {
+    patch.description = nullableProfileText(body.description, 2000, 'description');
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'operating_model')) {
+    patch.operating_model = nullableProfileText(body.operating_model, 160, 'operating_model');
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'currency_code')) {
+    if (typeof body.currency_code !== 'string' || !/^[A-Za-z]{3}$/.test(body.currency_code.trim())) {
+      const error = new Error('Informe um código de moeda válido.');
+      error.statusCode = 400;
+      error.code = 'INVALID_CURRENCY_CODE';
+      throw error;
+    }
+    patch.currency_code = body.currency_code.trim().toUpperCase();
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'target_margin_percent')) {
+    const value = body.target_margin_percent;
+    if (value !== null && (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value >= 100)) {
+      const error = new Error('A meta de margem deve estar entre 0% e 99%, ou ser nula.');
+      error.statusCode = 400;
+      error.code = 'INVALID_TARGET_MARGIN';
+      throw error;
+    }
+    patch.target_margin_percent = value;
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'additional_data')) {
+    const data = body.additional_data;
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      const error = new Error('As informações complementares estão em formato inválido.');
+      error.statusCode = 400;
+      error.code = 'INVALID_ADDITIONAL_DATA';
+      throw error;
+    }
+    const keys = Object.keys(data);
+    if (keys.some((key) => !BUSINESS_ADDITIONAL_FIELDS.has(key))) {
+      const error = new Error('As informações complementares contêm campos não permitidos.');
+      error.statusCode = 400;
+      error.code = 'UNKNOWN_ADDITIONAL_DATA_FIELD';
+      throw error;
+    }
+    const normalized = {};
+    const limits = { entrepreneur_name: 160, tax_regime: 120, location_text: 180, notes: 1000 };
+    for (const key of keys) normalized[key] = nullableProfileText(data[key], limits[key], key);
+    if (keys.length) patch.additional_data = normalized;
+  }
+  return patch;
+}
+
+app.post('/api/business/ensure', async (req, res) => {
+  try {
+    const user = await authenticateSupabaseRequest(req);
+    if (!user) {
+      return res.status(401).json({ success: false, error: { code: 'UNAUTHENTICATED', message: 'Sessão inválida ou expirada.' } });
+    }
+
+    const metadata = user.user_metadata && typeof user.user_metadata === 'object' ? user.user_metadata : {};
+    const requestedName = typeof metadata.company_name === 'string' ? metadata.company_name.trim().slice(0, 160) : '';
+    const requestedSector = normalizeBusinessSector(metadata.sector);
+    const name = requestedName || 'Meu negócio';
+    const sector = BUSINESS_SECTORS.has(requestedSector) ? requestedSector : 'comercio';
+
+    const inserted = await pool.query(
+      `INSERT INTO public.businesses (owner_user_id, name, sector)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (owner_user_id) DO NOTHING
+       RETURNING id, name, sector`,
+      [user.id, name, sector]
+    );
+    const business = inserted.rows[0] || (await pool.query(
+      'SELECT id, name, sector FROM public.businesses WHERE owner_user_id = $1 LIMIT 1',
+      [user.id]
+    )).rows[0];
+
+    if (!business) {
+      return res.status(503).json({ success: false, error: { code: 'BUSINESS_UNAVAILABLE', message: 'Não foi possível preparar seu negócio agora.' } });
+    }
+    return res.status(inserted.rows.length ? 201 : 200).json({ success: true, data: { business } });
+  } catch (error) {
+    console.error('Erro ao preparar negócio:', error?.code || 'BUSINESS_ENSURE_ERROR');
+    return res.status(503).json({ success: false, error: { code: 'BUSINESS_UNAVAILABLE', message: 'Não foi possível preparar seu negócio agora.' } });
+  }
+});
+
+app.get('/api/business/profile', async (req, res) => {
+  try {
+    const user = await authenticateSupabaseRequest(req);
+    if (!user) {
+      return res.status(401).json({ success: false, error: { code: 'UNAUTHENTICATED', message: 'Sessão inválida ou expirada.' } });
+    }
+    const result = await pool.query(
+      `SELECT ${BUSINESS_PROFILE_COLUMNS}
+       FROM public.businesses
+       WHERE owner_user_id = $1
+       LIMIT 1`,
+      [user.id]
+    );
+    if (!result.rows[0]) {
+      return res.status(404).json({ success: false, error: { code: 'BUSINESS_NOT_FOUND', message: 'Não encontramos o perfil do seu negócio.' } });
+    }
+    return res.json({ success: true, data: { business: result.rows[0] } });
+  } catch (error) {
+    console.error('Erro ao carregar perfil do negócio:', error?.code || 'BUSINESS_PROFILE_READ_ERROR');
+    return res.status(503).json({ success: false, error: { code: 'BUSINESS_PROFILE_UNAVAILABLE', message: 'Não foi possível carregar seu perfil agora.' } });
+  }
+});
+
+app.patch('/api/business/profile', async (req, res) => {
+  try {
+    const user = await authenticateSupabaseRequest(req);
+    if (!user) {
+      return res.status(401).json({ success: false, error: { code: 'UNAUTHENTICATED', message: 'Sessão inválida ou expirada.' } });
+    }
+
+    const patch = validateBusinessProfilePatch(req.body);
+    const values = [];
+    const assignments = [];
+    const addAssignment = (column, value) => {
+      values.push(value);
+      assignments.push(`${column} = $${values.length}`);
+    };
+
+    for (const column of ['name', 'sector', 'description', 'operating_model', 'currency_code', 'target_margin_percent']) {
+      if (Object.prototype.hasOwnProperty.call(patch, column)) addAssignment(column, patch[column]);
+    }
+    if (patch.additional_data && Object.keys(patch.additional_data).length) {
+      values.push(JSON.stringify(patch.additional_data));
+      assignments.push(`additional_data = COALESCE(additional_data, '{}'::jsonb) || $${values.length}::jsonb`);
+    }
+    if (!assignments.length) {
+      return res.status(400).json({ success: false, error: { code: 'EMPTY_PROFILE_PATCH', message: 'Informe ao menos um campo para atualizar.' } });
+    }
+
+    values.push(user.id);
+    const result = await pool.query(
+      `UPDATE public.businesses
+       SET ${assignments.join(', ')}, updated_at = NOW()
+       WHERE owner_user_id = $${values.length}
+       RETURNING ${BUSINESS_PROFILE_COLUMNS}`,
+      values
+    );
+    if (!result.rows[0]) {
+      return res.status(404).json({ success: false, error: { code: 'BUSINESS_NOT_FOUND', message: 'Não encontramos o perfil do seu negócio.' } });
+    }
+    return res.json({ success: true, data: { business: result.rows[0] } });
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: { code: error.code || 'INVALID_PROFILE', message: error.message }
+      });
+    }
+    console.error('Erro ao atualizar perfil do negócio:', error?.code || 'BUSINESS_PROFILE_WRITE_ERROR');
+    return res.status(503).json({ success: false, error: { code: 'BUSINESS_PROFILE_UNAVAILABLE', message: 'Não foi possível salvar seu perfil agora.' } });
+  }
+});
+
 app.get('/api/preferences/sidebar', async (req, res) => {
   try {
     const user = await authenticateSupabaseRequest(req);
