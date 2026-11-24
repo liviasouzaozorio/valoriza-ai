@@ -1935,6 +1935,28 @@ body, .app-shell, .main-viewport { color: var(--text-primary); }
     color: var(--text-primary);
 }
 
+/* Tabelas renderizadas em modais também usam superfícies claras. */
+.modal-body .data-table thead tr,
+.modal-body .data-table tbody tr,
+.modal-body .data-table tbody tr:hover {
+    background-color: #FFFFFF;
+}
+
+.modal-body .data-table thead th {
+    color: #64748B;
+    border-bottom-color: #DCE5EF;
+}
+
+.modal-body .data-table tbody td,
+.modal-body .data-table tbody tr:hover td {
+    color: #19263A;
+    border-bottom-color: #E2E8F0;
+}
+
+.modal-body .data-table tbody tr:hover {
+    background-color: #F1F5F9;
+}
+
 .modal-body .chart-legend,
 .main-viewport .chart-legend {
     color: var(--text-secondary);
