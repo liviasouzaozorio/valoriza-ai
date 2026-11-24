@@ -4145,48 +4145,54 @@
             ApiService.listPricings()
         ]);
 
-        const [profileResult, operationsResult] = await Promise.allSettled([
+        const dataSyncPromise = Promise.allSettled([
             profilePromise,
             operationsPromise
-        ]);
+        ]).then(([profileResult, operationsResult]) => {
+            if (profileResult.status === 'fulfilled') {
+                remoteBusinessProfile = profileResult.value;
+            } else {
+                profileLoadError = profileResult.reason;
+                console.error('Não foi possível sincronizar o perfil do negócio.', profileLoadError);
+            }
 
-        if (profileResult.status === 'fulfilled') {
-            remoteBusinessProfile = profileResult.value;
-        } else {
-            profileLoadError = profileResult.reason;
-            console.error('Não foi possível sincronizar o perfil do negócio.', profileLoadError);
-        }
+            if (operationsResult.status === 'fulfilled') {
+                const [products, pricings] = operationsResult.value;
+                remoteProducts = products.map(mapProductFromApi);
+                remotePricings = pricings.map(mapPricingFromApi);
+            } else {
+                operationalLoadError = operationsResult.reason;
+                console.error('Não foi possível sincronizar catálogo e histórico.', operationalLoadError);
+            }
 
-        if (operationsResult.status === 'fulfilled') {
-            const [products, pricings] = operationsResult.value;
-            remoteProducts = products.map(mapProductFromApi);
-            remotePricings = pricings.map(mapPricingFromApi);
-        } else {
-            operationalLoadError = operationsResult.reason;
-            console.error('Não foi possível sincronizar catálogo e histórico.', operationalLoadError);
-        }
-        if (remoteProducts !== null) WorkspaceStore.state.catalog = remoteProducts;
-        if (remotePricings !== null) WorkspaceStore.state.pricings = remotePricings;
-        if (remoteBusinessProfile) {
-            const additional = remoteBusinessProfile.additional_data || {};
-            WorkspaceStore.state.business = {
-                ...WorkspaceStore.state.business,
-                nomeNegocio: remoteBusinessProfile.name || '',
-                segmento: remoteBusinessProfile.sector === 'servicos' ? 'servico' : (remoteBusinessProfile.sector || ''),
-                descricao: remoteBusinessProfile.description || '',
-                modeloOperacao: remoteBusinessProfile.operating_model || '',
-                margemMeta: remoteBusinessProfile.target_margin_percent ?? null,
-                empreendedor: additional.entrepreneur_name || '',
-                regimeInformativo: additional.tax_regime || '',
-                cidadeUf: additional.location_text || '',
-                observacoes: additional.notes || '',
-                atualizadoEm: remoteBusinessProfile.updated_at || null
-            };
-            WorkspaceStore.save();
-        }
+            if (remoteProducts !== null) WorkspaceStore.state.catalog = remoteProducts;
+            if (remotePricings !== null) WorkspaceStore.state.pricings = remotePricings;
+            if (remoteBusinessProfile) {
+                const additional = remoteBusinessProfile.additional_data || {};
+                WorkspaceStore.state.business = {
+                    ...WorkspaceStore.state.business,
+                    nomeNegocio: remoteBusinessProfile.name || '',
+                    segmento: remoteBusinessProfile.sector === 'servicos' ? 'servico' : (remoteBusinessProfile.sector || ''),
+                    descricao: remoteBusinessProfile.description || '',
+                    modeloOperacao: remoteBusinessProfile.operating_model || '',
+                    margemMeta: remoteBusinessProfile.target_margin_percent ?? null,
+                    empreendedor: additional.entrepreneur_name || '',
+                    regimeInformativo: additional.tax_regime || '',
+                    cidadeUf: additional.location_text || '',
+                    observacoes: additional.notes || '',
+                    atualizadoEm: remoteBusinessProfile.updated_at || null
+                };
+                WorkspaceStore.save();
+            }
 
-        if (UI.currentView === 'dashboard') UI.renderCurrentView();
-
+            if (UI.currentView === 'dashboard') UI.renderCurrentView();
+            if (profileLoadError) {
+                UI.toast('Não foi possível sincronizar o perfil com sua conta. Suas informações locais foram preservadas; tente novamente mais tarde.', 'error');
+            }
+            if (operationalLoadError) {
+                UI.toast('Não foi possível atualizar catálogo e histórico. Os dados locais foram preservados.', 'error');
+            }
+        });
         const shell = document.getElementById('app-shell');
         const collapseButton = document.getElementById('sidebar-collapse-btn');
         const mobileMenuButton = document.getElementById('mobile-menu-btn');
@@ -4375,12 +4381,8 @@
 
         UI.updateChrome();
         UI.renderCurrentView();
-        if (profileLoadError) {
-            UI.toast('Não foi possível sincronizar o perfil com sua conta. Suas informações locais foram preservadas; tente novamente mais tarde.', 'error');
-        }
-        if (operationalLoadError) {
-            UI.toast('Não foi possível atualizar catálogo e histórico. Os dados locais foram preservados.', 'error');
-        }
+        // Sincronização continua em segundo plano, sem bloquear navegação ou interação.
+        dataSyncPromise;
     }
 
     document.addEventListener('DOMContentLoaded', init);
