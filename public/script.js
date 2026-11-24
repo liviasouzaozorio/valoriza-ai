@@ -1365,12 +1365,11 @@
         const saudacaoNome = business.empreendedor?.trim() || business.nomeNegocio?.trim();
         const saudacaoTitulo = saudacaoNome ? `${Formatter.greeting()}, ${Formatter.escapeHtml(saudacaoNome)}` : `${Formatter.greeting()}!`;
 
-        const latestPricing = latestPricings.length
-            ? [...latestPricings].sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm))[0]
-            : null;
-        const latestSavedPricing = pricings.length
-            ? [...pricings].sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm))[0]
-            : null;
+        const activePricingRecords = getActivePricingRecords(pricings, catalog);
+        const recentPricings = [...activePricingRecords]
+            .sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm))
+            .slice(0, 5);
+        const latestSavedPricing = recentPricings[0] || null;
 
         root.innerHTML = `
             <div class="page-header">
@@ -1405,9 +1404,9 @@
                     <div class="kpi-meta">${activeItems.length === 0 ? 'Nenhum item ativo no catálogo' : `${archivedItemsCount} arquivado(s)`}</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Precificações realizadas</div>
-                    <div class="kpi-value">${pricings.length}</div>
-                    <div class="kpi-meta">${pricings.length === 0 ? 'Salve uma precificação para iniciar o histórico' : `Última em ${Formatter.dateShort(latestSavedPricing.criadoEm)}`}</div>
+                    <div class="kpi-label">Versões em itens ativos</div>
+                    <div class="kpi-value">${activePricingRecords.length}</div>
+                    <div class="kpi-meta">${activePricingRecords.length === 0 ? 'Nenhuma versão vinculada a item ativo' : `Atualizada em ${Formatter.dateShort(latestSavedPricing.criadoEm)}`}</div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-label">Margem planejada média</div>
@@ -1425,37 +1424,36 @@
                 </div>
             </div>
 
-            <div class="dashboard-charts-grid">
-                <section class="surface-card">
-                    <div class="card-header">
-                        <div>
-                            <h2 class="card-title">Evolução das precificações</h2>
-                            <p class="card-subtitle">Histórico de preço sugerido e custo unitário ao longo das versões salvas.</p>
-                        </div>
-                    </div>
-                    <div id="dash-chart-evolution" class="chart-container"></div>
-                </section>
-
-                <section class="surface-card">
-                    <div class="card-header">
-                        <div>
-                            <h2 class="card-title">Distribuição dos custos</h2>
-                            <p class="card-subtitle">${latestPricing ? `Composição do último registro: ${Formatter.escapeHtml(latestPricing.itemNome)}` : 'Composição por categoria de custo'}</p>
-                        </div>
-                    </div>
-                    <div id="dash-chart-costs" class="chart-container"></div>
-                </section>
-            </div>
-
             <div class="dashboard-bottom-grid">
                 <section class="surface-card">
                     <div class="card-header">
                         <div>
-                            <h2 class="card-title">Margem planejada por item</h2>
-                            <p class="card-subtitle">${target === null ? 'Margens planejadas por item (não representam vendas realizadas). Defina uma meta em Meu negócio para comparar.' : `Margem planejada comparada à meta de ${Formatter.percent(target, 0)} (não representa venda realizada).`}</p>
+                            <h2 class="card-title">Atividade recente</h2>
+                            <p class="card-subtitle">Últimas versões salvas em produtos e serviços ativos.</p>
                         </div>
+                        <button type="button" class="btn btn-ghost btn-sm" id="dash-history-btn">Ver histórico</button>
                     </div>
-                    <div id="dash-chart-margin" class="chart-container"></div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Item / versão</th>
+                                    <th>Data</th>
+                                    <th class="num">Preço sugerido</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${recentPricings.length ? recentPricings.map(p => `
+                                    <tr>
+                                        <td>${Formatter.escapeHtml(p.itemNome)} <span class="mono" style="color:var(--color-silver);">v${p.versao}</span></td>
+                                        <td>${Formatter.dateShort(p.criadoEm)}</td>
+                                        <td class="num">${Formatter.brl(p.precoSugerido)}</td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="3">Nenhuma precificação vinculada a item ativo.</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="card-subtitle" style="margin-top:12px;">A atividade mostra registros salvos; não representa vendas ou faturamento.</p>
                 </section>
 
                 <section class="surface-card">
@@ -1470,16 +1468,10 @@
             </div>
         `;
 
-        ChartRenderer.renderPriceEvolutionChart(document.getElementById('dash-chart-evolution'), activePricingRecords);
-        ChartRenderer.renderCostDistributionChart(
-            document.getElementById('dash-chart-costs'),
-            latestPricing ? latestPricing.categoriasCusto : [],
-            latestPricing ? latestPricing.custoTotal : 0
-        );
-        ChartRenderer.renderPlannedMarginChart(document.getElementById('dash-chart-margin'), latestPricings, target);
+        document.getElementById('dash-history-btn')?.addEventListener('click', () => UI.navigate('historico'));
 
         const insightsContainer = document.getElementById('dash-insights-content');
-        if (activePricingCount === 0) {
+        if (activePricingRecords.length === 0) {
             insightsContainer.innerHTML = `
                 <div class="nilo-spotlight" style="border:0;padding:8px 0;background:transparent;">
                     <div class="nilo-avatar-box">
@@ -3487,7 +3479,7 @@
                     <div class="card-header">
                         <div>
                             <h2 class="card-title">Evolução de preços e custos</h2>
-                            <p class="card-subtitle">Comparativo cronológico entre custo unitário e preço sugerido.</p>
+                            <p class="card-subtitle">${selectedId === 'all' ? 'Selecione um item para comparar suas versões, sem misturar unidades de negócios diferentes.' : 'Comparativo cronológico das versões deste item.'}</p>
                         </div>
                     </div>
                     <div id="ana-chart-evo"></div>
@@ -3497,7 +3489,7 @@
                     <div class="card-header">
                         <div>
                             <h2 class="card-title">Composição de custos por categoria</h2>
-                            <p class="card-subtitle">Referência: ${Formatter.escapeHtml(latestFocus.itemNome)} (v${latestFocus.versao})</p>
+                            <p class="card-subtitle">${selectedId === 'all' ? 'Selecione um item para consultar a composição da sua versão mais recente.' : `Referência: ${Formatter.escapeHtml(latestFocus.itemNome)} (v${latestFocus.versao})`}</p>
                         </div>
                     </div>
                     <div id="ana-chart-comp"></div>
@@ -3518,8 +3510,8 @@
                 <section class="surface-card">
                     <div class="card-header">
                         <div>
-                            <h2 class="card-title">Comparação entre versões e preços</h2>
-                            <p class="card-subtitle">Resumo tabular dos registros selecionados.</p>
+                            <h2 class="card-title">Histórico de versões</h2>
+                            <p class="card-subtitle">Registros do escopo selecionado; compare versões do mesmo item.</p>
                         </div>
                     </div>
                     <div class="table-wrap">
@@ -3555,8 +3547,13 @@
             renderAnalyses(root);
         });
 
-        ChartRenderer.renderPriceEvolutionChart(document.getElementById('ana-chart-evo'), ordered);
-        ChartRenderer.renderCostDistributionChart(document.getElementById('ana-chart-comp'), latestFocus.categoriasCusto, latestFocus.custoTotal);
+        if (selectedId === 'all') {
+            document.getElementById('ana-chart-evo').innerHTML = '<div class="empty-state"><p class="empty-state-desc">Escolha um produto ou serviço no filtro acima para acompanhar a evolução do custo e do preço entre versões do mesmo item.</p></div>';
+            document.getElementById('ana-chart-comp').innerHTML = '<div class="empty-state"><p class="empty-state-desc">A composição é exibida por item. Selecione um produto ou serviço para consultar sua versão mais recente.</p></div>';
+        } else {
+            ChartRenderer.renderPriceEvolutionChart(document.getElementById('ana-chart-evo'), ordered);
+            ChartRenderer.renderCostDistributionChart(document.getElementById('ana-chart-comp'), latestFocus.categoriasCusto, latestFocus.custoTotal);
+        }
         ChartRenderer.renderPlannedMarginChart(document.getElementById('ana-chart-margin'), ordered, target);
     }
 
