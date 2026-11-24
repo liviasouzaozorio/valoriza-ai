@@ -432,7 +432,7 @@ function normalizarHistorico(historico) {
 }
 
 app.post('/perguntar', async (req, res) => {
-  const { pergunta, setor, resumoFinanceiro, detalhesCustos, historico } = req.body || {};
+  const { pergunta, setor, resumoFinanceiro, detalhesCustos, historico, conversation_id } = req.body || {};
 
   if (typeof pergunta !== 'string' || !pergunta.trim()) {
     return res.status(400).json({ resposta: 'Escreva uma pergunta para o Nilo.' });
@@ -445,6 +445,35 @@ app.post('/perguntar', async (req, res) => {
   }
 
   try {
+    const user = await authenticateSupabaseRequest(req);
+    if (!user) return res.status(401).json({ resposta: 'Sua sessão expirou. Entre novamente para conversar com o Nilo.' });
+    const businessId = await getOwnedBusinessId(user.id);
+    if (!businessId) return res.status(404).json({ resposta: 'Não encontramos o negócio associado à sua conta.' });
+
+    let conversation;
+    if (conversation_id) {
+      const ownedConversation = await pool.query(
+        `SELECT c.id FROM public.nilo_conversations c
+         WHERE c.id = $1 AND c.business_id = $2 LIMIT 1`,
+        [conversation_id, businessId]
+      );
+      if (!ownedConversation.rows[0]) return res.status(404).json({ resposta: 'Esta conversa não foi encontrada.' });
+      conversation = ownedConversation.rows[0];
+    } else {
+      const created = await pool.query(
+        `INSERT INTO public.nilo_conversations (business_id, title)
+         VALUES ($1, $2) RETURNING id`,
+        [businessId, pergunta.trim().slice(0, 120)]
+      );
+      conversation = created.rows[0];
+    }
+
+    await pool.query(
+      `INSERT INTO public.nilo_messages (conversation_id, role, content, metadata)
+       VALUES ($1, 'user', $2, $3::jsonb)`,
+      [conversation.id, pergunta.trim(), JSON.stringify({ source: 'chat' })]
+    );
+
     const setorValido = ['comercio', 'industria', 'servico'].includes(setor) ? setor : null;
     const instrucaoSistema = `Você é Nilo, assistente do ValorizAI: um assistente generalista com especialidade em empreendedorismo, gestão, mercado, estratégia comercial, operações, custos, precificação, tecnologia e pequenos negócios.
 
@@ -475,7 +504,14 @@ REGRAS DE ATENDIMENTO:
     });
     const chat = model.startChat({ history: normalizarHistorico(historico) });
     const result = await chat.sendMessage(prompt);
-    return res.json({ resposta: result.response.text() });
+    const answer = result.response.text();
+    await pool.query(
+      `INSERT INTO public.nilo_messages (conversation_id, role, content, metadata)
+       VALUES ($1, 'assistant', $2, $3::jsonb)`,
+      [conversation.id, answer, JSON.stringify({ model: 'gemini-2.5-flash' })]
+    );
+    await pool.query('UPDATE public.nilo_conversations SET updated_at = NOW() WHERE id = $1 AND business_id = $2', [conversation.id, businessId]);
+    return res.json({ resposta: answer, conversation_id: conversation.id });
   } catch (error) {
     console.error('Erro ao consultar Nilo:', error?.message || 'AI_ERROR');
     return res.status(500).json({ resposta: 'Não consegui responder agora. Tente novamente em alguns instantes.' });
