@@ -3549,6 +3549,16 @@
                     </div>
                 </section>
             </div>
+
+            <section class="surface-card analysis-evolution-feature">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Evolução histórica de preços e custos</h2>
+                        <p class="card-subtitle">${selectedId === 'all' ? 'Selecione um produto ou serviço no filtro acima para visualizar a evolução das versões desse item.' : 'Visão ampliada do histórico de preço sugerido e custo total deste item.'}</p>
+                    </div>
+                </div>
+                <div id="ana-chart-evo-feature" class="chart-container"></div>
+            </section>
         `;
 
         document.getElementById('ana-item-select').addEventListener('change', e => {
@@ -3557,10 +3567,13 @@
         });
 
         if (selectedId === 'all') {
-            document.getElementById('ana-chart-evo').innerHTML = '<div class="empty-state"><p class="empty-state-desc">Escolha um produto ou serviço no filtro acima para acompanhar a evolução do custo e do preço entre versões do mesmo item.</p></div>';
+            const selectionMessage = '<div class="empty-state"><p class="empty-state-desc">Escolha um produto ou serviço no filtro acima para acompanhar a evolução do custo e do preço entre versões do mesmo item.</p></div>';
+            document.getElementById('ana-chart-evo').innerHTML = selectionMessage;
+            document.getElementById('ana-chart-evo-feature').innerHTML = selectionMessage;
             document.getElementById('ana-chart-comp').innerHTML = '<div class="empty-state"><p class="empty-state-desc">A composição é exibida por item. Selecione um produto ou serviço para consultar sua versão mais recente.</p></div>';
         } else {
             ChartRenderer.renderPriceEvolutionChart(document.getElementById('ana-chart-evo'), ordered);
+            ChartRenderer.renderPriceEvolutionChart(document.getElementById('ana-chart-evo-feature'), ordered);
             ChartRenderer.renderCostDistributionChart(document.getElementById('ana-chart-comp'), latestFocus.categoriasCusto, latestFocus.custoTotal);
         }
         ChartRenderer.renderPlannedMarginChart(document.getElementById('ana-chart-margin'), ordered, target);
