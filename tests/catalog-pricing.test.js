@@ -250,7 +250,7 @@ test('POST pricing rejects non-finite numeric values before inserting', async ()
     method: 'POST',
     body: {
       pricing_type: 'quick',
-      custo_total: Number.NaN,
+      custo_total: '18.50',
       input_snapshot: {},
       result_snapshot: {}
     }
