@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#F1F5F9">
+  <meta name="description" content="Acesse o ValorizAI e organize a precificação do seu negócio.">
+  <title>Acessar | ValorizAI</title>
+  <link rel="icon" type="image/svg+xml" href="/img-valorizaai/logos/valorizai-symbol-gradient-dark.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/auth.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/auth-config.js"></script>
+  <script src="/auth.js" defer></script>
+</head>
+<body class="auth-page">
+  <main class="auth-layout">
+    <section class="auth-aside" aria-label="Sobre o ValorizAI">
+      <a class="auth-brand" href="/auth.html" aria-label="ValorizAI">
+        <img src="/img-valorizaai/logos/valorizai-horizontal-gradient-dark.svg" alt="ValorizAI">
+      </a>
+      <div class="auth-aside-copy">
+        <span class="eyebrow">INTELIGÊNCIA PARA DECISÕES DE PREÇO</span>
+        <h1>Mais clareza para valorizar cada decisão.</h1>
+        <p>Organize custos, entenda suas margens e tome decisões de preço com mais segurança.</p>
+      <div class="auth-nilo-stage" aria-label="Nilo, assistente do ValorizAI">
+        <span class="auth-nilo-orbit auth-nilo-orbit-one" aria-hidden="true"></span>
+        <span class="auth-nilo-orbit auth-nilo-orbit-two" aria-hidden="true"></span>
+        <img src="/img-valorizaai/nilo/nilo-apresentacao.svg" alt="Nilo, o robô assistente do ValorizAI" class="auth-nilo-figure">
+        <span class="auth-nilo-caption">Oi! Eu sou o Nilo. Vamos cuidar dos seus preços?</span>
+      </div>
+      </div>
+      <div class="auth-aside-foot">Precificação mais clara. Gestão mais consciente.</div>
+    </section>
+
+    <section class="auth-main">
+      <div class="auth-card">
+        <div class="auth-mobile-brand">
+          <img src="/img-valorizaai/logos/valorizai-horizontal-gradient-dark.svg" alt="ValorizAI">
+        </div>
+
+        <div id="auth-setup-message" class="auth-alert auth-alert-info" role="status" hidden>
+          O acesso à plataforma está temporariamente indisponível. Tente novamente mais tarde ou entre em contato com o suporte.
+        </div>
+
+        <div id="login-panel">
+          <span class="eyebrow">BEM-VINDA(O)</span>
+          <h2>Acesse sua conta</h2>
+          <p class="auth-description">Entre para cuidar da precificação do seu negócio.</p>
+          <form id="login-form" class="auth-form" novalidate>
+            <label for="login-email">E-mail</label>
+            <input id="login-email" name="email" type="email" autocomplete="email" placeholder="voce@empresa.com" required>
+            <label for="login-password">Senha</label>
+            <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Digite sua senha" required>
+            <div id="login-feedback" class="auth-feedback" role="alert" aria-live="polite"></div>
+            <button class="auth-submit" type="submit">Entrar</button>
+          </form>
+          <p class="auth-switch">Ainda não tem uma conta? <button type="button" class="auth-link" data-auth-view="register">Criar conta</button></p>
+        </div>
+
+        <div id="register-panel" hidden>
+          <span class="eyebrow">COMECE POR AQUI</span>
+          <h2>Crie sua conta</h2>
+          <p class="auth-description">Só o essencial para começar a organizar seu negócio.</p>
+          <form id="register-form" class="auth-form" novalidate>
+            <label for="register-name">Seu nome</label>
+            <input id="register-name" name="name" type="text" autocomplete="name" maxlength="100" placeholder="Como podemos chamar você?" required>
+            <label for="register-company">Nome da empresa</label>
+            <input id="register-company" name="company" type="text" autocomplete="organization" maxlength="120" placeholder="Nome do seu negócio" required>
+            <label for="register-sector">Segmento do negócio</label>
+            <select id="register-sector" name="sector" required>
+              <option value="" selected disabled>Selecione o segmento</option>
+              <option value="comercio">Comércio</option>
+              <option value="industria">Indústria</option>
+              <option value="servicos">Serviços</option>
+            </select>
+            <label for="register-email">E-mail</label>
+            <input id="register-email" name="email" type="email" autocomplete="email" placeholder="voce@empresa.com" required>
+            <label for="register-password">Senha</label>
+            <input id="register-password" name="password" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres" required>
+            <div id="register-feedback" class="auth-feedback" role="alert" aria-live="polite"></div>
+            <button class="auth-submit" type="submit">Criar minha conta</button>
+          </form>
+          <p class="auth-switch">Já tem uma conta? <button type="button" class="auth-link" data-auth-view="login">Fazer login</button></p>
+        </div>
+
+        <p class="auth-legal">Ao continuar, você utiliza o ValorizAI para organizar informações do seu negócio.</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

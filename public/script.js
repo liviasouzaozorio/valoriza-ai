@@ -5,10 +5,70 @@
        1. CONSTANTES E DEFINIÇÕES DE SETORES
        ========================================================================= */
     const STORAGE_KEYS = {
-        WORKSPACE: 'valorizai_workspace_v1',
-        DRAFT: 'valorizai_wizard_draft_v1',
-        SIDEBAR: 'valorizai_sidebar_collapsed_v1'
+        LEGACY_WORKSPACE: 'valorizai_workspace_v1',
+        WORKSPACE: null,
+        DRAFT: null,
+        SIDEBAR: null
     };
+
+    function mapProductFromApi(row) {
+        const extra = row.additional_data || {};
+        return {
+            id: row.id,
+            nome: row.name,
+            descricao: row.description || '',
+            categoria: row.category || '',
+            tipo: extra.subtype || (row.item_type === 'servico' ? 'Serviço' : 'Produto'),
+            setor: row.sector === 'servicos' ? 'servico' : row.sector,
+            unidade: row.unit || 'Unidade',
+            status: row.status === 'archived' ? 'Arquivado' : (extra.status_label || 'Ativo'),
+            criadoEm: row.created_at,
+            atualizadoEm: row.updated_at
+        };
+    }
+
+    function nullableFiniteNumber(value) {
+        if (value === null || value === undefined || value === '') return null;
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    function mapPricingFromApi(row) {
+        const input = row.input_snapshot || {};
+        const snapshot = row.result_snapshot || {};
+        const serverResult = snapshot.server_calculation || {};
+        const extra = snapshot.ui_record || snapshot;
+        return {
+            id: String(row.id),
+            catalogItemId: row.product_id || '',
+            itemNome: row.product_name || input.item_name || 'Item sem nome',
+            versao: Number(extra.versao || snapshot.version || 1),
+            setor: row.setor === 'servicos' ? 'servico' : (row.setor || input.sector || 'comercio'),
+            unidade: row.unit || '',
+            criadoEm: row.data_criacao,
+            custoTotal: nullableFiniteNumber(row.custo_total ?? extra.custoTotal),
+            precoSugerido: nullableFiniteNumber(row.preco_sugerido ?? extra.precoSugerido),
+            markup: nullableFiniteNumber(row.markup ?? extra.markup),
+            margemPlanejada: nullableFiniteNumber(row.margem_lucro ?? extra.margemPlanejada),
+            percentualImpostosTaxas: nullableFiniteNumber(row.impostos ?? extra.percentualImpostosTaxas),
+            valorImpostosTaxas: nullableFiniteNumber(serverResult.valorImpostosTaxas ?? extra.valorImpostosTaxas),
+            lucroEstimado: nullableFiniteNumber(serverResult.lucroEstimado ?? extra.lucroEstimado),
+            fonteCalculo: row.calculation_version || serverResult.calculationVersion || extra.fonteCalculo || 'persistido',
+            categoriasCusto: Array.isArray(serverResult.categoriasCusto)
+                ? serverResult.categoriasCusto
+                : (Array.isArray(extra.categoriasCusto) ? extra.categoriasCusto : []),
+            detalhesCustos: input.costs || {},
+            taxas: input.taxes || {}
+        };
+    }
+
+    function configureUserStorage(userId) {
+        if (!userId || typeof userId !== 'string') throw new Error('Conta autenticada inválida.');
+        const suffix = userId;
+        STORAGE_KEYS.WORKSPACE = `valorizai_workspace_v1:${suffix}`;
+        STORAGE_KEYS.DRAFT = `valorizai_wizard_draft_v1:${suffix}`;
+        STORAGE_KEYS.SIDEBAR = `valorizai_sidebar_collapsed_v1:${suffix}`;
+    }
 
     const NILO_ASSETS = {
         boasVindas: '/img-valorizaai/nilo/nilo-boas-vindas.svg',
@@ -24,6 +84,7 @@
             id: 'comercio',
             nome: 'Comércio',
             subtitulo: 'Revenda, lojas físicas, e-commerce e varejo',
+            orientacaoCustos: 'Informe quanto cada unidade vendida custa para o negócio. Quando uma despesa for mensal, divida pelo número de unidades que espera vender no mês.',
             itemTipoPadrao: 'Produto revendido',
             unidadePadrao: 'Unidade',
             camposCusto: [
@@ -34,7 +95,7 @@
                     tipo: 'currency',
                     obrigatorio: true,
                     placeholder: '0,00',
-                    help: 'Valor pago ao fornecedor por 1 unidade do produto (antes de adicionar frete).'
+                    help: 'Quanto você paga ao fornecedor por uma unidade, sem incluir o frete. Exemplo: se cada peça custa R$ 25, informe 25,00.'
                 },
                 {
                     id: 'freteEntrada',
@@ -43,7 +104,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Divida o frete pago na compra do pedido pela quantidade total de unidades recebidas.'
+                    help: 'Divida o frete total da compra pela quantidade de unidades recebidas. Exemplo: R$ 60 de frete ÷ 20 unidades = R$ 3 por unidade.'
                 },
                 {
                     id: 'seguroDespesasAquisicao',
@@ -52,7 +113,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Rateio por unidade de seguros, DIFAL na entrada ou taxas alfandegárias/emissão.'
+                    help: 'Some os gastos extras para receber a mercadoria e divida pela quantidade de unidades. Informe apenas a parte correspondente a uma unidade.'
                 },
                 {
                     id: 'embalagem',
@@ -61,7 +122,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Caixa, sacola, etiqueta, plástico bolha ou material de proteção usado por venda.'
+                    help: 'Quanto você gasta com a embalagem de uma venda: caixa, sacola, etiqueta ou proteção. Se não usar embalagem, deixe em branco.'
                 },
                 {
                     id: 'outrosVariaveis',
@@ -70,7 +131,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Brindes, montagem rápida ou insumos específicos por unidade vendida.'
+                    help: 'Outros gastos que acontecem a cada venda, como brinde ou montagem. Informe o valor por unidade, não o total do mês.'
                 },
                 {
                     id: 'custosOperacionaisRateados',
@@ -79,7 +140,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Parcela unitária de aluguel, energia e internet. Nunca informe o valor mensal cheio sem dividir pelo volume.'
+                    help: 'Divida os custos fixos do mês (como aluguel, energia e internet) pela quantidade que espera vender no mês. Informe somente o valor de uma unidade.'
                 }
             ]
         },
@@ -87,17 +148,18 @@
             id: 'industria',
             nome: 'Indústria',
             subtitulo: 'Produção própria, artesanal e fabricação em lotes',
+            orientacaoCustos: 'Na indústria, informe os gastos do lote inteiro, não o custo de uma única peça. O sistema distribui esses valores pela quantidade produzida e considera as perdas informadas.',
             itemTipoPadrao: 'Produto fabricado',
             unidadePadrao: 'Unidade (do lote)',
             camposCusto: [
                 {
                     id: 'quantidadeLote',
-                    label: 'Quantidade produzida no lote',
+                    label: 'Quantidade total produzida no lote',
                     categoria: 'Parâmetro de lote',
                     tipo: 'integer',
                     obrigatorio: true,
                     placeholder: '1',
-                    help: 'Informe quantas unidades são fabricadas com os valores de lote abaixo (use 1 se preencher tudo por unidade).'
+                    help: 'Quantas unidades saem da produção antes de descontar perdas. Exemplo: se produzir 100 peças, informe 100. A perda será considerada no campo próprio.'
                 },
                 {
                     id: 'materiaPrima',
@@ -106,7 +168,7 @@
                     tipo: 'currency',
                     obrigatorio: true,
                     placeholder: '0,00',
-                    help: 'Total gasto com a matéria-prima principal para produzir o lote informado acima.'
+                    help: 'Quanto foi gasto, no total, com a matéria-prima principal para fabricar todo esse lote — não o valor de uma peça.'
                 },
                 {
                     id: 'insumos',
@@ -115,7 +177,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Componentes secundários, aditivos, linhas, parafusos ou temperos consumidos no lote.'
+                    help: 'Total gasto com materiais complementares usados no lote, como linhas, parafusos, aditivos ou temperos.'
                 },
                 {
                     id: 'embalagemProducao',
@@ -124,7 +186,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Rótulos, frascos, caixas ou invólucros que integram o produto acabado no lote.'
+                    help: 'Total gasto com rótulos, frascos, caixas ou embalagens usadas nas unidades deste lote.'
                 },
                 {
                     id: 'maoObraDireta',
@@ -133,7 +195,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Custo das horas da equipe diretamente envolvida na produção deste lote.'
+                    help: 'Some o custo das horas das pessoas que trabalharam diretamente na fabricação deste lote. Exemplo: 5 horas × R$ 20 = R$ 100.'
                 },
                 {
                     id: 'cifRateado',
@@ -142,7 +204,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Rateio proporcional de aluguel fabril, manutenção de máquinas e supervisão para este lote.'
+                    help: 'Parcela dos custos da fábrica atribuída a este lote, como aluguel, manutenção e supervisão. Não informe o valor mensal inteiro.'
                 },
                 {
                     id: 'energiaTransformacao',
@@ -151,7 +213,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Energia elétrica, gás, água ou combustível consumidos diretamente no processo produtivo do lote.'
+                    help: 'Valor de energia, gás, água ou combustível usado para produzir este lote. Se a conta for compartilhada, estime a parte consumida na produção.'
                 },
                 {
                     id: 'perdasProducao',
@@ -160,7 +222,7 @@
                     tipo: 'percent',
                     obrigatorio: false,
                     placeholder: '0',
-                    help: 'Percentual esperado de quebra, refugo ou aparas que impactam os insumos do lote.'
+                    help: 'Percentual de unidades que normalmente não ficam prontas para venda por quebra, defeito ou sobra de material. Exemplo: se costuma perder 5 em cada 100 unidades, informe 5.'
                 }
             ]
         },
@@ -168,6 +230,7 @@
             id: 'servico',
             nome: 'Serviços',
             subtitulo: 'Horas técnicas, projetos, atendimentos e especialidade',
+            orientacaoCustos: 'Informe os custos para entregar um serviço completo. Considere o tempo de trabalho, o valor da sua hora e os gastos extras daquele atendimento ou projeto.',
             itemTipoPadrao: 'Serviço',
             unidadePadrao: 'Atendimento / Projeto',
             camposCusto: [
@@ -178,25 +241,25 @@
                     tipo: 'decimal',
                     obrigatorio: true,
                     placeholder: '1',
-                    help: 'Total de horas dedicadas para realizar este serviço ou entrega completa.'
+                    help: 'Quantas horas você ou sua equipe levam para concluir o serviço, incluindo o tempo de preparação e execução. Exemplo: 2 horas e 30 minutos = 2,5.'
                 },
                 {
                     id: 'custoHoraProdutiva',
-                    label: 'Custo da hora produtiva (R$/h)',
-                    categoria: 'Tempo técnico',
+                    label: 'Quanto custa cada hora de trabalho? (R$/h)',
+                    categoria: 'Tempo de trabalho',
                     tipo: 'currency',
                     obrigatorio: true,
-                    placeholder: '0,00',
-                    help: 'Seus custos fixos de operação + pró-labore base divididos pelas horas faturáveis do mês.'
+                    placeholder: 'Ex: 40,00',
+                    help: 'Para estimar: some os custos mensais do negócio e o valor que precisa receber pelo seu trabalho. Divida pelas horas que realmente consegue cobrar dos clientes no mês. Exemplo: R$ 4.000 ÷ 100 horas = R$ 40 por hora.'
                 },
                 {
                     id: 'maoObraContratada',
-                    label: 'Mão de obra própria extra ou contratada',
-                    categoria: 'Execução e terceiros',
+                    label: 'Pagamento de ajudante ou profissional contratado',
+                    categoria: 'Ajuda na execução',
                     tipo: 'currency',
                     obrigatorio: false,
-                    placeholder: '0,00',
-                    help: 'Valor pago a assistentes, freelancers ou técnicos auxiliares neste atendimento específico.'
+                    placeholder: 'Ex: 50,00',
+                    help: 'Quanto você pagará a um ajudante ou profissional por este serviço específico. Se não houver outra pessoa envolvida, deixe em branco.'
                 },
                 {
                     id: 'deslocamento',
@@ -205,7 +268,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Combustível, transporte, estacionamento, pedágio ou alimentação vinculada ao serviço.'
+                    help: 'Gastos para chegar ao cliente ou realizar o atendimento, como combustível, transporte, estacionamento ou pedágio.'
                 },
                 {
                     id: 'materiaisUtilizados',
@@ -214,7 +277,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Peças, insumos ou consumíveis aplicados diretamente durante a execução.'
+                    help: 'Materiais que serão usados ou consumidos durante este serviço, como peças, produtos ou materiais de trabalho.'
                 },
                 {
                     id: 'ferramentasLicencas',
@@ -223,7 +286,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Rateio de softwares, assinaturas ou desgaste de equipamentos usados no trabalho.'
+                    help: 'Parte do custo de ferramentas, softwares ou equipamentos usada neste serviço. Se tiver uma assinatura mensal, estime a parcela correspondente.'
                 },
                 {
                     id: 'outrosEspecificos',
@@ -232,21 +295,22 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Taxas de emissão, ART, impressões ou custos pontuais exigidos pelo projeto.'
+                    help: 'Outras despesas específicas deste trabalho, como taxas, impressões ou documentos técnicos.'
                 }
             ]
         }
     };
 
     const VIEW_LABELS = {
-        dashboard: 'Dashboard',
-        negocio: 'Meu negócio',
-        catalogo: 'Catálogo',
-        precificacao: 'Precificação',
+        dashboard: 'Visão geral',
+        negocio: 'Perfil da empresa',
+        catalogo: 'Produtos e serviços',
+        precificacao: 'Nova precificação',
         simulacao: 'Simulação rápida',
         historico: 'Histórico',
-        analises: 'Análises',
-        consultor: 'Consultor IA',
+        analises: 'Custos e rentabilidade',
+        consultor: 'Nilo',
+        conta: 'Minha conta',
         configuracoes: 'Configurações'
     };
 
@@ -255,8 +319,9 @@
        ========================================================================= */
     const Formatter = {
         brl(value) {
+            if (value === null || value === undefined || value === '') return '—';
             const num = Number(value);
-            if (!Number.isFinite(num)) return 'R$ 0,00';
+            if (!Number.isFinite(num)) return '—';
             return num.toLocaleString('pt-BR', {
                 style: 'currency',
                 currency: 'BRL',
@@ -265,20 +330,26 @@
             });
         },
         num(value, decimals = 2) {
+            if (value === null || value === undefined || value === '') return '—';
             const n = Number(value);
-            if (!Number.isFinite(n)) return '0';
+            if (!Number.isFinite(n)) return '—';
             return n.toLocaleString('pt-BR', {
                 minimumFractionDigits: decimals,
                 maximumFractionDigits: decimals
             });
         },
         percent(value, decimals = 1) {
+            if (value === null || value === undefined || value === '') return '—';
             const n = Number(value);
-            if (!Number.isFinite(n)) return '0,0%';
+            if (!Number.isFinite(n)) return '—';
             return `${n.toLocaleString('pt-BR', {
                 minimumFractionDigits: decimals,
                 maximumFractionDigits: decimals
             })}%`;
+        },
+        multiplier(value) {
+            const n = nullableFiniteNumber(value);
+            return n === null ? '—' : `${n.toFixed(2)}x`;
         },
         dateShort(iso) {
             if (!iso) return '—';
@@ -324,8 +395,18 @@
         renderMarkdown(text) {
             const raw = String(text || '');
             if (window.marked && typeof window.marked.parse === 'function') {
-                const escaped = raw.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
-                return window.marked.parse(escaped);
+                const parsed = window.marked.parse(raw);
+                const template = document.createElement('template');
+                template.innerHTML = parsed;
+                template.content.querySelectorAll('script, style, iframe, object, embed, form').forEach(node => node.remove());
+                template.content.querySelectorAll('*').forEach(node => {
+                    [...node.attributes].forEach(attr => {
+                        if (/^on/i.test(attr.name) || ((attr.name === 'href' || attr.name === 'src') && /^\s*javascript:/i.test(attr.value))) {
+                            node.removeAttribute(attr.name);
+                        }
+                    });
+                });
+                return template.innerHTML;
             }
             return `<p>${Formatter.escapeHtml(raw).replace(/\n+/g, '</p><p>')}</p>`;
         },
@@ -348,6 +429,21 @@
         }
     };
 
+
+    function fieldInfoIcon(description) {
+        if (!description) return '';
+        const safeDescription = Formatter.escapeHtml(description);
+        return `<span class="field-info" tabindex="0" role="img" aria-label="Informações do campo: ${safeDescription}" data-tooltip="${safeDescription}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 8h.01"></path>
+            </svg>
+        </span>`;
+    }
+
+    function fieldRequiredMark(required) {
+        return required ? '<span class="field-required" aria-label="Campo obrigatório">*</span>' : '';
+    }
+
     /* =========================================================================
        3. GERENCIAMENTO DE ESTADO LOCAL (SEPARADO DE RASCUNHOS)
        ========================================================================= */
@@ -363,17 +459,18 @@
                 regimeInformativo: '',
                 cidadeUf: '',
                 observacoes: '',
+                margemMeta: null,
                 atualizadoEm: null
             },
             settings: {
-                margemMetaPadrao: 20,
-                alertaCargaTributaria: 35,
+                alertaCargaTributaria: null,
                 mostrarDicasCampos: true,
                 salvarRascunhoAutomatico: true
             },
             catalog: [],
             pricings: [],
-            chatHistory: []
+            chatHistory: [],
+            niloConversationId: null
         };
     }
 
@@ -401,7 +498,9 @@
 
     const WorkspaceStore = {
         state: defaultWorkspaceState(),
+        storageWriteBlocked: false,
         load() {
+            this.storageWriteBlocked = false;
             try {
                 const raw = localStorage.getItem(STORAGE_KEYS.WORKSPACE);
                 if (!raw) {
@@ -418,20 +517,36 @@
                     pricings: Array.isArray(parsed.pricings) ? parsed.pricings : [],
                     chatHistory: Array.isArray(parsed.chatHistory) ? parsed.chatHistory : []
                 };
+                // Migra metas personalizadas antigas; 20% era apenas o padrão legado.
+                if (!Object.prototype.hasOwnProperty.call(parsed.business || {}, 'margemMeta')) {
+                    const legacyTarget = parsed.settings?.margemMetaPadrao;
+                    this.state.business.margemMeta =
+                        Number.isFinite(Number(legacyTarget)) && legacyTarget !== null &&
+                        Number(legacyTarget) >= 0 && Number(legacyTarget) < 100 && Number(legacyTarget) !== 20
+                            ? Number(legacyTarget)
+                            : null;
+                }
+                delete this.state.settings.margemMetaPadrao;
+                if (this.state.settings.alertaCargaTributaria === 35) this.state.settings.alertaCargaTributaria = null;
             } catch {
+                // Preserva a cópia original se o conteúdo estiver corrompido ou inacessível.
+                this.storageWriteBlocked = true;
                 this.state = defaultWorkspaceState();
             }
         },
         save() {
             try {
+                if (!STORAGE_KEYS.WORKSPACE || this.storageWriteBlocked) return false;
                 localStorage.setItem(STORAGE_KEYS.WORKSPACE, JSON.stringify(this.state));
+                return true;
             } catch {
-                // Ignora indisponibilidade de storage
+                return false;
             }
         },
         resetAll() {
             this.state = defaultWorkspaceState();
-            localStorage.removeItem(STORAGE_KEYS.WORKSPACE);
+            if (STORAGE_KEYS.WORKSPACE) localStorage.removeItem(STORAGE_KEYS.WORKSPACE);
+            this.storageWriteBlocked = false;
         },
         loadDemoScenario() {
             const now = Date.now();
@@ -648,16 +763,50 @@
        4. CAMADA DE COMUNICAÇÃO E ADAPTADORES DE API
        ========================================================================= */
     const ApiService = {
+        async authenticatedRequest(url, options = {}) {
+            const config = window.VALORIZAI_CONFIG || {};
+            const client = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey, {
+                auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+            });
+            const { data, error } = await client.auth.getSession();
+            if (error || !data?.session?.access_token) throw new Error('Sua sessão expirou. Entre novamente.');
+            const headers = { Authorization: `Bearer ${data.session.access_token}`, ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) };
+            const response = await fetch(url, { ...options, headers });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok || payload.success === false) throw new Error(payload.error?.message || payload.resposta || 'Não foi possível concluir a operação.');
+            return payload.data || payload;
+        },
+        async listProducts() { return (await this.authenticatedRequest('/api/products')).products || []; },
+        async listPricings() { return (await this.authenticatedRequest('/api/pricings')).pricings || []; },
+        async createProduct(product) { return (await this.authenticatedRequest('/api/products', { method: 'POST', body: JSON.stringify(product) })).product; },
+        async updateProduct(id, product) { return (await this.authenticatedRequest(`/api/products/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(product) })).product; },
+        async createPricing(pricing) { return (await this.authenticatedRequest('/api/pricings', { method: 'POST', body: JSON.stringify(pricing) })).pricing; },
+        async getLatestNiloConversation() {
+            return await this.authenticatedRequest('/api/nilo/conversations/latest');
+        },
+        async getNiloConversation(id) {
+            return await this.authenticatedRequest(`/api/nilo/conversations/${encodeURIComponent(id)}`);
+        },
         /**
          * Endpoint REAL existente no backend (server.js -> POST /perguntar).
          * Mantém integralmente o contrato esperado.
          */
         async enviarPerguntaIA(payload) {
+            const config = window.VALORIZAI_CONFIG || {};
+            const supabaseLib = window.supabase;
+            const headers = { 'Content-Type': 'application/json' };
+            if (supabaseLib?.createClient && config.supabaseUrl && config.supabaseAnonKey) {
+                const client = supabaseLib.createClient(config.supabaseUrl, config.supabaseAnonKey, {
+                    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+                });
+                const { data } = await client.auth.getSession();
+                if (data?.session?.access_token) {
+                    headers.Authorization = `Bearer ${data.session.access_token}`;
+                }
+            }
             const response = await fetch('/perguntar', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers,
                 body: JSON.stringify(payload)
             });
 
@@ -676,108 +825,35 @@
         },
 
         /**
-         * Adaptador preparado para o futuro motor oficial de precificação no backend.
-         * Enquanto o endpoint dedicado não existir, executa uma prévia transparente
-         * para permitir simulação na interface sem substituir o motor oficial futuro.
+         * Normaliza o contrato da interface para o formato esperado pelo motor server-side.
+         * A interface mantém "setor"; a API de cálculo recebe "sector".
          */
         async calcularPreviaPrecificacao(payload) {
-            const { setor, costs, taxes } = payload;
-            const categoriasCusto = [];
-            let custoTotal = 0;
-
-            if (setor === 'comercio') {
-                const aquisicao = (costs.custoAquisicao || 0) + (costs.freteEntrada || 0) + (costs.seguroDespesasAquisicao || 0);
-                const variaveis = (costs.embalagem || 0) + (costs.outrosVariaveis || 0);
-                const operacional = costs.custosOperacionaisRateados || 0;
-                custoTotal = aquisicao + variaveis + operacional;
-
-                if (aquisicao > 0) categoriasCusto.push({ nome: 'Aquisição e logística', valor: aquisicao });
-                if (variaveis > 0) categoriasCusto.push({ nome: 'Embalagem e variáveis', valor: variaveis });
-                if (operacional > 0) categoriasCusto.push({ nome: 'Rateio operacional', valor: operacional });
-            } else if (setor === 'industria') {
-                const lote = Math.max(1, costs.quantidadeLote || 1);
-                const perdaFator = 1 + ((costs.perdasProducao || 0) / 100);
-                const insumosLote = ((costs.materiaPrima || 0) + (costs.insumos || 0) + (costs.embalagemProducao || 0)) * perdaFator;
-                const modLote = costs.maoObraDireta || 0;
-                const transfLote = (costs.cifRateado || 0) + (costs.energiaTransformacao || 0);
-
-                const insumosUnit = insumosLote / lote;
-                const modUnit = modLote / lote;
-                const transfUnit = transfLote / lote;
-                custoTotal = insumosUnit + modUnit + transfUnit;
-
-                if (insumosUnit > 0) categoriasCusto.push({ nome: 'Matéria-prima e insumos (c/ perdas)', valor: insumosUnit });
-                if (modUnit > 0) categoriasCusto.push({ nome: 'Mão de obra direta', valor: modUnit });
-                if (transfUnit > 0) categoriasCusto.push({ nome: 'Transformação e CIF rateado', valor: transfUnit });
-            } else if (setor === 'servico') {
-                const horas = (costs.tempoExecucao || 0) * (costs.custoHoraProdutiva || 0);
-                const terceiros = costs.maoObraContratada || 0;
-                const diretas = (costs.deslocamento || 0) + (costs.materiaisUtilizados || 0);
-                const estrutura = (costs.ferramentasLicencas || 0) + (costs.outrosEspecificos || 0);
-                custoTotal = horas + terceiros + diretas + estrutura;
-
-                if (horas + terceiros > 0) categoriasCusto.push({ nome: 'Tempo técnico e execução', valor: horas + terceiros });
-                if (diretas > 0) categoriasCusto.push({ nome: 'Deslocamento e materiais', valor: diretas });
-                if (estrutura > 0) categoriasCusto.push({ nome: 'Ferramentas e despesas específicas', valor: estrutura });
-            }
-
-            if (categoriasCusto.length === 0) {
-                categoriasCusto.push({ nome: 'Custos informados', valor: custoTotal });
-            }
-
-            const imposto = taxes.impostosVenda || 0;
-            const taxaPag = taxes.taxaPagamento || 0;
-            const comissao = taxes.comissao || 0;
-            const mkt = taxes.taxaMarketplace || 0;
-            const margem = taxes.margemDesejada || 0;
-
-            const percentualImpostosTaxas = imposto + taxaPag + comissao + mkt;
-            const somaPercentuais = percentualImpostosTaxas + margem;
-            const divisor = 1 - (somaPercentuais / 100);
-
-            const precoSugerido = divisor > 0 ? custoTotal / divisor : 0;
-            const markup = custoTotal > 0 && precoSugerido > 0 ? precoSugerido / custoTotal : 0;
-            const valorImpostos = precoSugerido * (imposto / 100);
-            const valorTaxasComissoes = precoSugerido * ((taxaPag + comissao + mkt) / 100);
-            const lucroEstimado = precoSugerido * (margem / 100);
-
+            const requestPayload = {
+                sector: payload.setor || payload.sector,
+                costs: payload.costs,
+                taxes: payload.taxes
+            };
+            const response = await this.authenticatedRequest('/api/pricings/calculate', {
+                method: 'POST',
+                body: JSON.stringify(requestPayload)
+            });
             return {
-                fonteCalculo: 'preview-local',
-                custoTotal: Number(custoTotal.toFixed(2)),
-                precoSugerido: Number(precoSugerido.toFixed(2)),
-                markup: Number(markup.toFixed(2)),
-                margemPlanejada: Number(margem.toFixed(2)),
-                percentualImpostosTaxas: Number(percentualImpostosTaxas.toFixed(2)),
-                valorImpostos: Number(valorImpostos.toFixed(2)),
-                valorTaxasComissoes: Number(valorTaxasComissoes.toFixed(2)),
-                valorImpostosTaxas: Number((valorImpostos + valorTaxasComissoes).toFixed(2)),
-                lucroEstimado: Number(lucroEstimado.toFixed(2)),
-                categoriasCusto
+                fonteCalculo: 'server-preview',
+                custoTotal: response.result.custoTotal,
+                precoSugerido: response.result.precoSugerido,
+                markup: response.result.markup,
+                margemPlanejada: response.result.margemPlanejada,
+                percentualImpostosTaxas: response.result.percentualImpostosTaxas,
+                valorImpostosTaxas: response.result.valorImpostosTaxas,
+                lucroEstimado: response.result.lucroEstimado,
+                categoriasCusto: response.result.categoriasCusto,
+                calculationVersion: response.result.calculationVersion,
+                costsNormalized: payload.costs,
+                taxesNormalized: payload.taxes
             };
         },
 
-        integracoesStatus() {
-            return [
-                {
-                    nome: 'Consultor IA (Gemini API)',
-                    endpoint: 'POST /perguntar',
-                    disponivel: true,
-                    descricao: 'Integração ativa no servidor Node.js/Express.'
-                },
-                {
-                    nome: 'Persistência de Negócio, Catálogo e Histórico',
-                    endpoint: 'Endpoints REST dedicados (pendentes)',
-                    disponivel: false,
-                    descricao: 'Dados armazenados localmente no navegador em modo de demonstração até criação dos endpoints no backend.'
-                },
-                {
-                    nome: 'Motor Oficial de Precificação',
-                    endpoint: 'Endpoint de cálculo no backend (pendente)',
-                    disponivel: false,
-                    descricao: 'Cálculo exibido como prévia transparente no navegador aguardando o motor validado no servidor.'
-                }
-            ];
-        }
     };
 
     /* =========================================================================
@@ -806,72 +882,87 @@
     const ChartRenderer = {
         renderPriceEvolutionChart(container, pricings) {
             if (!pricings.length) {
+                const message = 'Ainda não há precificações salvas para traçar a evolução ao longo do tempo.';
                 container.innerHTML = `
                     <div class="empty-state">
-                        <p class="empty-state-desc">Ainda não há precificações salvas para traçar a evolução ao longo do tempo.</p>
+                        <p class="empty-state-desc">${message}</p>
                     </div>`;
                 return;
             }
 
             const ordered = [...pricings].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm));
+            const priceValues = ordered.map(p => nullableFiniteNumber(p.precoSugerido));
+            const costValues = ordered.map(p => nullableFiniteNumber(p.custoTotal));
+            const validValues = [...priceValues, ...costValues].filter(value => value !== null && value >= 0);
+            if (!validValues.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p class="empty-state-desc">Há registros no histórico, mas ainda não existem custos ou preços válidos para desenhar este gráfico.</p>
+                    </div>`;
+                return;
+            }
+
             const width = 580;
             const height = 240;
             const pad = { top: 20, right: 24, bottom: 38, left: 72 };
             const innerW = width - pad.left - pad.right;
             const innerH = height - pad.top - pad.bottom;
-
-            const maxVal = Math.max(...ordered.map(p => Math.max(p.precoSugerido, p.custoTotal)), 10) * 1.15;
+            const maxVal = Math.max(...validValues, 10) * 1.15;
             const stepX = ordered.length > 1 ? innerW / (ordered.length - 1) : innerW / 2;
-
-            const getX = idx => ordered.length === 1 ? pad.left + innerW / 2 : pad.left + idx * stepX;
+            const getX = idx => ordered.length > 1 ? pad.left + idx * stepX : pad.left + innerW / 2;
             const getY = val => pad.top + innerH - (val / maxVal) * innerH;
-
+            const buildPath = values => {
+                let path = '';
+                let activeSegment = false;
+                values.forEach((value, index) => {
+                    if (value === null || value < 0) {
+                        activeSegment = false;
+                        return;
+                    }
+                    path += `${activeSegment ? ' L' : ' M'} ${getX(index)},${getY(value)}`;
+                    activeSegment = true;
+                });
+                return path.trim();
+            };
+            const pricePath = buildPath(priceValues);
+            const costPath = buildPath(costValues);
             const yTicks = [0, 0.33, 0.66, 1].map(ratio => ({
                 val: maxVal * ratio,
                 y: getY(maxVal * ratio)
             }));
 
-            const pricePoints = ordered.map((p, i) => `${getX(i)},${getY(p.precoSugerido)}`).join(' ');
-            const costPoints = ordered.map((p, i) => `${getX(i)},${getY(p.custoTotal)}`).join(' ');
-
-            const areaPath = ordered.length > 1
-                ? `M ${getX(0)},${getY(0)} ` +
-                  ordered.map((p, i) => `L ${getX(i)},${getY(p.precoSugerido)}`).join(' ') +
-                  ` L ${getX(ordered.length - 1)},${getY(0)} Z`
-                : '';
-
             container.innerHTML = `
-                <svg class="chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolução dos preços sugeridos e custos">
-                    <defs>
-                        <linearGradient id="chartPriceArea" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="#3986D8" stop-opacity="0.28"/>
-                            <stop offset="100%" stop-color="#3986D8" stop-opacity="0"/>
-                        </linearGradient>
-                    </defs>
+                <svg class="chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolução dos preços sugeridos e custos; valores ausentes não são representados como zero">
                     ${yTicks.map(t => `
                         <line x1="${pad.left}" y1="${t.y}" x2="${width - pad.right}" y2="${t.y}" stroke="rgba(168,181,199,0.12)" stroke-dasharray="3,3" />
-                        <text x="${pad.left - 8}" y="${t.y + 4}" text-anchor="end" fill="#A8B5C7" font-size="11" font-family="JetBrains Mono, monospace">${Formatter.brl(t.val)}</text>
+                        <text x="${pad.left - 8}" y="${t.y + 4}" text-anchor="end" fill="#A8B5C7" font-size="14.3" font-family="JetBrains Mono, monospace">${Formatter.brl(t.val)}</text>
                     `).join('')}
-                    ${areaPath ? `<path d="${areaPath}" fill="url(#chartPriceArea)" />` : ''}
-                    ${ordered.length > 1 ? `
-                        <polyline fill="none" stroke="#3986D8" stroke-width="2.5" stroke-linejoin="round" points="${pricePoints}" />
-                        <polyline fill="none" stroke="#A8B5C7" stroke-width="1.8" stroke-dasharray="5,4" points="${costPoints}" />
-                    ` : ''}
                     ${ordered.map((p, i) => {
                         const x = getX(i);
-                        const yp = getY(p.precoSugerido);
-                        const yc = getY(p.custoTotal);
+                        const price = priceValues[i];
+                        const cost = costValues[i];
+                        if (price === null || cost === null || price < 0 || cost < 0) return '';
+                        const spreadColor = price >= cost ? '#55D6A0' : '#E87979';
+                        return `<line x1="${x}" y1="${getY(price)}" x2="${x}" y2="${getY(cost)}" stroke="${spreadColor}" stroke-opacity="0.55" stroke-width="7" stroke-linecap="round" />`;
+                    }).join('')}
+                    ${pricePath ? `<path d="${pricePath}" fill="none" stroke="#3986D8" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round" />` : ''}
+                    ${costPath ? `<path d="${costPath}" fill="none" stroke="#A8B5C7" stroke-width="2.6" stroke-dasharray="6,4" stroke-linejoin="round" stroke-linecap="round" />` : ''}
+                    ${ordered.map((p, i) => {
+                        const x = getX(i);
+                        const price = priceValues[i];
+                        const cost = costValues[i];
                         const label = Formatter.dateShort(p.criadoEm).slice(0, 5);
                         return `
-                            <text x="${x}" y="${height - 12}" text-anchor="middle" fill="#A8B5C7" font-size="11" font-family="Inter, sans-serif">${label}</text>
-                            <circle cx="${x}" cy="${yc}" r="3.5" fill="#A8B5C7" stroke="#101827" stroke-width="1.5" />
-                            <circle class="chart-point" data-idx="${i}" cx="${x}" cy="${yp}" r="5" fill="#55D6A0" stroke="#101827" stroke-width="2" style="cursor:pointer" />
+                            <text x="${x}" y="${height - 12}" text-anchor="middle" fill="#A8B5C7" font-size="18.2" font-family="Inter, sans-serif">${label}</text>
+                            ${cost !== null && cost >= 0 ? `<circle cx="${x}" cy="${getY(cost)}" r="5.5" fill="#A8B5C7" stroke="#101827" stroke-width="1.5" />` : ''}
+                            ${price !== null && price >= 0 ? `<circle class="chart-point" data-idx="${i}" cx="${x}" cy="${getY(price)}" r="7" fill="#3986D8" stroke="#101827" stroke-width="2" style="cursor:pointer" />` : ''}
                         `;
                     }).join('')}
                 </svg>
                 <div class="chart-legend">
-                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#3986D8"></span> Preço sugerido (R$)</span>
-                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#A8B5C7"></span> Custo unitário (R$)</span>
+                    ${priceValues.some(value => value !== null && value >= 0) ? '<span class="chart-legend-entry"><span class="legend-swatch" style="background:#3986D8"></span> Preço sugerido (R$)</span>' : '<span class="chart-legend-entry">Preço sugerido indisponível nos registros exibidos</span>'}
+                    ${costValues.some(value => value !== null && value >= 0) ? '<span class="chart-legend-entry"><span class="legend-swatch" style="background:#A8B5C7"></span> Custo total (R$)</span>' : '<span class="chart-legend-entry">Custo total indisponível nos registros exibidos</span>'}
+                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#55D6A0"></span> Faixa entre custo e preço (diferença bruta estimada; não é lucro líquido)</span>
                 </div>
             `;
 
@@ -880,8 +971,9 @@
                 dot.addEventListener('mouseenter', e => {
                     showChartTooltip(e, `
                         <strong>${Formatter.escapeHtml(item.itemNome)} (v${item.versao})</strong><br>
-                        Preço: <span class="mono">${Formatter.brl(item.precoSugerido)}</span><br>
-                        Custo: <span class="mono">${Formatter.brl(item.custoTotal)}</span> · Margem: ${Formatter.percent(item.margemPlanejada)}
+                        Preço sugerido: <span class="mono">${Formatter.brl(item.precoSugerido)}</span><br>
+                        Custo total: <span class="mono">${Formatter.brl(item.custoTotal)}</span><br>
+                        Lucro estimado: <span class="mono">${Formatter.brl(item.lucroEstimado)}</span> · Margem planejada: ${Formatter.percent(item.margemPlanejada)}
                     `);
                 });
                 dot.addEventListener('mousemove', e => showChartTooltip(e, tooltipEl.innerHTML));
@@ -889,27 +981,123 @@
             });
         },
 
+        renderPriceEvolutionOverviewChart(container, pricings) {
+            const records = [...pricings].filter(p => {
+                const date = new Date(p.criadoEm).getTime();
+                const price = nullableFiniteNumber(p.precoSugerido);
+                const cost = nullableFiniteNumber(p.custoTotal);
+                return Number.isFinite(date) && ((price !== null && price >= 0) || (cost !== null && cost >= 0));
+            }).sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm));
+
+            if (!records.length) {
+                container.innerHTML = '<div class="empty-state"><p class="empty-state-desc">Ainda não há preços ou custos válidos nos registros dos itens ativos.</p></div>';
+                return;
+            }
+
+            const grouped = new Map();
+            records.forEach((record, index) => {
+                const key = String(record.catalogItemId || record.itemNome || 'item-sem-identificacao');
+                if (!grouped.has(key)) {
+                    const palette = ['#3986D8', '#55D6A0', '#D69B45', '#A78BFA', '#E879A9', '#22B8A8', '#E07A5F', '#8BABC8'];
+                    grouped.set(key, { name: record.itemNome || 'Item sem nome', records: [], color: palette[grouped.size % palette.length] });
+                }
+                grouped.get(key).records.push({ record, index });
+            });
+            const groups = Array.from(grouped.values());
+            const values = records.flatMap(p => [nullableFiniteNumber(p.precoSugerido), nullableFiniteNumber(p.custoTotal)])
+                .filter(value => value !== null && value >= 0);
+            const minDate = new Date(records[0].criadoEm).getTime();
+            const maxDate = new Date(records[records.length - 1].criadoEm).getTime();
+            const width = 920, height = 340;
+            const pad = { top: 24, right: 28, bottom: 48, left: 82 };
+            const innerW = width - pad.left - pad.right;
+            const innerH = height - pad.top - pad.bottom;
+            const maxVal = Math.max(...values, 10) * 1.15;
+            const x = date => maxDate === minDate ? pad.left + innerW / 2 : pad.left + ((date - minDate) / (maxDate - minDate)) * innerW;
+            const y = value => pad.top + innerH - (value / maxVal) * innerH;
+            const pathFor = (items, field) => items
+                .map(item => ({ x: x(new Date(item.record.criadoEm).getTime()), value: nullableFiniteNumber(item.record[field]) }))
+                .filter(point => point.value !== null && point.value >= 0)
+                .map((point, index) => (index ? 'L ' : 'M ') + point.x + ',' + y(point.value))
+                .join(' ');
+            const ticks = [0, 0.25, 0.5, 0.75, 1].map(ratio => {
+                const value = maxVal * ratio;
+                return '<line x1="' + pad.left + '" y1="' + y(value) + '" x2="' + (width - pad.right) + '" y2="' + y(value) + '" stroke="rgba(168,181,199,0.16)" stroke-dasharray="3,3" />' +
+                    '<text x="' + (pad.left - 10) + '" y="' + (y(value) + 4) + '" text-anchor="end" fill="#A8B5C7" font-size="14.3" font-family="JetBrains Mono, monospace">' + Formatter.brl(value) + '</text>';
+            }).join('');
+            const dateTicks = [];
+            const tickCount = Math.min(5, records.length);
+            for (let i = 0; i < tickCount; i++) {
+                const date = minDate === maxDate ? minDate : minDate + ((maxDate - minDate) * i / Math.max(1, tickCount - 1));
+                dateTicks.push('<text x="' + x(date) + '" y="' + (height - 14) + '" text-anchor="middle" fill="#A8B5C7" font-size="14.3" font-family="Inter, sans-serif">' + Formatter.dateShort(new Date(date).toISOString()).slice(0, 5) + '</text>');
+            }
+            const series = groups.map(group => {
+                const pricePath = pathFor(group.records, 'precoSugerido');
+                const costPath = pathFor(group.records, 'custoTotal');
+                const spreadMarkers = group.records.map(item => {
+                    const record = item.record;
+                    const price = nullableFiniteNumber(record.precoSugerido);
+                    const cost = nullableFiniteNumber(record.custoTotal);
+                    if (price === null || cost === null || price < 0 || cost < 0) return '';
+                    const cx = x(new Date(record.criadoEm).getTime());
+                    const spreadColor = price >= cost ? '#55D6A0' : '#E87979';
+                    return '<line x1="' + cx + '" y1="' + y(price) + '" x2="' + cx + '" y2="' + y(cost) + '" stroke="' + spreadColor + '" stroke-opacity="0.62" stroke-width="7" stroke-linecap="round" />';
+                }).join('');
+                const lines = (pricePath ? '<path d="' + pricePath + '" fill="none" stroke="' + group.color + '" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />' : '') +
+                    (costPath ? '<path d="' + costPath + '" fill="none" stroke="' + group.color + '" stroke-opacity="0.82" stroke-width="2.5" stroke-dasharray="6,4" stroke-linejoin="round" stroke-linecap="round" />' : '');
+                const dots = group.records.map(item => {
+                    const record = item.record, cx = x(new Date(record.criadoEm).getTime());
+                    const price = nullableFiniteNumber(record.precoSugerido), cost = nullableFiniteNumber(record.custoTotal);
+                    return (cost !== null && cost >= 0 ? '<circle class="chart-overview-point" data-idx="' + item.index + '" data-kind="cost" cx="' + cx + '" cy="' + y(cost) + '" r="5.5" fill="' + group.color + '" fill-opacity="0.82" stroke="#101827" stroke-width="1.5" />' : '') +
+                        (price !== null && price >= 0 ? '<circle class="chart-overview-point" data-idx="' + item.index + '" data-kind="price" cx="' + cx + '" cy="' + y(price) + '" r="7" fill="' + group.color + '" stroke="#101827" stroke-width="2" />' : '');
+                }).join('');
+                return spreadMarkers + lines + dots;
+            }).join('');
+
+            container.innerHTML = '<svg class="chart-svg" viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Visão geral da evolução dos preços sugeridos e custos de todos os itens ativos. Cada cor representa um item; linhas contínuas representam preço e tracejadas representam custo.">' +
+                ticks + dateTicks.join('') + series + '</svg>' +
+                '<div class="chart-legend"><span class="chart-legend-entry">Linha contínua: preço sugerido</span><span class="chart-legend-entry">Linha tracejada: custo total</span><span class="chart-legend-entry">Faixa verde: preço acima do custo; faixa vermelha: custo acima do preço. A diferença não representa lucro líquido.</span><span class="chart-legend-entry">Cada cor identifica um item; pontos isolados representam itens com uma versão.</span></div>' +
+                '<div class="chart-legend">' + groups.map(group => '<span class="chart-legend-entry"><span class="legend-swatch" style="background:' + group.color + '"></span>' + Formatter.escapeHtml(group.name) + ' (' + group.records.length + ' registro(s))</span>').join('') + '</div>';
+
+            container.querySelectorAll('.chart-overview-point').forEach(dot => {
+                dot.addEventListener('mouseenter', event => {
+                    const item = records[Number(dot.dataset.idx)];
+                    showChartTooltip(event, '<strong>' + Formatter.escapeHtml(item.itemNome || 'Item') + ' (v' + item.versao + ')</strong><br>Preço sugerido: ' + Formatter.brl(item.precoSugerido) + '<br>Custo total: ' + Formatter.brl(item.custoTotal) + '<br>Lucro estimado: ' + Formatter.brl(item.lucroEstimado) + '<br>Data: ' + Formatter.dateShort(item.criadoEm));
+                });
+                dot.addEventListener('mousemove', event => showChartTooltip(event, tooltipEl.innerHTML));
+                dot.addEventListener('mouseleave', hideChartTooltip);
+            });
+        },
+
         renderCostDistributionChart(container, categorias, totalCusto) {
-            if (!categorias || !categorias.length || totalCusto <= 0) {
+            const total = nullableFiniteNumber(totalCusto);
+            const validCategories = Array.isArray(categorias)
+                ? categorias.filter(category => category && typeof category.nome === 'string' &&
+                    nullableFiniteNumber(category.valor) !== null && Number(category.valor) > 0)
+                : [];
+            if (total === null || total <= 0 || !validCategories.length) {
+                const message = total === null || total <= 0
+                    ? 'O custo total desta versão não está disponível para análise.'
+                    : 'O custo total está registrado, mas a composição por categoria não está disponível.';
                 container.innerHTML = `
                     <div class="empty-state">
-                        <p class="empty-state-desc">Selecione ou registre uma precificação para visualizar a distribuição dos custos.</p>
+                        <p class="empty-state-desc">${message}</p>
                     </div>`;
                 return;
             }
 
             const colors = ['#3986D8', '#55D6A0', '#F59E0B', '#A8B5C7'];
-            const maxVal = Math.max(...categorias.map(c => c.valor), 1);
+            const maxVal = Math.max(...validCategories.map(c => Number(c.valor)), 1);
 
             container.innerHTML = `
                 <div style="display:flex;flex-direction:column;gap:14px;">
-                    ${categorias.map((cat, idx) => {
-                        const pct = (cat.valor / totalCusto) * 100;
-                        const barW = Math.max(4, (cat.valor / maxVal) * 100);
+                    ${validCategories.map((cat, idx) => {
+                        const pct = (Number(cat.valor) / total) * 100;
+                        const barW = Math.max(4, (Number(cat.valor) / maxVal) * 100);
                         const color = colors[idx % colors.length];
                         return `
                             <div>
-                                <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:6px;font-size:13px;">
+                                <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:6px;font-size:16.9px;">
                                     <span style="color:var(--color-cloud);font-weight:500;">${Formatter.escapeHtml(cat.nome)}</span>
                                     <span class="mono" style="color:var(--color-silver);">${Formatter.brl(cat.valor)} (${Formatter.percent(pct)})</span>
                                 </div>
@@ -924,47 +1112,55 @@
         },
 
         renderPlannedMarginChart(container, pricings, targetMargin) {
-            if (!pricings.length) {
+            // Seleciona primeiro a última versão de cada item; uma margem ausente na versão atual
+            // não pode fazer o gráfico reutilizar silenciosamente a margem de uma versão antiga.
+            const latestByItem = new Map();
+            [...pricings].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm)).forEach(p => {
+                latestByItem.set(getPricingItemKey(p), p);
+            });
+            const rows = Array.from(latestByItem.values())
+                .filter(p => {
+                    const margin = nullableFiniteNumber(p.margemPlanejada);
+                    return margin !== null && margin >= 0 && margin < 100;
+                })
+                .slice(-6);
+            if (!rows.length) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <p class="empty-state-desc">Nenhuma margem planejada registrada ainda. Salve uma precificação para comparar com a meta de ${Formatter.percent(targetMargin, 0)}.</p>
+                        <p class="empty-state-desc">Nenhuma margem planejada válida disponível nas últimas versões dos itens ativos. Confira os dados antes de comparar com a meta.</p>
                     </div>`;
                 return;
             }
 
-            // Agrupa pela versão mais recente de cada item
-            const latestByItem = new Map();
-            [...pricings].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm)).forEach(p => {
-                latestByItem.set(p.catalogItemId || p.itemNome, p);
-            });
-            const rows = Array.from(latestByItem.values()).slice(-6);
-            const maxMargin = Math.max(targetMargin, ...rows.map(r => r.margemPlanejada), 40);
+            const parsedTarget = nullableFiniteNumber(targetMargin);
+            const hasTarget = parsedTarget !== null && parsedTarget >= 0 && parsedTarget < 100;
+            const maxMargin = Math.max(hasTarget ? parsedTarget : 0, ...rows.map(r => Number(r.margemPlanejada)), 40);
 
             container.innerHTML = `
                 <div style="display:flex;flex-direction:column;gap:14px;">
                     ${rows.map(r => {
-                        const belowTarget = r.margemPlanejada < targetMargin;
-                        const color = belowTarget ? 'var(--color-warning)' : 'var(--color-emerald)';
+                        const belowTarget = hasTarget && Number(r.margemPlanejada) < parsedTarget;
+                        const color = !hasTarget ? 'var(--color-blue)' : (belowTarget ? 'var(--color-warning)' : 'var(--color-emerald)');
                         const barW = Math.min(100, Math.max(4, (r.margemPlanejada / maxMargin) * 100));
-                        const targetPos = Math.min(100, (targetMargin / maxMargin) * 100);
+                        const targetPos = hasTarget ? Math.min(100, (parsedTarget / maxMargin) * 100) : null;
                         return `
                             <div>
-                                <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:5px;font-size:13px;">
+                                <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:5px;font-size:16.9px;">
                                     <span style="color:var(--color-cloud);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${Formatter.escapeHtml(r.itemNome)}</span>
-                                    <span class="mono" style="color:${color};font-weight:600;">${Formatter.percent(r.margemPlanejada)} ${belowTarget ? '· Abaixo da meta' : '· Na meta'}</span>
+                                    <span class="mono" style="color:${color};font-weight:600;">${Formatter.percent(r.margemPlanejada)} ${!hasTarget ? '· Meta não definida' : (belowTarget ? '· Abaixo da meta' : '· Na meta')}</span>
                                 </div>
                                 <div style="position:relative;height:10px;border-radius:999px;background:var(--color-midnight);border:var(--border-hairline);">
                                     <div class="chart-bar-anim" style="width:${barW}%;height:100%;background:${color};border-radius:999px;"></div>
-                                    <div title="Meta: ${Formatter.percent(targetMargin, 0)}" style="position:absolute;top:-3px;bottom:-3px;left:${targetPos}%;width:2px;background:var(--color-cloud);opacity:0.65;"></div>
+                                    ${hasTarget ? `<div title="Meta: ${Formatter.percent(parsedTarget, 0)}" style="position:absolute;top:-3px;bottom:-3px;left:${targetPos}%;width:2px;background:var(--color-cloud);opacity:0.65;"></div>` : ''}
                                 </div>
                             </div>
                         `;
                     }).join('')}
                 </div>
-                <div class="chart-legend">
+                ${hasTarget ? `<div class="chart-legend">
                     <span class="chart-legend-entry"><span class="legend-swatch" style="background:#55D6A0"></span> Margem planejada dentro da meta</span>
-                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#F59E0B"></span> Abaixo da meta (${Formatter.percent(targetMargin, 0)})</span>
-                </div>
+                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#F59E0B"></span> Abaixo da meta (${Formatter.percent(parsedTarget, 0)})</span>
+                </div>` : '<p class="chart-legend">Defina uma meta de margem em Meu negócio para ativar a comparação.</p>'}
             `;
         }
     };
@@ -972,9 +1168,40 @@
     /* =========================================================================
        6. NOTIFICAÇÕES E INSIGHTS DERIVADOS DE DADOS REAIS
        ========================================================================= */
+    function getPricingItemKey(pricing) {
+        if (pricing.catalogItemId) return `id:${pricing.catalogItemId}`;
+        return `name:${String(pricing.itemNome || '').trim().toLocaleLowerCase('pt-BR')}`;
+    }
+
+    function getActivePricingRecords(pricings, catalog) {
+        const catalogById = new Map(catalog.filter(item => item.id).map(item => [item.id, item]));
+        return pricings.filter(pricing => {
+            // Sem vínculo não é possível provar que o item continua ativo.
+            // Esses registros permanecem no Histórico, mas não entram nos indicadores atuais.
+            if (!pricing.catalogItemId) return false;
+            const catalogItem = catalogById.get(pricing.catalogItemId);
+            return Boolean(catalogItem && catalogItem.status !== 'Arquivado');
+        });
+    }
+
+    function getLatestPricingPerItem(pricings) {
+        const latestByItem = new Map();
+        [...pricings].sort((a, b) => {
+            const dateA = new Date(a.criadoEm).getTime();
+            const dateB = new Date(b.criadoEm).getTime();
+            const safeA = Number.isFinite(dateA) ? dateA : 0;
+            const safeB = Number.isFinite(dateB) ? dateB : 0;
+            if (safeA !== safeB) return safeA - safeB;
+            return (Number(a.versao) || 0) - (Number(b.versao) || 0);
+        }).forEach(pricing => latestByItem.set(getPricingItemKey(pricing), pricing));
+        return Array.from(latestByItem.values());
+    }
+
     function computeDerivedInsights() {
-        const { catalog, pricings, settings, business } = WorkspaceStore.state;
-        const target = Number(settings.margemMetaPadrao) || 20;
+        const { catalog, pricings, business } = WorkspaceStore.state;
+        const rawTarget = business.margemMeta;
+        const parsedTarget = rawTarget === null || rawTarget === '' || rawTarget === undefined ? null : Number(rawTarget);
+        const target = Number.isFinite(parsedTarget) && parsedTarget >= 0 && parsedTarget < 100 ? parsedTarget : null;
         const insights = [];
         const notifications = [];
 
@@ -995,30 +1222,41 @@
             });
         }
 
-        if (pricings.length === 0) {
-            return { insights, notifications, belowTargetCount: 0, avgMargin: null };
+        const activePricingRecords = getActivePricingRecords(pricings, catalog);
+        const latestPricings = getLatestPricingPerItem(activePricingRecords);
+        const validMarginPricings = latestPricings.filter(p => {
+            const margin = nullableFiniteNumber(p.margemPlanejada);
+            return margin !== null && margin >= 0 && margin < 100;
+        });
+        const avgMargin = validMarginPricings.length
+            ? validMarginPricings.reduce((sum, p) => sum + Number(p.margemPlanejada), 0) / validMarginPricings.length
+            : null;
+        const belowTarget = target === null ? null : validMarginPricings.filter(p => Number(p.margemPlanejada) < target);
+        const missingMarginCount = latestPricings.filter(p => {
+            const margin = nullableFiniteNumber(p.margemPlanejada);
+            return margin === null || margin < 0 || margin >= 100;
+        }).length;
+        const missingCostCount = latestPricings.filter(p => {
+            const cost = nullableFiniteNumber(p.custoTotal);
+            return cost === null || cost <= 0;
+        }).length;
+        if (missingMarginCount > 0 || missingCostCount > 0) {
+            const gaps = [];
+            if (missingCostCount > 0) gaps.push(`${missingCostCount} ${missingCostCount === 1 ? 'item sem custo total válido' : 'itens sem custo total válido'}`);
+            if (missingMarginCount > 0) gaps.push(`${missingMarginCount} ${missingMarginCount === 1 ? 'item sem margem planejada válida' : 'itens sem margem planejada válida'}`);
+            insights.push({
+                tone: 'warning',
+                title: 'Há indicadores incompletos nas últimas versões',
+                desc: `${gaps.join(' e ')}. Esses itens ficam fora das médias e comparações correspondentes até que os dados sejam revisados.`
+            });
         }
 
-        // Última versão por item
-        const latestByItem = new Map();
-        const versionsByItem = new Map();
-        [...pricings].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm)).forEach(p => {
-            const key = p.catalogItemId || p.itemNome;
-            latestByItem.set(key, p);
-            if (!versionsByItem.has(key)) versionsByItem.set(key, []);
-            versionsByItem.get(key).push(p);
-        });
-
-        const latestList = Array.from(latestByItem.values());
-        const avgMargin = latestList.reduce((acc, p) => acc + p.margemPlanejada, 0) / latestList.length;
-        const belowTarget = latestList.filter(p => p.margemPlanejada < target);
-
-        if (belowTarget.length > 0) {
-            const lowest = [...belowTarget].sort((a, b) => a.margemPlanejada - b.margemPlanejada)[0];
+        if (belowTarget && belowTarget.length > 0) {
+            const lowest = [...belowTarget].sort((a, b) => Number(a.margemPlanejada) - Number(b.margemPlanejada))[0];
             insights.push({
                 tone: 'warning',
                 title: `${belowTarget.length} ${belowTarget.length === 1 ? 'item com margem planejada abaixo da meta' : 'itens com margem planejada abaixo da meta'}`,
-                desc: `"${lowest.itemNome}" está com ${Formatter.percent(lowest.margemPlanejada)} frente à meta de ${Formatter.percent(target, 0)}. Avalie custos ou reposicionamento.`
+                desc: `"${lowest.itemNome}" está com ${Formatter.percent(lowest.margemPlanejada)} frente à meta de ${Formatter.percent(target, 0)}. Avalie os custos e as condições de venda antes de decidir uma alteração.`
             });
             notifications.push({
                 title: 'Margem abaixo da meta configurada',
@@ -1027,48 +1265,60 @@
             });
         }
 
-        const highestCost = [...latestList].sort((a, b) => b.custoTotal - a.custoTotal)[0];
+        const validCostPricings = latestPricings.filter(p => {
+            const cost = nullableFiniteNumber(p.custoTotal);
+            return cost !== null && cost > 0;
+        });
+        const highestCost = [...validCostPricings].sort((a, b) => Number(b.custoTotal) - Number(a.custoTotal))[0];
         if (highestCost) {
             insights.push({
                 tone: 'info',
-                title: 'Maior custo unitário registrado',
-                desc: `"${highestCost.itemNome}" possui custo de ${Formatter.brl(highestCost.custoTotal)} e preço sugerido de ${Formatter.brl(highestCost.precoSugerido)} (markup ${highestCost.markup.toFixed(2)}x).`
+                title: 'Maior custo unitário registrado entre os itens ativos',
+                desc: `"${highestCost.itemNome}" possui custo de ${Formatter.brl(highestCost.custoTotal)} por ${highestCost.unidade || 'unidade de comercialização'} e preço sugerido de ${Formatter.brl(highestCost.precoSugerido)}. É o maior valor unitário registrado; unidades de comercialização diferentes não são diretamente comparáveis e isso não representa gasto total do negócio.`
             });
         }
 
-        // Variação relevante de custo entre versões
+        // Compara somente as duas versões mais recentes de cada item ativo.
+        const versionsByItem = new Map();
+        [...activePricingRecords].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm)).forEach(p => {
+            const key = getPricingItemKey(p);
+            if (!versionsByItem.has(key)) versionsByItem.set(key, []);
+            versionsByItem.get(key).push(p);
+        });
         versionsByItem.forEach(list => {
-            if (list.length >= 2) {
-                const prev = list[list.length - 2];
-                const curr = list[list.length - 1];
-                if (prev.custoTotal > 0) {
-                    const diffPct = ((curr.custoTotal - prev.custoTotal) / prev.custoTotal) * 100;
-                    if (Math.abs(diffPct) >= 5) {
-                        insights.push({
-                            tone: diffPct > 0 ? 'warning' : 'success',
-                            title: `Variação de custo em "${curr.itemNome}"`,
-                            desc: `O custo unitário variou ${diffPct > 0 ? '+' : ''}${Formatter.percent(diffPct)} entre a v${prev.versao} (${Formatter.brl(prev.custoTotal)}) e a v${curr.versao} (${Formatter.brl(curr.custoTotal)}).`
-                        });
-                    }
-                }
+            if (list.length < 2) return;
+            const prev = list[list.length - 2];
+            const curr = list[list.length - 1];
+            const previousCost = nullableFiniteNumber(prev.custoTotal);
+            const currentCost = nullableFiniteNumber(curr.custoTotal);
+            if (previousCost === null || currentCost === null || previousCost <= 0) return;
+            const diffPct = ((currentCost - previousCost) / previousCost) * 100;
+            if (Math.abs(diffPct) >= 5) {
+                insights.push({
+                    tone: diffPct > 0 ? 'warning' : 'success',
+                    title: `Variação de custo em "${curr.itemNome}"`,
+                    desc: `O custo unitário/por atendimento variou ${diffPct > 0 ? '+' : ''}${Formatter.percent(diffPct)} entre a v${prev.versao} (${Formatter.brl(previousCost)}) e a v${curr.versao} (${Formatter.brl(currentCost)}). A comparação mostra a diferença, mas não identifica sua causa.`
+                });
             }
         });
 
-        // Itens no catálogo ainda sem precificação
-        const unpriced = catalog.filter(c => c.status !== 'Arquivado' && !latestByItem.has(c.id));
+        const latestKeys = new Set(latestPricings.map(getPricingItemKey));
+        const unpriced = catalog.filter(c => c.status !== 'Arquivado' && !latestKeys.has(c.id ? `id:${c.id}` : `name:${String(c.nome || '').trim().toLocaleLowerCase('pt-BR')}`));
         if (unpriced.length > 0) {
             insights.push({
                 tone: 'info',
                 title: `${unpriced.length} ${unpriced.length === 1 ? 'item aguardando precificação' : 'itens aguardando precificação'}`,
-                desc: `"${unpriced[0].nome}" está no catálogo, mas ainda não possui histórico de preço calculado.`
+                desc: `"${unpriced[0].nome}" está no catálogo, mas ainda não possui uma precificação salva.`
             });
         }
 
         return {
             insights,
             notifications,
-            belowTargetCount: belowTarget.length,
-            avgMargin
+            belowTargetCount: belowTarget === null ? null : belowTarget.length,
+            avgMargin,
+            latestPricings,
+            activePricingCount: validMarginPricings.length
         };
     }
 
@@ -1084,6 +1334,7 @@
         analysisSelectedItemId: 'all',
         simulacaoResult: null,
         chatSending: false,
+        niloOpen: false,
 
         toast(message, type = 'info') {
             const region = document.getElementById('toast-region');
@@ -1176,6 +1427,7 @@
 
         renderCurrentView() {
             const viewport = document.getElementById('main-viewport');
+            viewport.dataset.view = this.currentView;
             viewport.classList.remove('view-enter');
             void viewport.offsetWidth;
             viewport.classList.add('view-enter');
@@ -1189,6 +1441,7 @@
                 case 'historico': renderHistory(viewport); break;
                 case 'analises': renderAnalyses(viewport); break;
                 case 'consultor': renderConsultor(viewport); break;
+                case 'conta': renderMyAccount(viewport); break;
                 case 'configuracoes': renderSettings(viewport); break;
                 default: renderDashboard(viewport);
             }
@@ -1202,16 +1455,21 @@
     // --- 8.1 DASHBOARD ---
     function renderDashboard(root) {
         const { business, catalog, pricings, settings, isDemo } = WorkspaceStore.state;
-        const { insights, belowTargetCount, avgMargin } = computeDerivedInsights();
+        const { insights, belowTargetCount, avgMargin, latestPricings, activePricingCount } = computeDerivedInsights();
         const activeItems = catalog.filter(c => c.status !== 'Arquivado');
-        const target = Number(settings.margemMetaPadrao) || 20;
+        const rawTarget = business.margemMeta;
+        const parsedTarget = rawTarget === null || rawTarget === '' || rawTarget === undefined ? null : Number(rawTarget);
+        const target = Number.isFinite(parsedTarget) && parsedTarget >= 0 && parsedTarget < 100 ? parsedTarget : null;
+        const archivedItemsCount = catalog.length - activeItems.length;
 
         const saudacaoNome = business.empreendedor?.trim() || business.nomeNegocio?.trim();
         const saudacaoTitulo = saudacaoNome ? `${Formatter.greeting()}, ${Formatter.escapeHtml(saudacaoNome)}` : `${Formatter.greeting()}!`;
 
-        const latestPricing = pricings.length
-            ? [...pricings].sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm))[0]
-            : null;
+        const activePricingRecords = getActivePricingRecords(pricings, catalog);
+        const recentPricings = [...activePricingRecords]
+            .sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm))
+            .slice(0, 5);
+        const latestSavedPricing = recentPricings[0] || null;
 
         root.innerHTML = `
             <div class="page-header">
@@ -1232,10 +1490,10 @@
             ${isDemo ? `
                 <div class="notice-bar warning">
                     <div>
-                        <div class="notice-bar-text"><strong>Modo de demonstração ativo</strong> — os itens e precificações abaixo são exemplos locais para exploração da interface.</div>
-                        <div class="notice-bar-sub">Você pode limpar esses dados a qualquer momento em Configurações ou iniciar sua própria precificação.</div>
+                        <div class="notice-bar-text"><strong>Você está vendo dados de exemplo</strong> — este negócio e suas precificações são fictícios e servem para apresentar os indicadores do ValorizAI.</div>
+                        <div class="notice-bar-sub">Remova os exemplos quando quiser começar a cadastrar as informações do seu negócio.</div>
                     </div>
-                    <button type="button" class="btn btn-sm btn-secondary" id="dash-clear-demo-btn">Limpar demonstração</button>
+                    <button type="button" class="btn btn-sm btn-secondary" id="dash-clear-demo-btn">Remover dados de exemplo</button>
                 </div>
             ` : ''}
 
@@ -1243,67 +1501,66 @@
                 <div class="kpi-card">
                     <div class="kpi-label">Produtos e serviços cadastrados</div>
                     <div class="kpi-value">${activeItems.length}</div>
-                    <div class="kpi-meta">${activeItems.length === 0 ? 'Nenhum item ativo no catálogo' : `${catalog.length} no total incluindo arquivados`}</div>
+                    <div class="kpi-meta">${activeItems.length === 0 ? 'Nenhum item ativo no catálogo' : `${archivedItemsCount} arquivado(s)`}</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Precificações realizadas</div>
-                    <div class="kpi-value">${pricings.length}</div>
-                    <div class="kpi-meta">${pricings.length === 0 ? 'Salve uma precificação para iniciar o histórico' : `Última em ${Formatter.dateShort(latestPricing.criadoEm)}`}</div>
+                    <div class="kpi-label">Versões em itens ativos</div>
+                    <div class="kpi-value">${activePricingRecords.length}</div>
+                    <div class="kpi-meta">${activePricingRecords.length === 0 ? 'Nenhuma versão vinculada a item ativo' : `Atualizada em ${Formatter.dateShort(latestSavedPricing.criadoEm)}`}</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Margem média registrada</div>
-                    <div class="kpi-value ${avgMargin === null ? '' : (avgMargin >= target ? 'positive' : 'warning')}">
+                    <div class="kpi-label">Margem planejada média</div>
+                    <div class="kpi-value ${avgMargin === null || target === null ? '' : (avgMargin >= target ? 'positive' : 'warning')}">
                         ${avgMargin === null ? '—' : Formatter.percent(avgMargin)}
                     </div>
-                    <div class="kpi-meta">${avgMargin === null ? 'Calculada após salvar precificações' : 'Margem planejada média (não realizada)'}</div>
+                    <div class="kpi-meta">${avgMargin === null ? 'Sem margem planejada válida nas últimas versões' : 'Média simples das margens válidas nas últimas versões · não representa vendas'}</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Margem abaixo da meta (${Formatter.percent(target, 0)})</div>
-                    <div class="kpi-value ${belowTargetCount > 0 ? 'warning' : (pricings.length > 0 ? 'positive' : '')}">
-                        ${pricings.length === 0 ? '—' : belowTargetCount}
+                    <div class="kpi-label">${target === null ? 'Meta de margem' : `Margem abaixo da meta (${Formatter.percent(target, 0)})`}</div>
+                    <div class="kpi-value ${target === null ? '' : (belowTargetCount > 0 ? 'warning' : (activePricingCount > 0 ? 'positive' : ''))}">
+                        ${target === null || activePricingCount === 0 ? '—' : belowTargetCount}
                     </div>
-                    <div class="kpi-meta">${pricings.length === 0 ? 'Aguardando precificações salvas' : (belowTargetCount === 0 ? 'Todos os itens dentro da meta' : 'Itens que merecem revisão')}</div>
+                    <div class="kpi-meta">${target === null ? 'Defina uma meta em Meu negócio' : (activePricingCount === 0 ? 'Sem margens válidas para comparar' : (belowTargetCount === 0 ? 'Todos os itens com margem válida estão na meta ou acima' : 'Itens que merecem revisão'))}</div>
                 </div>
-            </div>
-
-            <div class="dashboard-charts-grid">
-                <section class="surface-card">
-                    <div class="card-header">
-                        <div>
-                            <h2 class="card-title">Evolução das precificações</h2>
-                            <p class="card-subtitle">Histórico de preço sugerido e custo unitário ao longo das versões salvas.</p>
-                        </div>
-                    </div>
-                    <div id="dash-chart-evolution" class="chart-container"></div>
-                </section>
-
-                <section class="surface-card">
-                    <div class="card-header">
-                        <div>
-                            <h2 class="card-title">Distribuição dos custos</h2>
-                            <p class="card-subtitle">${latestPricing ? `Composição do último registro: ${Formatter.escapeHtml(latestPricing.itemNome)}` : 'Composição por categoria de custo'}</p>
-                        </div>
-                    </div>
-                    <div id="dash-chart-costs" class="chart-container"></div>
-                </section>
             </div>
 
             <div class="dashboard-bottom-grid">
                 <section class="surface-card">
                     <div class="card-header">
                         <div>
-                            <h2 class="card-title">Margem planejada por item</h2>
-                            <p class="card-subtitle">Margem configurada nas precificações comparada à meta de ${Formatter.percent(target, 0)} (não representa venda realizada).</p>
+                            <h2 class="card-title">Atividade recente</h2>
+                            <p class="card-subtitle">Últimas versões salvas em produtos e serviços ativos.</p>
                         </div>
+                        <button type="button" class="btn btn-ghost btn-sm" id="dash-history-btn">Ver histórico</button>
                     </div>
-                    <div id="dash-chart-margin" class="chart-container"></div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Item / versão</th>
+                                    <th>Data</th>
+                                    <th class="num">Preço sugerido</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${recentPricings.length ? recentPricings.map(p => `
+                                    <tr>
+                                        <td>${Formatter.escapeHtml(p.itemNome)} <span class="mono" style="color:var(--color-silver);">v${p.versao}</span></td>
+                                        <td>${Formatter.dateShort(p.criadoEm)}</td>
+                                        <td class="num">${Formatter.brl(p.precoSugerido)}</td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="3">Nenhuma precificação vinculada a item ativo.</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="card-subtitle" style="margin-top:12px;">A atividade mostra registros salvos; não representa vendas ou faturamento.</p>
                 </section>
 
                 <section class="surface-card">
                     <div class="card-header">
                         <div>
                             <h2 class="card-title">Insights do seu negócio</h2>
-                            <p class="card-subtitle">Leituras objetivas derivadas exclusivamente dos seus registros reais.</p>
+                            <p class="card-subtitle">Leituras objetivas com base nas informações cadastradas no negócio.</p>
                         </div>
                     </div>
                     <div id="dash-insights-content"></div>
@@ -1311,40 +1568,27 @@
             </div>
         `;
 
-        ChartRenderer.renderPriceEvolutionChart(document.getElementById('dash-chart-evolution'), pricings);
-        ChartRenderer.renderCostDistributionChart(
-            document.getElementById('dash-chart-costs'),
-            latestPricing ? latestPricing.categoriasCusto : [],
-            latestPricing ? latestPricing.custoTotal : 0
-        );
-        ChartRenderer.renderPlannedMarginChart(document.getElementById('dash-chart-margin'), pricings, target);
+        document.getElementById('dash-history-btn')?.addEventListener('click', () => UI.navigate('historico'));
 
         const insightsContainer = document.getElementById('dash-insights-content');
-        if (pricings.length === 0) {
+        if (activePricingRecords.length === 0) {
             insightsContainer.innerHTML = `
                 <div class="nilo-spotlight" style="border:0;padding:8px 0;background:transparent;">
                     <div class="nilo-avatar-box">
                         <img src="${NILO_ASSETS.boasVindas}" alt="Nilo dando boas-vindas" class="nilo-figure nilo-float">
                     </div>
                     <div>
-                        <h3 style="font-size:16px;font-weight:600;margin-bottom:6px;">Olá! Sou o Nilo, seu apoio analítico.</h3>
-                        <p style="font-size:13px;color:var(--color-silver);margin-bottom:14px;">
-                            Ainda não há precificações salvas para gerar diagnósticos do negócio. Comece cadastrando uma primeira precificação ou carregue um cenário de demonstração para explorar os gráficos.
+                        <h3 style="font-size:20.8px;font-weight:600;margin-bottom:6px;">Olá! Sou o Nilo, seu apoio analítico.</h3>
+                        <p style="font-size:16.9px;color:var(--color-silver);margin-bottom:14px;">
+                            Cadastre sua primeira precificação para acompanhar custos, margens planejadas e recomendações do negócio.
                         </p>
                         <div style="display:flex;gap:10px;flex-wrap:wrap;">
                             <button type="button" class="btn btn-primary btn-sm" id="dash-empty-start">Criar primeira precificação</button>
-                            <button type="button" class="btn btn-secondary btn-sm" id="dash-load-demo">Carregar demonstração</button>
                         </div>
                     </div>
                 </div>
             `;
             document.getElementById('dash-empty-start')?.addEventListener('click', () => UI.navigate('precificacao'));
-            document.getElementById('dash-load-demo')?.addEventListener('click', () => {
-                WorkspaceStore.loadDemoScenario();
-                UI.updateChrome();
-                UI.renderCurrentView();
-                UI.toast('Cenário de demonstração carregado localmente.', 'success');
-            });
         } else {
             const niloPose = belowTargetCount > 0 ? NILO_ASSETS.recomendacao : NILO_ASSETS.analisando;
             insightsContainer.innerHTML = `
@@ -1352,10 +1596,14 @@
                     <div class="nilo-avatar-box-sm">
                         <img src="${niloPose}" alt="Nilo analisando indicadores" class="nilo-figure nilo-float">
                     </div>
-                    <p style="font-size:13px;color:var(--color-silver);padding-top:6px;">
+                    <p style="font-size:16.9px;color:var(--color-silver);padding-top:6px;">
                         ${belowTargetCount > 0
                             ? 'Identifiquei pontos de atenção nas suas margens planejadas. Vale revisar os itens destacados antes de atualizar sua tabela de vendas.'
-                            : 'Suas precificações salvas estão consistentes com a meta definida. Use o Consultor IA se quiser validar competitividade.'}
+                            : (activePricingCount === 0
+                                ? 'Ainda não há margens planejadas válidas nas últimas versões dos itens ativos para fazer essa leitura.'
+                                : (belowTargetCount === null
+                                    ? 'As margens planejadas dos itens ativos estão disponíveis para acompanhamento. Defina uma meta em Meu negócio se quiser compará-las.'
+                                    : 'As margens planejadas dos itens ativos estão na meta ou acima dela. Isso não representa vendas realizadas.'))}
                     </p>
                 </div>
                 <div class="insights-list">
@@ -1402,18 +1650,9 @@
                 </div>
             </div>
 
-            <div class="notice-bar">
-                <div class="notice-bar-text">
-                    <strong>Armazenamento local (demonstração):</strong> Estas informações ficam salvas no navegador e pré-selecionam seu segmento padrão sem impedir simulações em outros setores.
-                </div>
-            </div>
-
             <form id="business-form" class="surface-card" novalidate>
                 <div style="margin-bottom:22px;">
-                    <div class="field-label" style="margin-bottom:10px;">
-                        <span>Segmento principal de atuação</span>
-                        <span class="field-req">Opcional para começar</span>
-                    </div>
+                    <div class="field-label" style="margin-bottom:10px;">Segmento principal de atuação</div>
                     <div class="sector-selector-grid" id="biz-sector-grid">
                         ${Object.values(SETORES).map(s => `
                             <button type="button" class="sector-option ${selectedSegment === s.id ? 'active' : ''}" data-sector="${s.id}">
@@ -1425,9 +1664,13 @@
                 </div>
 
                 <div class="form-grid">
+                    <div class="form-field form-field-full">
+                        <label class="field-label" for="biz-margem-meta"><span>Meta de margem da empresa (%)</span>${fieldInfoIcon('Defina uma meta de margem para acompanhar seus resultados. Se não tiver uma meta, deixe em branco.')}</label>
+                        <input id="biz-margem-meta" class="field-input mono" type="text" inputmode="decimal" value="${b.margemMeta ?? ''}" placeholder="Ex: 25">
+                                            </div>
                     <div class="form-field">
-                        <label class="field-label" for="biz-nome">Nome do negócio</label>
-                        <input id="biz-nome" class="field-input" type="text" value="${Formatter.escapeHtml(b.nomeNegocio)}" placeholder="Ex: Padaria Trigo & Cia ou Studio Silva">
+                        <label class="field-label" for="biz-nome">Nome do negócio ${fieldRequiredMark(true)}</label>
+                        <input id="biz-nome" class="field-input" type="text" required maxlength="160" value="${Formatter.escapeHtml(b.nomeNegocio)}" placeholder="Ex: Padaria Trigo & Cia ou Studio Silva">
                     </div>
 
                     <div class="form-field">
@@ -1454,9 +1697,8 @@
                     </div>
 
                     <div class="form-field">
-                        <label class="field-label" for="biz-regime">Enquadramento / Regime (informativo)</label>
+                        <label class="field-label" for="biz-regime"><span>Enquadramento / Regime (informativo)</span>${fieldInfoIcon('Informe seu enquadramento apenas para referência. O ValorizAI não presume alíquotas nem substitui orientação contábil.')}</label>
                         <input id="biz-regime" class="field-input" type="text" value="${Formatter.escapeHtml(b.regimeInformativo)}" placeholder="Ex: MEI, Simples Nacional, Autônomo">
-                        <span class="field-help">Apenas referência organizacional; nenhuma alíquota automática é presumida.</span>
                     </div>
 
                     <div class="form-field form-field-full">
@@ -1493,23 +1735,98 @@
             });
         });
 
-        document.getElementById('business-form').addEventListener('submit', e => {
+        document.getElementById('business-form').addEventListener('submit', async e => {
             e.preventDefault();
-            WorkspaceStore.state.business = {
-                nomeNegocio: document.getElementById('biz-nome').value.trim(),
+            const form = e.currentTarget;
+            const submitButton = form.querySelector('button[type="submit"]');
+            const nomeNegocio = document.getElementById('biz-nome').value.trim();
+            const margemMeta = Formatter.parseNumber(document.getElementById('biz-margem-meta').value);
+            if (!nomeNegocio) {
+                UI.toast('Informe o nome do negócio para continuar.', 'error');
+                document.getElementById('biz-nome').focus();
+                return;
+            }
+            if (margemMeta !== null && (!Number.isFinite(margemMeta) || margemMeta < 0 || margemMeta >= 100)) {
+                UI.toast('Informe uma meta entre 0% e 99%, ou deixe o campo vazio.', 'error');
+                return;
+            }
+
+            const businessPayload = {
+                nomeNegocio,
                 empreendedor: document.getElementById('biz-empreendedor').value.trim(),
+                margemMeta,
                 segmento: selectedSegment,
                 modeloOperacao: document.getElementById('biz-modelo').value,
                 regimeInformativo: document.getElementById('biz-regime').value.trim(),
                 descricao: document.getElementById('biz-descricao').value.trim(),
                 cidadeUf: document.getElementById('biz-cidade').value.trim(),
-                observacoes: document.getElementById('biz-obs').value.trim(),
-                atualizadoEm: new Date().toISOString()
+                observacoes: document.getElementById('biz-obs').value.trim()
             };
-            WorkspaceStore.save();
-            UI.updateChrome();
-            UI.renderCurrentView();
-            UI.toast('Informações do negócio salvas localmente.', 'success');
+            const config = window.VALORIZAI_CONFIG || {};
+            const authClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+            submitButton.disabled = true;
+            submitButton.textContent = 'Salvando…';
+
+            try {
+                const { data: sessionData, error: sessionError } = await authClient.auth.getSession();
+                const session = sessionData?.session;
+                if (sessionError || !session?.access_token) throw new Error('Sua sessão expirou. Entre novamente.');
+
+                const response = await fetch('/api/business/profile', {
+                    method: 'PATCH',
+                    headers: {
+                        Authorization: `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: businessPayload.nomeNegocio,
+                        sector: businessPayload.segmento || null,
+                        description: businessPayload.descricao || null,
+                        operating_model: businessPayload.modeloOperacao || null,
+                        target_margin_percent: businessPayload.margemMeta,
+                        additional_data: {
+                            entrepreneur_name: businessPayload.empreendedor || null,
+                            tax_regime: businessPayload.regimeInformativo || null,
+                            location_text: businessPayload.cidadeUf || null,
+                            notes: businessPayload.observacoes || null
+                        }
+                    })
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || !result.success || !result.data?.business) {
+                    throw new Error(result.error?.message || 'Não foi possível salvar seu perfil agora.');
+                }
+
+                const saved = result.data.business;
+                const additional = saved.additional_data || {};
+                WorkspaceStore.state.business = {
+                    ...WorkspaceStore.state.business,
+                    nomeNegocio: saved.name || '',
+                    empreendedor: additional.entrepreneur_name || '',
+                    margemMeta: saved.target_margin_percent ?? null,
+                    segmento: saved.sector === 'servicos' ? 'servico' : (saved.sector || ''),
+                    modeloOperacao: saved.operating_model || '',
+                    regimeInformativo: additional.tax_regime || '',
+                    descricao: saved.description || '',
+                    cidadeUf: additional.location_text || '',
+                    observacoes: additional.notes || '',
+                    atualizadoEm: saved.updated_at || new Date().toISOString()
+                };
+                const locallySaved = WorkspaceStore.save();
+                UI.updateChrome();
+                UI.renderCurrentView();
+                UI.toast(
+                    locallySaved
+                        ? 'Perfil salvo na sua conta.'
+                        : 'Perfil salvo na sua conta. Não foi possível atualizar a cópia deste navegador.',
+                    locallySaved ? 'success' : 'info'
+                );
+            } catch (error) {
+                UI.toast(error.message || 'Não foi possível salvar seu perfil. Tente novamente.', 'error');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Salvar informações';
+            }
         });
     }
 
@@ -1616,11 +1933,11 @@
                                     <tr>
                                         <td>
                                             <div style="font-weight:600;color:var(--color-cloud);">${Formatter.escapeHtml(item.nome)}</div>
-                                            <div style="font-size:12px;color:var(--color-silver);">${Formatter.escapeHtml(item.categoria || 'Sem categoria')} · Cadastro ${Formatter.dateShort(item.criadoEm)}</div>
+                                            <div style="font-size:15.6px;color:var(--color-silver);">${Formatter.escapeHtml(item.categoria || 'Sem categoria')} · Cadastro ${Formatter.dateShort(item.criadoEm)}</div>
                                         </td>
                                         <td>
                                             <div>${SETORES[item.setor]?.nome || item.setor}</div>
-                                            <div style="font-size:12px;color:var(--color-silver);">${Formatter.escapeHtml(item.tipo || '—')}</div>
+                                            <div style="font-size:15.6px;color:var(--color-silver);">${Formatter.escapeHtml(item.tipo || '—')}</div>
                                         </td>
                                         <td>${Formatter.escapeHtml(item.unidade)}</td>
                                         <td><span class="status-label ${statusClass}">${Formatter.escapeHtml(item.status)}</span></td>
@@ -1680,7 +1997,7 @@
             <form id="cat-item-form" novalidate>
                 <div class="form-grid">
                     <div class="form-field form-field-full">
-                        <label class="field-label" for="modal-item-nome">Nome do produto ou serviço <span class="field-req">Obrigatório</span></label>
+                        <label class="field-label" for="modal-item-nome">Nome do produto ou serviço ${fieldRequiredMark(true)}</label>
                         <input id="modal-item-nome" class="field-input" type="text" value="${Formatter.escapeHtml(existing?.nome || '')}" placeholder="Ex: Bolo artesanal 1kg, Camiseta algodão, Consultoria mensal">
                         <span class="field-error hidden" id="err-item-nome"></span>
                     </div>
@@ -1737,8 +2054,9 @@
                 });
 
                 body.querySelector('#modal-cancel-btn').addEventListener('click', () => UI.closeModal());
-                body.querySelector('#cat-item-form').addEventListener('submit', e => {
+                body.querySelector('#cat-item-form').addEventListener('submit', async e => {
                     e.preventDefault();
+                    const submit = body.querySelector('button[type="submit"]');
                     const nome = body.querySelector('#modal-item-nome').value.trim();
                     const errEl = body.querySelector('#err-item-nome');
                     if (!nome) {
@@ -1747,36 +2065,42 @@
                         body.querySelector('#modal-item-nome').classList.add('has-error');
                         return;
                     }
-
-                    if (isEdit) {
-                        Object.assign(existing, {
-                            nome,
-                            setor: setorSelect.value,
-                            tipo: tipoInput.value.trim() || SETORES[setorSelect.value].itemTipoPadrao,
-                            categoria: body.querySelector('#modal-item-categoria').value.trim(),
-                            unidade: unidadeInput.value.trim() || SETORES[setorSelect.value].unidadePadrao,
-                            status: body.querySelector('#modal-item-status').value,
-                            descricao: body.querySelector('#modal-item-desc').value.trim()
-                        });
-                        UI.toast('Item atualizado no catálogo.', 'success');
-                    } else {
-                        WorkspaceStore.state.catalog.unshift({
-                            id: Formatter.uid('item'),
-                            nome,
-                            setor: setorSelect.value,
-                            tipo: tipoInput.value.trim() || SETORES[setorSelect.value].itemTipoPadrao,
-                            categoria: body.querySelector('#modal-item-categoria').value.trim(),
-                            unidade: unidadeInput.value.trim() || SETORES[setorSelect.value].unidadePadrao,
-                            status: body.querySelector('#modal-item-status').value,
-                            descricao: body.querySelector('#modal-item-desc').value.trim(),
-                            criadoEm: new Date().toISOString()
-                        });
-                        UI.toast('Item adicionado ao catálogo.', 'success');
+                    const statusLabel = body.querySelector('#modal-item-status').value;
+                    const payload = {
+                        name: nome,
+                        sector: setorSelect.value === 'servico' ? 'servicos' : setorSelect.value,
+                        item_type: setorSelect.value === 'servico' ? 'servico' : 'produto',
+                        category: body.querySelector('#modal-item-categoria').value.trim() || null,
+                        unit: unidadeInput.value.trim() || SETORES[setorSelect.value].unidadePadrao,
+                        description: body.querySelector('#modal-item-desc').value.trim() || null,
+                        status: statusLabel === 'Arquivado' ? 'archived' : 'active',
+                        additional_data: {
+                            subtype: tipoInput.value.trim() || SETORES[setorSelect.value].itemTipoPadrao,
+                            status_label: statusLabel === 'Em revisão' ? 'Em revisão' : (statusLabel === 'Arquivado' ? 'Arquivado' : 'Ativo')
+                        }
+                    };
+                    submit.disabled = true;
+                    try {
+                        const saved = isEdit
+                            ? await ApiService.updateProduct(existing.id, payload)
+                            : await ApiService.createProduct(payload);
+                        const item = mapProductFromApi(saved);
+                        if (isEdit) {
+                            Object.assign(existing, item);
+                            UI.toast('Item atualizado no catálogo.', 'success');
+                        } else {
+                            WorkspaceStore.state.catalog.unshift(item);
+                            UI.toast('Item adicionado ao catálogo.', 'success');
+                        }
+                        WorkspaceStore.save();
+                        UI.closeModal();
+                        UI.updateChrome();
+                        UI.renderCurrentView();
+                    } catch (error) {
+                        UI.toast(error.message || 'Não foi possível salvar o item. Seus dados locais foram preservados.', 'error');
+                    } finally {
+                        submit.disabled = false;
                     }
-                    WorkspaceStore.save();
-                    UI.closeModal();
-                    UI.updateChrome();
-                    UI.renderCurrentView();
                 });
             }
         );
@@ -1792,7 +2116,7 @@
         UI.openModal(
             item.nome,
             `
-            <div class="kv-list" style="margin-bottom:20px;">
+            <div class="kv-list simulation-result-details" style="margin-bottom:20px;">
                 <div class="kv-row"><span class="kv-key">Setor / Tipo</span><span class="kv-val">${SETORES[item.setor]?.nome || item.setor} · ${Formatter.escapeHtml(item.tipo)}</span></div>
                 <div class="kv-row"><span class="kv-key">Categoria</span><span class="kv-val">${Formatter.escapeHtml(item.categoria || 'Não informada')}</span></div>
                 <div class="kv-row"><span class="kv-key">Unidade de comercialização</span><span class="kv-val">${Formatter.escapeHtml(item.unidade)}</span></div>
@@ -1800,9 +2124,9 @@
                 ${item.descricao ? `<div class="kv-row"><span class="kv-key">Descrição</span><span class="kv-val" style="max-width:65%;font-weight:400;">${Formatter.escapeHtml(item.descricao)}</span></div>` : ''}
             </div>
 
-            <h3 style="font-size:15px;font-weight:600;margin-bottom:10px;">Histórico preservado de precificações (${itemPricings.length})</h3>
+            <h3 style="font-size:19.5px;font-weight:600;margin-bottom:10px;">Histórico preservado de precificações (${itemPricings.length})</h3>
             ${itemPricings.length === 0 ? `
-                <p style="font-size:13px;color:var(--color-silver);margin-bottom:16px;">Este item ainda não possui precificações salvas.</p>
+                <p style="font-size:16.9px;color:var(--color-silver);margin-bottom:16px;">Este item ainda não possui precificações salvas.</p>
             ` : `
                 <div class="table-wrap" style="margin-bottom:16px;">
                     <table class="data-table">
@@ -1893,7 +2217,7 @@
                 <div class="notice-bar">
                     <div>
                         <div class="notice-bar-text"><strong>Rascunho encontrado:</strong> ${Formatter.escapeHtml(savedDraft.itemNome || 'Precificação em andamento')} (Etapa ${savedDraft.step} de 5)</div>
-                        <div class="notice-bar-sub">Salvo localmente em ${Formatter.dateTime(savedDraft.updatedAt)}</div>
+                        <div class="notice-bar-sub">Última atualização: ${Formatter.dateTime(savedDraft.updatedAt)}</div>
                     </div>
                     <div style="display:flex;gap:8px;">
                         <button type="button" class="btn btn-primary btn-sm" id="wiz-resume-draft">Retomar rascunho</button>
@@ -1989,7 +2313,7 @@
                 fieldsBox.innerHTML = `
                     <div class="form-grid">
                         <div class="form-field form-field-full">
-                            <label class="field-label" for="wiz-catalog-select">Item do catálogo <span class="field-req">Obrigatório</span></label>
+                            <label class="field-label" for="wiz-catalog-select"><span>Item do catálogo</span> ${fieldInfoIcon('Selecione o produto ou serviço que já está cadastrado. O ValorizAI usará os dados de identificação existentes para criar uma nova versão de precificação.')} ${fieldRequiredMark(true)}</label>
                             <select id="wiz-catalog-select" class="field-select">
                                 <option value="">Selecione um item...</option>
                                 ${activeCatalog.map(c => `<option value="${c.id}" ${w.catalogItemId === c.id ? 'selected' : ''}>${Formatter.escapeHtml(c.nome)} (${SETORES[c.setor]?.nome} · ${Formatter.escapeHtml(c.unidade)})</option>`).join('')}
@@ -2012,7 +2336,7 @@
             } else {
                 fieldsBox.innerHTML = `
                     <div style="margin-bottom:18px;">
-                        <div class="field-label" style="margin-bottom:8px;">Setor da operação <span class="field-req">Obrigatório</span></div>
+                        <div class="field-label" style="margin-bottom:8px;"><span>Setor da operação</span> ${fieldInfoIcon('Escolha a atividade principal relacionada a este item: Comércio para revenda, Indústria para fabricação ou Serviços para trabalhos e atendimentos.')} ${fieldRequiredMark(true)}</div>
                         <div class="sector-selector-grid">
                             ${Object.values(SETORES).map(s => `
                                 <button type="button" class="sector-option ${w.setor === s.id ? 'active' : ''}" data-wiz-sector="${s.id}">
@@ -2024,17 +2348,17 @@
                     </div>
                     <div class="form-grid">
                         <div class="form-field">
-                            <label class="field-label" for="wiz-item-nome">Nome do produto ou serviço <span class="field-req">Obrigatório</span></label>
+                            <label class="field-label" for="wiz-item-nome"><span>Nome do produto ou serviço</span> ${fieldInfoIcon('Digite o nome pelo qual você identifica e vende este item. Exemplo: Café especial 250 g ou Instalação elétrica residencial.')} ${fieldRequiredMark(true)}</label>
                             <input id="wiz-item-nome" class="field-input" type="text" value="${Formatter.escapeHtml(w.itemNome)}" placeholder="Ex: Café especial 250g ou Revisão elétrica">
                             <span class="field-error hidden" id="err-s1-nome"></span>
                         </div>
                         <div class="form-field">
-                            <label class="field-label" for="wiz-item-unidade">Unidade de comercialização <span class="field-req">Obrigatório</span></label>
+                            <label class="field-label" for="wiz-item-unidade"><span>Unidade de comercialização</span> ${fieldInfoIcon('É a unidade usada para vender ou cobrar o item. Exemplos: Unidade, Caixa, Quilograma, Hora, Diária ou Projeto. Use a mesma unidade ao informar os custos e definir o preço.')} ${fieldRequiredMark(true)}</label>
                             <input id="wiz-item-unidade" class="field-input" type="text" value="${Formatter.escapeHtml(w.unidade || SETORES[w.setor].unidadePadrao)}" placeholder="Ex: Unidade, Hora, Projeto, Caixa">
                             <span class="field-error hidden" id="err-s1-unidade"></span>
                         </div>
                         <div class="form-field form-field-full">
-                            <label class="field-label" for="wiz-item-desc">Descrição complementar <span class="field-req">Opcional</span></label>
+                            <label class="field-label" for="wiz-item-desc"><span>Descrição complementar</span> ${fieldInfoIcon('Adicione detalhes que ajudem a diferenciar este item de outros parecidos, como tamanho, material, modelo ou tipo de atendimento. Este campo é opcional.')}</label>
                             <input id="wiz-item-desc" class="field-input" type="text" value="${Formatter.escapeHtml(w.descricao)}" placeholder="Detalhes que ajudam a diferenciar esta versão de preço">
                         </div>
                     </div>
@@ -2117,14 +2441,13 @@
     function renderWizardStep2(container) {
         const w = UI.wizard;
         const sectorCfg = SETORES[w.setor] || SETORES.comercio;
-        const showHelp = WorkspaceStore.state.settings.mostrarDicasCampos;
 
         container.innerHTML = `
             <div class="surface-card">
                 <div class="card-header">
                     <div>
                         <h2 class="card-title">Etapa 2 — Estrutura de custos (${sectorCfg.nome})</h2>
-                        <p class="card-subtitle">Item: <strong>${Formatter.escapeHtml(w.itemNome)}</strong> · Unidade: ${Formatter.escapeHtml(w.unidade)}. Preencha os custos na unidade correspondente sem misturar contas mensais brutas.</p>
+                        <p class="card-subtitle">Item: <strong>${Formatter.escapeHtml(w.itemNome)}</strong> · Unidade: ${Formatter.escapeHtml(w.unidade)}. ${Formatter.escapeHtml(sectorCfg.orientacaoCustos)}</p>
                     </div>
                 </div>
 
@@ -2144,8 +2467,9 @@
                         return `
                             <div class="form-field">
                                 <label class="field-label" for="cost-${field.id}">
-                                    <span>${field.label}</span>
-                                    <span class="field-req">${field.obrigatorio ? 'Obrigatório' : 'Opcional'}</span>
+                                    <span>${Formatter.escapeHtml(field.label)}</span>
+                                    ${fieldInfoIcon(field.help)}
+                                    ${fieldRequiredMark(field.obrigatorio)}
                                 </label>
                                 <div class="input-with-prefix">
                                     ${prefix}
@@ -2160,7 +2484,6 @@
                                     >
                                     ${suffix}
                                 </div>
-                                ${showHelp ? `<span class="field-help">${field.help}</span>` : ''}
                                 <span class="field-error hidden" id="err-cost-${field.id}"></span>
                             </div>
                         `;
@@ -2189,7 +2512,7 @@
             UI.openModal(
                 'Auxiliar de rateio operacional unitário',
                 `
-                <p style="font-size:13px;color:var(--color-silver);margin-bottom:16px;">Informe o total de despesas fixas mensais (aluguel, energia, sistemas) e a quantidade média de unidades vendidas no mês para preencher o rateio por unidade sem misturar períodos.</p>
+                <p style="font-size:16.9px;color:var(--color-silver);margin-bottom:16px;">Informe o total de despesas fixas mensais (aluguel, energia, sistemas) e a quantidade média de unidades vendidas no mês para preencher o rateio por unidade sem misturar períodos.</p>
                 <div class="form-grid">
                     <div class="form-field">
                         <label class="field-label" for="aux-fixo">Custo fixo mensal (R$)</label>
@@ -2200,7 +2523,7 @@
                         <input id="aux-vol" class="field-input mono" type="text" inputmode="numeric" placeholder="Ex: 500">
                     </div>
                 </div>
-                <div id="aux-preview" style="margin-top:16px;font-size:14px;color:var(--color-emerald);" class="mono"></div>
+                <div id="aux-preview" style="margin-top:16px;font-size:18.2px;color:var(--color-emerald);" class="mono"></div>
                 <div class="wizard-footer">
                     <button type="button" class="btn btn-ghost" id="aux-cancel">Fechar</button>
                     <button type="button" class="btn btn-primary" id="aux-apply">Aplicar ao campo de rateio</button>
@@ -2331,10 +2654,10 @@
             },
             {
                 id: 'margemDesejada',
-                label: 'Margem de lucro desejada sobre o preço de venda (%)',
+                label: 'Quanto do preço de venda você quer manter como lucro? (%)',
                 obrigatorio: true,
-                placeholder: 'Ex: 25',
-                help: 'Percentual do preço final de venda que deve restar como lucro após pagar custos, taxas e impostos (diferente de markup sobre custo).'
+                placeholder: 'Ex: 20',
+                help: 'É a parte do preço final que deve sobrar como lucro estimado depois de pagar os custos, impostos e taxas informados. Exemplo: em uma venda de R$ 100, uma margem de 20% representa R$ 20 de lucro estimado. Não é o mesmo que markup.'
             }
         ];
 
@@ -2351,14 +2674,14 @@
                     ${taxFields.map(f => `
                         <div class="form-field ${f.id === 'margemDesejada' ? 'form-field-full' : ''}">
                             <label class="field-label" for="tax-${f.id}">
-                                <span>${f.label}</span>
-                                <span class="field-req">${f.obrigatorio ? 'Obrigatório' : 'Opcional'}</span>
+                                <span>${Formatter.escapeHtml(f.label)}</span>
+                                ${fieldInfoIcon(f.help)}
+                                ${fieldRequiredMark(f.obrigatorio)}
                             </label>
                             <div class="input-with-prefix">
                                 <input id="tax-${f.id}" class="field-input mono has-suffix" type="text" inputmode="decimal" data-tax-field="${f.id}" value="${Formatter.escapeHtml(t[f.id] ?? '')}" placeholder="${f.placeholder}">
                                 <span class="input-suffix">%</span>
                             </div>
-                            <span class="field-help">${f.help}</span>
                             <span class="field-error hidden" id="err-tax-${f.id}"></span>
                         </div>
                     `).join('')}
@@ -2469,9 +2792,9 @@
                 </div>
 
                 <div class="grid-2" style="margin-bottom:20px;">
-                    <div style="padding:18px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
+                    <div class="review-summary-card" style="padding:18px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                            <h3 style="font-size:15px;font-weight:600;">Identificação</h3>
+                            <h3 style="font-size:19.5px;font-weight:600;">Identificação</h3>
                             <button type="button" class="btn btn-ghost btn-sm" data-goto-step="1">Editar</button>
                         </div>
                         <div class="kv-list">
@@ -2482,9 +2805,9 @@
                         </div>
                     </div>
 
-                    <div style="padding:18px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
+                    <div class="review-summary-card" style="padding:18px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                            <h3 style="font-size:15px;font-weight:600;">Impostos, taxas e margem</h3>
+                            <h3 style="font-size:19.5px;font-weight:600;">Impostos, taxas e margem</h3>
                             <button type="button" class="btn btn-ghost btn-sm" data-goto-step="3">Editar</button>
                         </div>
                         <div class="kv-list">
@@ -2497,15 +2820,15 @@
                     </div>
                 </div>
 
-                <div style="padding:18px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
+                <div class="review-summary-card" style="padding:18px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                        <h3 style="font-size:15px;font-weight:600;">Custos declarados por categoria</h3>
+                        <h3 style="font-size:19.5px;font-weight:600;">Custos declarados por categoria</h3>
                         <button type="button" class="btn btn-ghost btn-sm" data-goto-step="2">Editar custos</button>
                     </div>
                     <div class="grid-2">
                         ${Array.from(grouped.entries()).map(([catName, fields]) => `
                             <div>
-                                <div style="font-size:12px;font-weight:600;color:var(--color-blue);margin-bottom:8px;">${catName}</div>
+                                <div style="font-size:15.6px;font-weight:600;color:var(--color-blue);margin-bottom:8px;">${catName}</div>
                                 <div class="kv-list">
                                     ${fields.map(f => {
                                         const raw = w.costs[f.id];
@@ -2550,17 +2873,18 @@
             btn.disabled = true;
             btn.textContent = 'Processando...';
 
-            const { costs, taxes } = normalizeNumericInputsForCalculation(w.setor, w.costs, w.taxes);
-            const result = await ApiService.calcularPreviaPrecificacao({
-                setor: w.setor,
-                costs,
-                taxes
-            });
-
-            w.previewResult = { ...result, costsNormalized: costs, taxesNormalized: taxes };
-            w.step = 5;
-            DraftStore.save(w);
-            renderWizard(document.getElementById('main-viewport'));
+            try {
+                const { costs, taxes } = normalizeNumericInputsForCalculation(w.setor, w.costs, w.taxes);
+                const result = await ApiService.calcularPreviaPrecificacao({ setor: w.setor, costs, taxes });
+                w.previewResult = { ...result, costsNormalized: costs, taxesNormalized: taxes };
+                w.step = 5;
+                DraftStore.save(w);
+                renderWizard(document.getElementById('main-viewport'));
+            } catch (error) {
+                UI.toast(error.message || 'Não foi possível calcular a precificação.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Calcular recomendação de preço';
+            }
         });
     }
 
@@ -2573,15 +2897,17 @@
             return;
         }
 
-        const targetMargin = Number(WorkspaceStore.state.settings.margemMetaPadrao) || 20;
-        const taxAlertThreshold = Number(WorkspaceStore.state.settings.alertaCargaTributaria) || 35;
-        const healthyMargin = r.margemPlanejada >= targetMargin;
+        const businessTarget = WorkspaceStore.state.business.margemMeta;
+        const targetMargin = businessTarget === null || businessTarget === '' || businessTarget === undefined ? null : Number(businessTarget);
+        const taxAlertThreshold = WorkspaceStore.state.settings.alertaCargaTributaria;
+        const hasTaxThreshold = taxAlertThreshold !== null && taxAlertThreshold !== '' && Number.isFinite(Number(taxAlertThreshold));
+        const healthyMargin = targetMargin !== null && r.margemPlanejada >= targetMargin;
 
         const warnings = [];
-        if (r.margemPlanejada < targetMargin) {
+        if (targetMargin !== null && r.margemPlanejada < targetMargin) {
             warnings.push(`Margem planejada (${Formatter.percent(r.margemPlanejada)}) está abaixo da meta configurada (${Formatter.percent(targetMargin, 0)}).`);
         }
-        if (r.percentualImpostosTaxas >= taxAlertThreshold) {
+        if (hasTaxThreshold && r.percentualImpostosTaxas >= Number(taxAlertThreshold)) {
             warnings.push(`Carga de impostos e taxas sobre o preço (${Formatter.percent(r.percentualImpostosTaxas)}) está elevada.`);
         }
         if (r.markup > 0 && r.markup < 1.3) {
@@ -2597,40 +2923,40 @@
         container.innerHTML = `
             <div class="notice-bar">
                 <div>
-                    <div class="notice-bar-text"><strong>Prévia de recomendação calculada</strong> com base nas informações declaradas (aguardando integração do motor oficial no backend).</div>
-                    <div class="notice-bar-sub">A margem exibida considera o percentual sobre o preço de venda sugerido, e não sobre o custo.</div>
+                    <div class="notice-bar-text"><strong>Prévia de preço calculada</strong> com base nas informações preenchidas. Revise os valores antes de usar esta recomendação.</div>
+                    <div class="notice-bar-sub">A margem é calculada sobre o preço de venda, não sobre o custo. Neste resultado, ${Formatter.percent(r.margemPlanejada)} de margem representam ${Formatter.brl(r.lucroEstimado)} de lucro estimado por ${Formatter.escapeHtml(w.unidade)}.</div>
                 </div>
             </div>
 
             <div class="grid-2" style="margin-bottom:20px;">
-                <section class="surface-card">
+                <section class="surface-card pricing-result-metrics">
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;">
                         <div>
                             <div class="kpi-label">Preço de venda sugerido · ${Formatter.escapeHtml(w.unidade)}</div>
-                            <div class="mono" style="font-size:34px;font-weight:700;color:var(--color-emerald);line-height:1.15;margin-top:4px;">${Formatter.brl(r.precoSugerido)}</div>
-                            <div style="font-size:13px;color:var(--color-silver);margin-top:6px;">Item: <strong style="color:var(--color-cloud);">${Formatter.escapeHtml(w.itemNome)}</strong> · ${SETORES[w.setor]?.nome}</div>
+                            <div class="mono" style="font-size:44.2px;font-weight:700;color:var(--color-emerald);line-height:1.15;margin-top:4px;">${Formatter.brl(r.precoSugerido)}</div>
+                            <div style="font-size:16.9px;color:var(--color-silver);margin-top:6px;">Item: <strong style="color:var(--color-cloud);">${Formatter.escapeHtml(w.itemNome)}</strong> · ${SETORES[w.setor]?.nome}</div>
                         </div>
                         <div class="nilo-avatar-box-sm">
-                            <img src="${healthyMargin ? NILO_ASSETS.comemorando : NILO_ASSETS.recomendacao}" alt="Nilo resultado da precificação" class="nilo-figure nilo-enter">
+                            <img src="${targetMargin === null ? NILO_ASSETS.analisando : (healthyMargin ? NILO_ASSETS.comemorando : NILO_ASSETS.recomendacao)}" alt="Nilo resultado da precificação" class="nilo-figure nilo-enter">
                         </div>
                     </div>
 
                     <div class="grid-2" style="gap:12px;">
-                        <div style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
+                        <div class="pricing-result-metric-card" style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                             <div class="kpi-label">Custo total unitário</div>
-                            <div class="kpi-value" style="font-size:20px;margin-top:4px;">${Formatter.brl(r.custoTotal)}</div>
+                            <div class="kpi-value" style="font-size:26.0px;margin-top:4px;">${Formatter.brl(r.custoTotal)}</div>
                         </div>
-                        <div style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
+                        <div class="pricing-result-metric-card" style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                             <div class="kpi-label">Multiplicador (Markup)</div>
-                            <div class="kpi-value" style="font-size:20px;color:var(--color-blue);margin-top:4px;">${r.markup.toFixed(2)}x</div>
+                            <div class="kpi-value" style="font-size:26.0px;color:var(--color-blue);margin-top:4px;">${r.markup.toFixed(2)}x</div>
                         </div>
-                        <div style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
+                        <div class="pricing-result-metric-card" style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                             <div class="kpi-label">Impostos e taxas (${Formatter.percent(r.percentualImpostosTaxas)})</div>
-                            <div class="kpi-value warning" style="font-size:20px;margin-top:4px;">${Formatter.brl(r.valorImpostosTaxas)}</div>
+                            <div class="kpi-value warning" style="font-size:26.0px;margin-top:4px;">${Formatter.brl(r.valorImpostosTaxas)}</div>
                         </div>
-                        <div style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
+                        <div class="pricing-result-metric-card" style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                             <div class="kpi-label">Lucro estimado / unidade (${Formatter.percent(r.margemPlanejada)})</div>
-                            <div class="kpi-value positive" style="font-size:20px;margin-top:4px;">${Formatter.brl(r.lucroEstimado)}</div>
+                            <div class="kpi-value positive" style="font-size:26.0px;margin-top:4px;">${Formatter.brl(r.lucroEstimado)}</div>
                         </div>
                     </div>
                 </section>
@@ -2649,26 +2975,26 @@
                     <div class="composition-legend">
                         <div class="legend-item">
                             <span class="legend-label"><span class="legend-swatch" style="background:#3986D8"></span> Custo unitário</span>
-                            <span class="mono" style="font-size:12px;">${Formatter.brl(r.custoTotal)} (${Formatter.percent(pctCusto)})</span>
+                            <span class="mono" style="font-size:15.6px;">${Formatter.brl(r.custoTotal)} (${Formatter.percent(pctCusto)})</span>
                         </div>
                         <div class="legend-item">
                             <span class="legend-label"><span class="legend-swatch" style="background:#EF4444"></span> Impostos</span>
-                            <span class="mono" style="font-size:12px;">${Formatter.brl(r.valorImpostos)} (${Formatter.percent(pctImposto)})</span>
+                            <span class="mono" style="font-size:15.6px;">${Formatter.brl(r.valorImpostos)} (${Formatter.percent(pctImposto)})</span>
                         </div>
                         <div class="legend-item">
                             <span class="legend-label"><span class="legend-swatch" style="background:#F59E0B"></span> Taxas e comissões</span>
-                            <span class="mono" style="font-size:12px;">${Formatter.brl(r.valorTaxasComissoes)} (${Formatter.percent(pctTaxas)})</span>
+                            <span class="mono" style="font-size:15.6px;">${Formatter.brl(r.valorTaxasComissoes)} (${Formatter.percent(pctTaxas)})</span>
                         </div>
                         <div class="legend-item">
                             <span class="legend-label"><span class="legend-swatch" style="background:#55D6A0"></span> Lucro estimado</span>
-                            <span class="mono" style="font-size:12px;">${Formatter.brl(r.lucroEstimado)} (${Formatter.percent(pctLucro)})</span>
+                            <span class="mono" style="font-size:15.6px;">${Formatter.brl(r.lucroEstimado)} (${Formatter.percent(pctLucro)})</span>
                         </div>
                     </div>
 
                     ${warnings.length ? `
                         <div style="margin-top:18px;padding-top:14px;border-top:var(--border-hairline);">
-                            <div style="font-size:12px;font-weight:600;color:var(--color-warning);margin-bottom:6px;">Indicadores de atenção</div>
-                            <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--color-silver);display:flex;flex-direction:column;gap:4px;">
+                            <div style="font-size:15.6px;font-weight:600;color:var(--color-warning);margin-bottom:6px;">Indicadores de atenção</div>
+                            <ul style="margin:0;padding-left:18px;font-size:16.9px;color:var(--color-silver);display:flex;flex-direction:column;gap:4px;">
                                 ${warnings.map(msg => `<li>${Formatter.escapeHtml(msg)}</li>`).join('')}
                             </ul>
                         </div>
@@ -2704,8 +3030,11 @@
             UI.navigate('consultor', { consultorContextId: 'wizard_preview' });
         });
 
-        document.getElementById('wiz-s5-save').addEventListener('click', () => {
-            const savedPricing = persistPricingToWorkspace({
+        document.getElementById('wiz-s5-save').addEventListener('click', async () => {
+            const saveButton = document.getElementById('wiz-s5-save');
+            saveButton.disabled = true;
+            try {
+            const savedPricing = await persistPricingToWorkspace({
                 catalogItemId: w.catalogItemId,
                 itemNome: w.itemNome,
                 setor: w.setor,
@@ -2718,40 +3047,38 @@
             UI.updateChrome();
             UI.toast(`Precificação v${savedPricing.versao} salva no catálogo e no histórico.`, 'success');
             UI.navigate('historico');
+            } catch (error) {
+                UI.toast(error.message || 'Não foi possível salvar a precificação. O histórico local foi preservado.', 'error');
+            } finally {
+                saveButton.disabled = false;
+            }
         });
     }
 
-    function persistPricingToWorkspace({ catalogItemId, itemNome, setor, unidade, descricao, result }) {
+    async function persistPricingToWorkspace({ catalogItemId, itemNome, setor, unidade, descricao, result, pricingType = 'full' }) {
         let item = catalogItemId
             ? WorkspaceStore.state.catalog.find(c => c.id === catalogItemId)
             : null;
 
         if (!item) {
-            item = {
-                id: Formatter.uid('item'),
-                nome: itemNome,
-                descricao: descricao || '',
-                categoria: 'Geral',
-                tipo: SETORES[setor]?.itemTipoPadrao || 'Item',
-                setor,
-                unidade: unidade || SETORES[setor]?.unidadePadrao || 'Unidade',
-                status: 'Ativo',
-                criadoEm: new Date().toISOString()
-            };
-            WorkspaceStore.state.catalog.unshift(item);
+            const created = await ApiService.createProduct({
+                name: itemNome,
+                description: descricao || null,
+                category: 'Geral',
+                item_type: setor === 'servico' ? 'servico' : 'produto',
+                sector: setor === 'servico' ? 'servicos' : setor,
+                unit: unidade || SETORES[setor]?.unidadePadrao || 'Unidade',
+                status: 'active',
+                additional_data: { subtype: SETORES[setor]?.itemTipoPadrao || 'Item', status_label: 'Ativo' }
+            });
+            item = mapProductFromApi(created);
         }
 
         const existingVersions = WorkspaceStore.state.pricings.filter(p => p.catalogItemId === item.id);
         const nextVersion = existingVersions.length ? Math.max(...existingVersions.map(p => p.versao)) + 1 : 1;
-
-        const record = {
-            id: Formatter.uid('prec'),
-            catalogItemId: item.id,
-            itemNome: item.nome,
+        const createdAt = new Date().toISOString();
+        const uiRecord = {
             versao: nextVersion,
-            setor,
-            unidade: item.unidade,
-            criadoEm: new Date().toISOString(),
             custoTotal: result.custoTotal,
             precoSugerido: result.precoSugerido,
             markup: result.markup,
@@ -2760,11 +3087,52 @@
             valorImpostosTaxas: result.valorImpostosTaxas,
             lucroEstimado: result.lucroEstimado,
             fonteCalculo: result.fonteCalculo,
-            categoriasCusto: result.categoriasCusto,
+            categoriasCusto: result.categoriasCusto
+        };
+        const saved = await ApiService.createPricing({
+            product_id: item.id,
+            pricing_type: pricingType,
+            unit: item.unidade,
+            quantity: 1,
+            custo_total: result.custoTotal,
+            preco_sugerido: result.precoSugerido,
+            markup: result.markup,
+            margem_lucro: result.margemPlanejada,
+            impostos: result.percentualImpostosTaxas,
+            setor: setor === 'servico' ? 'servicos' : setor,
+            desired_margin_percent: result.taxesNormalized?.margemDesejada ?? null,
+            input_snapshot: {
+                item_name: item.nome,
+                sector: setor,
+                costs: result.costsNormalized || {},
+                taxes: result.taxesNormalized || {},
+                created_at: createdAt
+            },
+            result_snapshot: { ui_record: uiRecord },
+            calculation_version: 'frontend-preview-v1'
+        });
+        if (!WorkspaceStore.state.catalog.some(c => c.id === item.id)) WorkspaceStore.state.catalog.unshift(item);
+        const authoritative = saved.result_snapshot?.server_calculation || {};
+        const record = {
+            id: String(saved.id),
+            catalogItemId: item.id,
+            itemNome: item.nome,
+            versao: nextVersion,
+            setor,
+            unidade: item.unidade,
+            criadoEm: saved.data_criacao || createdAt,
+            custoTotal: nullableFiniteNumber(saved.custo_total),
+            precoSugerido: nullableFiniteNumber(saved.preco_sugerido),
+            markup: nullableFiniteNumber(saved.markup),
+            margemPlanejada: nullableFiniteNumber(saved.margem_lucro),
+            percentualImpostosTaxas: nullableFiniteNumber(saved.impostos),
+            valorImpostosTaxas: nullableFiniteNumber(authoritative.valorImpostosTaxas),
+            lucroEstimado: nullableFiniteNumber(authoritative.lucroEstimado),
+            fonteCalculo: saved.calculation_version || 'server-v1',
+            categoriasCusto: Array.isArray(authoritative.categoriasCusto) ? authoritative.categoriasCusto : [],
             detalhesCustos: result.costsNormalized,
             taxas: result.taxesNormalized
         };
-
         WorkspaceStore.state.pricings.unshift(record);
         WorkspaceStore.save();
         return record;
@@ -2789,20 +3157,21 @@
             <div class="page-header">
                 <div>
                     <h1 class="page-heading">Simulação rápida</h1>
-                    <p class="page-subtitle">Teste cenários de preço instantaneamente sem poluir seu histórico. Registros só são salvos se você decidir adicionar ao catálogo.</p>
+                    <p class="page-subtitle">Compare cenários de preço sem alterar seu histórico. Você escolhe se deseja salvar um resultado no catálogo.</p>
                 </div>
             </div>
 
             <div class="notice-bar">
-                <div class="notice-bar-text"><strong>Simulação temporária:</strong> Nenhum resultado desta tela entra automaticamente no histórico ou nas análises.</div>
+                <div class="notice-bar-text"><strong>Simulação não salva automaticamente:</strong> os resultados só entram no histórico se você decidir adicioná-los ao catálogo.</div>
             </div>
 
             <div class="grid-2">
                 <section class="surface-card">
                     <h2 class="card-title" style="margin-bottom:14px;">Parâmetros da hipótese</h2>
+                    <p class="card-subtitle" style="margin-bottom:14px;">${Formatter.escapeHtml(sectorCfg.orientacaoCustos)} Na simulação rápida, são exibidos os principais campos de cada setor.</p>
                     <div class="form-grid">
                         <div class="form-field">
-                            <label class="field-label" for="sim-nome">Nome do teste <span class="field-req">Opcional</span></label>
+                            <label class="field-label" for="sim-nome">Nome da simulação</label>
                             <input id="sim-nome" class="field-input" type="text" value="${Formatter.escapeHtml(sim.nome)}" placeholder="Ex: Teste kit promocional">
                         </div>
                         <div class="form-field">
@@ -2816,18 +3185,18 @@
 
                         ${sectorCfg.camposCusto.slice(0, 4).map(f => `
                             <div class="form-field">
-                                <label class="field-label" for="sim-cost-${f.id}">${f.label}</label>
+                                <label class="field-label" for="sim-cost-${f.id}"><span>${Formatter.escapeHtml(f.label)}</span>${fieldInfoIcon(f.help)}</label>
                                 <input id="sim-cost-${f.id}" class="field-input mono" type="text" inputmode="decimal" data-sim-cost="${f.id}" value="${Formatter.escapeHtml(sim.costs[f.id] ?? '')}" placeholder="${f.placeholder}">
                             </div>
                         `).join('')}
 
                         <div class="form-field">
-                            <label class="field-label" for="sim-taxas">Impostos e taxas totais (%)</label>
+                            <label class="field-label" for="sim-taxas"><span>Impostos e taxas sobre a venda (%)</span>${fieldInfoIcon('Some os percentuais cobrados sobre cada venda, como imposto, maquininha, comissão e taxa de aplicativo. Exemplo: 6% + 3% = 9%.')}</label>
                             <input id="sim-taxas" class="field-input mono" type="text" inputmode="decimal" value="${Formatter.escapeHtml(sim.taxasTotais)}" placeholder="Ex: 10">
                         </div>
                         <div class="form-field">
-                            <label class="field-label" for="sim-margem">Margem desejada (%)</label>
-                            <input id="sim-margem" class="field-input mono" type="text" inputmode="decimal" value="${Formatter.escapeHtml(sim.margemDesejada)}" placeholder="Ex: 25">
+                            <label class="field-label" for="sim-margem"><span>Quanto você quer ganhar sobre o preço de venda? (%)</span>${fieldInfoIcon('É a parte do preço que deve sobrar como lucro estimado. Exemplo: em R$ 100 de venda, 20% de margem representam R$ 20.')}${fieldRequiredMark(true)}</label>
+                            <input id="sim-margem" class="field-input mono" type="text" inputmode="decimal" value="${Formatter.escapeHtml(sim.margemDesejada)}" placeholder="Ex: 20">
                         </div>
                     </div>
 
@@ -2858,23 +3227,25 @@
             }
 
             panel.innerHTML = `
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px;">
+                <div class="simulation-result-content" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px;">
                     <div>
                         <div class="kpi-label">Resultado temporário da simulação</div>
-                        <div class="mono" style="font-size:32px;font-weight:700;color:var(--color-emerald);margin-top:4px;">${Formatter.brl(res.precoSugerido)}</div>
-                        <div style="font-size:12px;color:var(--color-silver);margin-top:4px;">Não salvo no catálogo nem no histórico</div>
+                        <div class="mono" style="font-size:41.6px;font-weight:700;color:var(--color-emerald);margin-top:4px;">${Formatter.brl(res.precoSugerido)}</div>
+                        <div style="font-size:15.6px;color:var(--color-silver);margin-top:4px;">Não salvo no catálogo nem no histórico</div>
                     </div>
                     <div class="nilo-avatar-box-sm">
                         <img src="${NILO_ASSETS.recomendacao}" alt="Nilo recomendando" class="nilo-figure nilo-enter">
                     </div>
                 </div>
 
-                <div class="kv-list" style="margin-bottom:20px;">
+                <div class="kv-list simulation-result-details" style="margin-bottom:14px;">
                     <div class="kv-row"><span class="kv-key">Custo total considerado</span><span class="kv-val mono">${Formatter.brl(res.custoTotal)}</span></div>
-                    <div class="kv-row"><span class="kv-key">Multiplicador (Markup)</span><span class="kv-val mono">${res.markup.toFixed(2)}x</span></div>
+                    <div class="kv-row"><span class="kv-key">Markup (multiplicador do custo)</span><span class="kv-val mono">${Formatter.multiplier(res.markup)}</span></div>
                     <div class="kv-row"><span class="kv-key">Impostos e taxas (${Formatter.percent(res.percentualImpostosTaxas)})</span><span class="kv-val mono" style="color:var(--color-warning);">${Formatter.brl(res.valorImpostosTaxas)}</span></div>
                     <div class="kv-row"><span class="kv-key">Lucro estimado (${Formatter.percent(res.margemPlanejada)})</span><span class="kv-val mono" style="color:var(--color-emerald);">${Formatter.brl(res.lucroEstimado)}</span></div>
                 </div>
+
+                <p class="simulation-result-explainer">A margem mostra quanto do preço de venda fica como lucro estimado. Já o markup mostra quantas vezes o custo foi multiplicado para chegar ao preço.</p>
 
                 <div style="display:flex;flex-direction:column;gap:10px;">
                     <button type="button" class="btn btn-primary" id="sim-promote-btn">Adicionar ao catálogo e salvar no histórico</button>
@@ -2882,19 +3253,28 @@
                 </div>
             `;
 
-            document.getElementById('sim-promote-btn').addEventListener('click', () => {
+            document.getElementById('sim-promote-btn').addEventListener('click', async () => {
+                const promoteButton = document.getElementById('sim-promote-btn');
+                promoteButton.disabled = true;
                 const nomeFinal = sim.nome.trim() || `Item simulado (${SETORES[sim.setor].nome})`;
-                const saved = persistPricingToWorkspace({
-                    catalogItemId: '',
-                    itemNome: nomeFinal,
-                    setor: sim.setor,
-                    unidade: SETORES[sim.setor].unidadePadrao,
-                    descricao: 'Originado de simulação rápida.',
-                    result: res
-                });
-                UI.updateChrome();
-                UI.toast(`"${saved.itemNome}" adicionado ao catálogo e salvo no histórico.`, 'success');
-                UI.navigate('historico');
+                try {
+                    const saved = await persistPricingToWorkspace({
+                        catalogItemId: '',
+                        itemNome: nomeFinal,
+                        setor: sim.setor,
+                        unidade: SETORES[sim.setor].unidadePadrao,
+                        descricao: 'Originado de simulação rápida.',
+                        result: res,
+                        pricingType: 'quick'
+                    });
+                    UI.updateChrome();
+                    UI.toast(`"${saved.itemNome}" adicionado ao catálogo e salvo no histórico.`, 'success');
+                    UI.navigate('historico');
+                } catch (error) {
+                    UI.toast(error.message || 'Não foi possível salvar a simulação.', 'error');
+                } finally {
+                    promoteButton.disabled = false;
+                }
             });
 
             document.getElementById('sim-ai-btn').addEventListener('click', () => {
@@ -2945,9 +3325,18 @@
                 taxaMarketplace: 0,
                 margemDesejada: margemVal
             };
-            const res = await ApiService.calcularPreviaPrecificacao({ setor: sim.setor, costs, taxes });
-            UI.simulacaoResult = { ...res, costsNormalized: costs, taxesNormalized: taxes };
-            renderSimResult();
+            const runButton = document.getElementById('sim-run-btn');
+            runButton.disabled = true;
+            try {
+                const res = await ApiService.calcularPreviaPrecificacao({ setor: sim.setor, costs, taxes });
+                UI.simulacaoResult = { ...res, costsNormalized: costs, taxesNormalized: taxes };
+                renderSimResult();
+            } catch (error) {
+                UI.toast(error.message || 'Não foi possível calcular a simulação.', 'error');
+            } finally {
+                const currentButton = document.getElementById('sim-run-btn');
+                if (currentButton) currentButton.disabled = false;
+            }
         });
     }
 
@@ -3024,7 +3413,8 @@
         } else if (filtered.length === 0) {
             region.innerHTML = `<div class="empty-state"><h2 class="empty-state-title">Nenhum registro encontrado</h2><p class="empty-state-desc">Altere os filtros aplicados acima.</p></div>`;
         } else {
-            const target = Number(WorkspaceStore.state.settings.margemMetaPadrao) || 20;
+            const businessTarget = WorkspaceStore.state.business.margemMeta;
+            const target = businessTarget === null || businessTarget === '' || businessTarget === undefined ? null : Number(businessTarget);
             region.innerHTML = `
                 <div class="table-wrap">
                     <table class="data-table">
@@ -3050,8 +3440,8 @@
                                     <td>${SETORES[p.setor]?.nome || p.setor}</td>
                                     <td class="num">${Formatter.brl(p.custoTotal)}</td>
                                     <td class="num" style="color:var(--color-emerald);font-weight:600;">${Formatter.brl(p.precoSugerido)}</td>
-                                    <td class="num">${p.markup.toFixed(2)}x</td>
-                                    <td class="num" style="color:${p.margemPlanejada < target ? 'var(--color-warning)' : 'var(--color-emerald)'};">${Formatter.percent(p.margemPlanejada)}</td>
+                                    <td class="num">${Formatter.multiplier(p.markup)}</td>
+                                    <td class="num" style="${target === null ? '' : `color:${p.margemPlanejada < target ? 'var(--color-warning)' : 'var(--color-emerald)'};`}">${Formatter.percent(p.margemPlanejada)}</td>
                                     <td style="text-align:right;white-space:nowrap;">
                                         <div style="display:inline-flex;gap:6px;">
                                             <button type="button" class="btn btn-ghost btn-sm" data-hist-detail="${p.id}">Detalhes</button>
@@ -3101,12 +3491,12 @@
                 <div class="kv-row"><span class="kv-key">Setor · Unidade</span><span class="kv-val">${sectorCfg?.nome || p.setor} · ${Formatter.escapeHtml(p.unidade)}</span></div>
                 <div class="kv-row"><span class="kv-key">Custo total unitário</span><span class="kv-val mono">${Formatter.brl(p.custoTotal)}</span></div>
                 <div class="kv-row"><span class="kv-key">Preço sugerido</span><span class="kv-val mono" style="color:var(--color-emerald);">${Formatter.brl(p.precoSugerido)}</span></div>
-                <div class="kv-row"><span class="kv-key">Markup · Margem planejada</span><span class="kv-val mono">${p.markup.toFixed(2)}x · ${Formatter.percent(p.margemPlanejada)}</span></div>
+                <div class="kv-row"><span class="kv-key">Markup · Margem planejada</span><span class="kv-val mono">${Formatter.multiplier(p.markup)} · ${Formatter.percent(p.margemPlanejada)}</span></div>
                 <div class="kv-row"><span class="kv-key">Impostos e taxas (${Formatter.percent(p.percentualImpostosTaxas)})</span><span class="kv-val mono">${Formatter.brl(p.valorImpostosTaxas)}</span></div>
                 <div class="kv-row"><span class="kv-key">Lucro estimado / unidade</span><span class="kv-val mono">${Formatter.brl(p.lucroEstimado)}</span></div>
             </div>
 
-            <h3 style="font-size:14px;font-weight:600;margin-bottom:10px;">Composição dos custos</h3>
+            <h3 style="font-size:18.2px;font-weight:600;margin-bottom:10px;">Composição dos custos</h3>
             <div id="modal-hist-cost-chart" style="margin-bottom:18px;"></div>
 
             <div class="wizard-footer">
@@ -3127,42 +3517,49 @@
 
     // --- 8.7 ANÁLISES ---
     function renderAnalyses(root) {
-        const { pricings, catalog, settings } = WorkspaceStore.state;
-        const target = Number(settings.margemMetaPadrao) || 20;
+        const { pricings, catalog, business } = WorkspaceStore.state;
+        const parsedTarget = nullableFiniteNumber(business.margemMeta);
+        const target = parsedTarget !== null && parsedTarget >= 0 && parsedTarget < 100 ? parsedTarget : null;
+        const activePricingRecords = getActivePricingRecords(pricings, catalog);
+        const activeCatalogItems = catalog.filter(item => item.status !== 'Arquivado');
+        const itemsWithPricing = activeCatalogItems.filter(item => activePricingRecords.some(p => p.catalogItemId === item.id));
 
         root.innerHTML = `
             <div class="page-header">
                 <div>
-                    <h1 class="page-heading">Análises financeiras e operacionais</h1>
-                    <p class="page-subtitle">Comparativos derivados exclusivamente dos custos e precificações salvos (sem estimativas fictícias de faturamento ou vendas realizadas).</p>
+                    <h1 class="page-heading">Custos e rentabilidade</h1>
+                    <p class="page-subtitle">Indicadores calculados a partir dos custos e das precificações cadastradas. Não incluem vendas realizadas ou faturamento.</p>
                 </div>
             </div>
             <div id="analises-body"></div>
         `;
 
         const body = document.getElementById('analises-body');
-        if (pricings.length === 0) {
+        if (activePricingRecords.length === 0) {
             body.innerHTML = `
                 <div class="surface-card empty-state">
                     <div class="empty-state-nilo">
                         <img src="${NILO_ASSETS.analisando}" alt="Nilo" class="nilo-figure nilo-float">
                     </div>
-                    <h2 class="empty-state-title">Sem dados suficientes para análise</h2>
-                    <p class="empty-state-desc">Registre ao menos uma precificação no histórico para destravar comparativos de composição de custos, evolução entre versões e margens planejadas.</p>
+                    <h2 class="empty-state-title">Sem precificações de itens ativos</h2>
+                    <p class="empty-state-desc">As análises atuais consideram apenas itens ativos do catálogo. Os registros de itens arquivados continuam disponíveis no Histórico.</p>
                     <div class="empty-state-actions">
-                        <button type="button" class="btn btn-primary" id="ana-start-btn">Ir para Precificação</button>
+                        <button type="button" class="btn btn-primary" id="ana-start-btn">Ir para Produtos e serviços</button>
                     </div>
                 </div>
             `;
-            document.getElementById('ana-start-btn').addEventListener('click', () => UI.navigate('precificacao'));
+            document.getElementById('ana-start-btn').addEventListener('click', () => UI.navigate('catalogo'));
             return;
         }
 
-        const itemsWithPricing = catalog.filter(c => pricings.some(p => p.catalogItemId === c.id));
-        const selectedId = UI.analysisSelectedItemId;
+        let selectedId = UI.analysisSelectedItemId;
+        if (selectedId !== 'all' && !itemsWithPricing.some(item => item.id === selectedId)) {
+            selectedId = 'all';
+            UI.analysisSelectedItemId = 'all';
+        }
         const filteredPricings = selectedId === 'all'
-            ? pricings
-            : pricings.filter(p => p.catalogItemId === selectedId);
+            ? activePricingRecords
+            : activePricingRecords.filter(p => p.catalogItemId === selectedId);
 
         const ordered = [...filteredPricings].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm));
         const latestFocus = ordered[ordered.length - 1];
@@ -3171,13 +3568,13 @@
             <div class="surface-card" style="margin-bottom:20px;">
                 <div class="toolbar" style="margin-bottom:0;">
                     <div class="toolbar-group">
-                        <label for="ana-item-select" style="font-size:13px;font-weight:500;color:var(--color-silver);">Escopo da análise:</label>
+                        <label for="ana-item-select" style="font-size:16.9px;font-weight:500;color:var(--color-silver);">Escopo da análise:</label>
                         <select id="ana-item-select" class="field-select" style="width:auto;min-width:240px;">
-                            <option value="all" ${selectedId === 'all' ? 'selected' : ''}>Todos os itens precificados (${pricings.length} registros)</option>
+                            <option value="all" ${selectedId === 'all' ? 'selected' : ''}>Todos os itens ativos (${activePricingRecords.length} registros)</option>
                             ${itemsWithPricing.map(item => `<option value="${item.id}" ${selectedId === item.id ? 'selected' : ''}>${Formatter.escapeHtml(item.nome)}</option>`).join('')}
                         </select>
                     </div>
-                    <span style="font-size:12px;color:var(--color-silver);">Exibindo métricas planejadas de custo, preço e margem</span>
+                    <span style="font-size:15.6px;color:var(--color-silver);">Exibindo métricas planejadas de custo, preço e margem</span>
                 </div>
             </div>
 
@@ -3186,7 +3583,7 @@
                     <div class="card-header">
                         <div>
                             <h2 class="card-title">Evolução de preços e custos</h2>
-                            <p class="card-subtitle">Comparativo cronológico entre custo unitário e preço sugerido.</p>
+                            <p class="card-subtitle">${selectedId === 'all' ? 'Visão geral de todos os produtos e serviços ativos. Cada cor identifica um item.' : 'Comparativo cronológico das versões deste item.'}</p>
                         </div>
                     </div>
                     <div id="ana-chart-evo"></div>
@@ -3196,7 +3593,7 @@
                     <div class="card-header">
                         <div>
                             <h2 class="card-title">Composição de custos por categoria</h2>
-                            <p class="card-subtitle">Referência: ${Formatter.escapeHtml(latestFocus.itemNome)} (v${latestFocus.versao})</p>
+                            <p class="card-subtitle">${selectedId === 'all' ? 'Selecione um item para consultar a composição da sua versão mais recente.' : `Referência: ${Formatter.escapeHtml(latestFocus.itemNome)} (v${latestFocus.versao})`}</p>
                         </div>
                     </div>
                     <div id="ana-chart-comp"></div>
@@ -3207,8 +3604,8 @@
                 <section class="surface-card">
                     <div class="card-header">
                         <div>
-                            <h2 class="card-title">Margens planejadas vs. meta</h2>
-                            <p class="card-subtitle">Meta configurada de ${Formatter.percent(target, 0)} sobre o preço de venda.</p>
+                            <h2 class="card-title">${target === null ? 'Margens planejadas' : 'Margens planejadas vs. meta'}</h2>
+                            <p class="card-subtitle">${target === null ? 'Acompanhe as margens registradas. Defina uma meta em Meu negócio para ativar a comparação.' : `Meta definida pela empresa: ${Formatter.percent(target, 0)} sobre o preço de venda.`}</p>
                         </div>
                     </div>
                     <div id="ana-chart-margin"></div>
@@ -3217,8 +3614,8 @@
                 <section class="surface-card">
                     <div class="card-header">
                         <div>
-                            <h2 class="card-title">Comparação entre versões e preços</h2>
-                            <p class="card-subtitle">Resumo tabular dos registros selecionados.</p>
+                            <h2 class="card-title">Histórico de versões</h2>
+                            <p class="card-subtitle">Registros do escopo selecionado; compare versões do mesmo item.</p>
                         </div>
                     </div>
                     <div class="table-wrap">
@@ -3238,7 +3635,7 @@
                                         <td>${Formatter.escapeHtml(p.itemNome)} <span class="mono" style="color:var(--color-silver);">v${p.versao}</span></td>
                                         <td class="num">${Formatter.brl(p.custoTotal)}</td>
                                         <td class="num" style="color:var(--color-emerald);">${Formatter.brl(p.precoSugerido)}</td>
-                                        <td class="num">${p.markup.toFixed(2)}x</td>
+                                        <td class="num">${Formatter.multiplier(p.markup)}</td>
                                         <td class="num">${Formatter.percent(p.margemPlanejada)}</td>
                                     </tr>
                                 `).join('')}
@@ -3247,6 +3644,7 @@
                     </div>
                 </section>
             </div>
+
         `;
 
         document.getElementById('ana-item-select').addEventListener('change', e => {
@@ -3254,8 +3652,13 @@
             renderAnalyses(root);
         });
 
-        ChartRenderer.renderPriceEvolutionChart(document.getElementById('ana-chart-evo'), ordered);
-        ChartRenderer.renderCostDistributionChart(document.getElementById('ana-chart-comp'), latestFocus.categoriasCusto, latestFocus.custoTotal);
+        if (selectedId === 'all') {
+            ChartRenderer.renderPriceEvolutionOverviewChart(document.getElementById('ana-chart-evo'), activePricingRecords);
+            document.getElementById('ana-chart-comp').innerHTML = '<div class="empty-state"><p class="empty-state-desc">A composição é exibida por item. Selecione um produto ou serviço para consultar sua versão mais recente.</p></div>';
+        } else {
+            ChartRenderer.renderPriceEvolutionChart(document.getElementById('ana-chart-evo'), ordered);
+            ChartRenderer.renderCostDistributionChart(document.getElementById('ana-chart-comp'), latestFocus.categoriasCusto, latestFocus.custoTotal);
+        }
         ChartRenderer.renderPlannedMarginChart(document.getElementById('ana-chart-margin'), ordered, target);
     }
 
@@ -3318,18 +3721,12 @@
             };
         }
 
-        const fallbackSetor = WorkspaceStore.state.business.segmento || 'comercio';
+        const fallbackSetor = WorkspaceStore.state.business.segmento || null;
         return {
-            label: 'Sem precificação selecionada (consulta geral)',
+            label: 'Consulta geral sem dados financeiros',
             setor: fallbackSetor,
-            resumoFinanceiro: {
-                precoSugerido: 'R$ 0,00',
-                totalCustos: 'R$ 0,00',
-                markup: '1.00x',
-                taxaPercentual: '0%',
-                margemPercentual: '0%'
-            },
-            detalhesCustos: {}
+            resumoFinanceiro: null,
+            detalhesCustos: null
         };
     }
 
@@ -3357,7 +3754,7 @@
             <div class="page-header">
                 <div>
                     <h1 class="page-heading">Consultor IA ValorizAI</h1>
-                    <p class="page-subtitle">Análise comercial e operacional conectada ao endpoint oficial do servidor com os dados da sua precificação.</p>
+                    <p class="page-subtitle">Pergunte sobre negócios, mercado, gestão, tecnologia ou seu próprio negócio.</p>
                 </div>
                 <div class="page-header-actions">
                     <button type="button" class="btn btn-ghost btn-sm" id="ai-clear-chat" ${chatMsgs.length === 0 ? 'disabled' : ''}>Limpar conversa</button>
@@ -3365,14 +3762,15 @@
             </div>
 
             <div class="chat-layout">
-                <aside class="surface-card">
-                    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-                        <div class="nilo-avatar-box-sm">
-                            <img src="${UI.chatSending ? NILO_ASSETS.processando : NILO_ASSETS.apresentacao}" alt="Nilo Consultor IA" class="nilo-figure ${UI.chatSending ? '' : 'nilo-float'}" id="ai-nilo-avatar">
+                <aside class="surface-card nilo-profile-card">
+                    <div class="nilo-profile-heading">
+                        <div class="nilo-profile-avatar">
+                            <img src="${UI.chatSending ? NILO_ASSETS.processando : NILO_ASSETS.apresentacao}" alt="Nilo, assistente do ValorizAI" class="nilo-figure ${UI.chatSending ? '' : 'nilo-float'}" id="ai-nilo-avatar">
                         </div>
-                        <div>
-                            <div style="font-family:var(--font-display);font-weight:700;font-size:15px;">Nilo · Consultor</div>
-                            <div style="font-size:12px;color:var(--color-silver);">Setor ativo: <strong style="color:var(--color-cloud);">${SETORES[ctx.setor]?.nome || ctx.setor}</strong></div>
+                        <div class="nilo-profile-copy">
+                            <h2>Nilo</h2>
+                            <span>Assistente do ValorizAI</span>
+                            <p>${ctx.setor && SETORES[ctx.setor] ? `Contexto atual: ${SETORES[ctx.setor].nome}` : 'Apoio para dúvidas sobre gestão, custos e decisões do negócio.'}</p>
                         </div>
                     </div>
 
@@ -3383,15 +3781,17 @@
                         </select>
                     </div>
 
-                    <div style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
-                        <div style="font-size:12px;font-weight:600;color:var(--color-silver);margin-bottom:10px;">Resumo enviado à IA</div>
-                        <div class="kv-list">
-                            <div class="kv-row"><span class="kv-key">Preço sugerido</span><span class="kv-val mono" style="color:var(--color-emerald);">${ctx.resumoFinanceiro.precoSugerido}</span></div>
-                            <div class="kv-row"><span class="kv-key">Custo total</span><span class="kv-val mono">${ctx.resumoFinanceiro.totalCustos}</span></div>
-                            <div class="kv-row"><span class="kv-key">Markup</span><span class="kv-val mono">${ctx.resumoFinanceiro.markup}</span></div>
-                            <div class="kv-row"><span class="kv-key">Impostos e taxas</span><span class="kv-val mono">${ctx.resumoFinanceiro.taxaPercentual}</span></div>
-                            <div class="kv-row"><span class="kv-key">Margem desejada</span><span class="kv-val mono">${ctx.resumoFinanceiro.margemPercentual}</span></div>
-                        </div>
+                    <div style="padding:14px;border-radius:var(--radius-md);background:var(--app-background);border:1px solid var(--border);">
+                        <div style="font-size:15.6px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;">Contexto enviado à IA</div>
+                        ${ctx.resumoFinanceiro ? `
+                            <div class="kv-list">
+                                <div class="kv-row"><span class="kv-key">Preço sugerido</span><span class="kv-val mono">${ctx.resumoFinanceiro.precoSugerido}</span></div>
+                                <div class="kv-row"><span class="kv-key">Custo total</span><span class="kv-val mono">${ctx.resumoFinanceiro.totalCustos}</span></div>
+                                <div class="kv-row"><span class="kv-key">Markup</span><span class="kv-val mono">${ctx.resumoFinanceiro.markup}</span></div>
+                                <div class="kv-row"><span class="kv-key">Impostos e taxas</span><span class="kv-val mono">${ctx.resumoFinanceiro.taxaPercentual}</span></div>
+                                <div class="kv-row"><span class="kv-key">Margem desejada</span><span class="kv-val mono">${ctx.resumoFinanceiro.margemPercentual}</span></div>
+                            </div>
+                        ` : '<p style="font-size:15.6px;color:var(--text-secondary);">Nenhum dado financeiro será enviado. O Nilo pode responder normalmente a perguntas gerais.</p>'}
                     </div>
                 </aside>
 
@@ -3402,8 +3802,8 @@
                                 <div class="empty-state-nilo" style="width:100px;">
                                     <img src="${NILO_ASSETS.apresentacao}" alt="Nilo" class="nilo-figure nilo-float">
                                 </div>
-                                <h2 class="empty-state-title">Faça uma pergunta sobre sua precificação</h2>
-                                <p class="empty-state-desc">Selecione um item ao lado para enviar seus custos e margens em tempo real ao Consultor IA e receber recomendações práticas.</p>
+                                <h2 class="empty-state-title">O que você gostaria de entender?</h2>
+                                <p class="empty-state-desc">Pode perguntar sobre gestão, mercado, empreendedorismo, tecnologia ou custos. Se houver dados financeiros selecionados, o Nilo poderá usá-los quando forem relevantes.</p>
                             </div>
                         ` : chatMsgs.map((m, idx) => `
                             <div class="chat-bubble ${m.role}">
@@ -3418,7 +3818,7 @@
                         ${UI.chatSending ? `
                             <div class="chat-bubble assistant" style="display:flex;align-items:center;gap:12px;">
                                 <img src="${NILO_ASSETS.processando}" alt="Processando" style="width:40px;height:auto;">
-                                <span>Analisando seus dados financeiros e estratégia comercial...</span>
+                                <span>Preparando uma resposta para sua pergunta...</span>
                             </div>
                         ` : ''}
                     </div>
@@ -3426,13 +3826,13 @@
                     <form class="chat-composer" id="ai-chat-form">
                         <div class="prompt-suggestions">
                             ${[
-                                'Esse preço está saudável para o meu setor?',
-                                'Onde posso reduzir custos sem perder margem?',
-                                'Como comunicar esse valor ao cliente?'
+                                'O que é margem de contribuição?',
+                                'Como organizar o fluxo de caixa?',
+                                'Como avaliar uma ideia de negócio?'
                             ].map(q => `<button type="button" class="prompt-chip" data-prompt-chip="${Formatter.escapeHtml(q)}">${Formatter.escapeHtml(q)}</button>`).join('')}
                         </div>
                         <div class="chat-composer-row">
-                            <input type="text" id="ai-question-input" class="field-input" placeholder="Digite sua dúvida sobre custos, markup, margem ou posicionamento..." ${UI.chatSending ? 'disabled' : ''}>
+                            <input type="text" id="ai-question-input" class="field-input" placeholder="Pergunte sobre negócios, mercado, gestão, tecnologia..." ${UI.chatSending ? 'disabled' : ''}>
                             <button type="submit" class="btn btn-primary" ${UI.chatSending ? 'disabled' : ''}>${UI.chatSending ? 'Analisando...' : 'Enviar'}</button>
                         </div>
                     </form>
@@ -3450,6 +3850,7 @@
 
         document.getElementById('ai-clear-chat').addEventListener('click', () => {
             WorkspaceStore.state.chatHistory = [];
+            WorkspaceStore.state.niloConversationId = null;
             WorkspaceStore.save();
             renderConsultor(root);
         });
@@ -3484,8 +3885,10 @@
                     pergunta,
                     setor: ctx.setor,
                     resumoFinanceiro: ctx.resumoFinanceiro,
-                    detalhesCustos: ctx.detalhesCustos
+                    detalhesCustos: ctx.detalhesCustos,
+                    conversation_id: WorkspaceStore.state.niloConversationId
                 });
+                if (data.conversation_id) WorkspaceStore.state.niloConversationId = data.conversation_id;
 
                 WorkspaceStore.state.chatHistory.push({
                     role: 'assistant',
@@ -3495,7 +3898,7 @@
             } catch (err) {
                 WorkspaceStore.state.chatHistory.push({
                     role: 'error',
-                    text: err.message || 'Erro ao comunicar com o endpoint /perguntar.',
+                    text: 'Não foi possível responder agora. Verifique sua conexão e tente novamente em instantes.',
                     at: new Date().toISOString()
                 });
             } finally {
@@ -3503,6 +3906,9 @@
                 WorkspaceStore.save();
                 if (UI.currentView === 'consultor') {
                     renderConsultor(document.getElementById('main-viewport'));
+                }
+                if (UI.niloOpen) {
+                    renderConsultor(document.getElementById('nilo-panel-content'));
                 }
             }
         }
@@ -3514,48 +3920,86 @@
         });
     }
 
+    // --- CONTA DO USUÁRIO ---
+    function renderMyAccount(root) {
+        const config = window.VALORIZAI_CONFIG || {};
+        const supabaseLib = window.supabase;
+        root.innerHTML = `
+            <div class="page-header">
+                <div>
+                    <h1 class="page-heading">Minha conta</h1>
+                    <p class="page-subtitle">Informações da sua conta de acesso ao ValorizAI.</p>
+                </div>
+            </div>
+            <section class="surface-card account-summary">
+                <div class="account-avatar" aria-hidden="true">👤</div>
+                <div>
+                    <h2 class="card-title" id="account-user-name">Carregando conta…</h2>
+                    <p class="card-subtitle" id="account-user-email">Carregando informações da conta</p>
+                </div>
+            </section>
+            <section class="surface-card account-details">
+                <h2 class="card-title">Acesso e segurança</h2>
+                <p class="card-subtitle">Sua senha não fica armazenada nem visível no ValorizAI.</p>
+                <div class="account-detail-row"><span>Status do acesso</span><strong id="account-session-status">Verificando…</strong></div>
+            </section>
+        `;
+
+        if (!supabaseLib?.createClient || !config.supabaseUrl || !config.supabaseAnonKey) {
+            document.getElementById('account-user-name').textContent = 'Conta indisponível';
+            document.getElementById('account-user-email').textContent = 'Não foi possível carregar as informações da conta.';
+            document.getElementById('account-session-status').textContent = 'Não verificada';
+            return;
+        }
+
+        const client = supabaseLib.createClient(config.supabaseUrl, config.supabaseAnonKey, {
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+        });
+        client.auth.getUser().then(({ data, error }) => {
+            if (error || !data?.user) {
+                document.getElementById('account-user-name').textContent = 'Acesso não confirmado';
+                document.getElementById('account-user-email').textContent = 'Entre novamente para continuar.';
+                document.getElementById('account-session-status').textContent = 'Inativa';
+                return;
+            }
+            const user = data.user;
+            const metadata = user.user_metadata || {};
+            document.getElementById('account-user-name').textContent =
+                metadata.full_name || metadata.name || 'Minha conta';
+            document.getElementById('account-user-email').textContent = user.email || 'E-mail não informado';
+            document.getElementById('account-session-status').textContent = 'Ativa';
+        }).catch(() => {
+            document.getElementById('account-session-status').textContent = 'Não verificada';
+        });
+    }
+
     // --- 8.9 CONFIGURAÇÕES ---
     function renderSettings(root) {
-        const { settings, business } = WorkspaceStore.state;
-        const integrations = ApiService.integracoesStatus();
+        const { settings } = WorkspaceStore.state;
 
         root.innerHTML = `
             <div class="page-header">
                 <div>
                     <h1 class="page-heading">Configurações</h1>
-                    <p class="page-subtitle">Preferências de metas financeiras, comportamento do assistente e estado das integrações do projeto.</p>
+                    <p class="page-subtitle">Personalize os alertas e a experiência durante o preenchimento das suas informações.</p>
                 </div>
             </div>
 
-            <div class="grid-2" style="margin-bottom:20px;">
+            <div style="margin-bottom:20px;">
                 <form id="settings-form" class="surface-card">
                     <h2 class="card-title" style="margin-bottom:6px;">Metas e preferências da interface</h2>
-                    <p class="card-subtitle" style="margin-bottom:18px;">Ajuste os parâmetros de leitura de margem e exibição de ajudas nos formulários.</p>
+                    <p class="card-subtitle" style="margin-bottom:18px;">Ajuste os parâmetros de leitura de margem e salvamento automático de rascunhos.</p>
 
                     <div class="form-grid">
                         <div class="form-field">
-                            <label class="field-label" for="set-margem-meta">Margem mínima de referência (%)</label>
-                            <input id="set-margem-meta" class="field-input mono" type="text" inputmode="decimal" value="${settings.margemMetaPadrao}">
-                            <span class="field-help">Usada no Dashboard e Análises para sinalizar itens abaixo da meta.</span>
-                        </div>
-
-                        <div class="form-field">
-                            <label class="field-label" for="set-carga-alerta">Alerta de impostos + taxas (%)</label>
-                            <input id="set-carga-alerta" class="field-input mono" type="text" inputmode="decimal" value="${settings.alertaCargaTributaria}">
-                            <span class="field-help">Destaca quando a soma percentual sobre o preço atingir este limiar.</span>
-                        </div>
+                            <label class="field-label" for="set-carga-alerta"><span>Alerta de impostos + taxas (%)</span>${fieldInfoIcon('Destaca quando a soma percentual sobre o preço atingir este limiar. Deixe vazio para não ativar esse alerta.')}</label>
+                            <input id="set-carga-alerta" class="field-input mono" type="text" inputmode="decimal" value="${settings.alertaCargaTributaria ?? ''}">
+                                                    </div>
 
                         <div class="form-field form-field-full">
-                            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;">
-                                <input id="set-dicas" type="checkbox" ${settings.mostrarDicasCampos ? 'checked' : ''} style="width:16px;height:16px;">
-                                <span>Exibir textos explicativos abaixo de cada campo de custo</span>
-                            </label>
-                        </div>
-
-                        <div class="form-field form-field-full">
-                            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;">
+                            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:18.2px;">
                                 <input id="set-rascunho" type="checkbox" ${settings.salvarRascunhoAutomatico ? 'checked' : ''} style="width:16px;height:16px;">
-                                <span>Preservar rascunhos locais automaticamente ao interromper o assistente</span>
+                                <span>Salvar rascunho automaticamente se você sair antes de concluir</span>
                             </label>
                         </div>
                     </div>
@@ -3565,52 +4009,28 @@
                     </div>
                 </form>
 
-                <section class="surface-card">
-                    <h2 class="card-title" style="margin-bottom:6px;">Perfil e estado das integrações</h2>
-                    <p class="card-subtitle" style="margin-bottom:16px;">Transparência sobre os serviços conectados ao backend atual.</p>
-
-                    <div class="kv-list" style="margin-bottom:18px;">
-                        <div class="kv-row"><span class="kv-key">Empreendedor</span><span class="kv-val">${Formatter.escapeHtml(business.empreendedor || 'Não informado')}</span></div>
-                        <div class="kv-row"><span class="kv-key">Negócio</span><span class="kv-val">${Formatter.escapeHtml(business.nomeNegocio || 'Não informado')}</span></div>
-                    </div>
-
-                    <div style="display:flex;flex-direction:column;gap:10px;">
-                        ${integrations.map(intg => `
-                            <div style="padding:12px 14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
-                                <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:4px;">
-                                    <span style="font-weight:600;font-size:13px;">${intg.nome}</span>
-                                    <span class="status-label ${intg.disponivel ? 'success' : 'warning'}">${intg.disponivel ? 'Ativo' : 'Demonstração local'}</span>
-                                </div>
-                                <div style="font-size:12px;color:var(--color-silver);">${intg.descricao}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </section>
             </div>
 
             <section class="surface-card">
-                <h2 class="card-title" style="margin-bottom:6px;">Gerenciamento de dados locais</h2>
-                <p class="card-subtitle" style="margin-bottom:16px;">Exporte seus registros locais em JSON, carregue um cenário de demonstração ou limpe o armazenamento do navegador.</p>
+                <h2 class="card-title" style="margin-bottom:6px;">Seus dados</h2>
+                <p class="card-subtitle" style="margin-bottom:16px;">Baixe uma cópia das suas informações, experimente o ValorizAI com dados de exemplo ou apague os dados salvos neste dispositivo.</p>
                 <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                    <button type="button" class="btn btn-secondary" id="set-export-btn">Exportar dados (JSON)</button>
-                    <button type="button" class="btn btn-secondary" id="set-demo-btn">Carregar cenário de demonstração</button>
-                    <button type="button" class="btn btn-danger-ghost" id="set-clear-btn">Limpar todos os dados locais</button>
+                    <button type="button" class="btn btn-secondary" id="set-export-btn">Baixar uma cópia dos meus dados</button>
+                    <button type="button" class="btn btn-secondary" id="set-demo-btn">Carregar dados de exemplo</button>
+                    <button type="button" class="btn btn-danger-ghost" id="set-clear-btn">Apagar dados salvos</button>
                 </div>
             </section>
         `;
 
         document.getElementById('settings-form').addEventListener('submit', e => {
             e.preventDefault();
-            const meta = Formatter.parseNumber(document.getElementById('set-margem-meta').value);
             const carga = Formatter.parseNumber(document.getElementById('set-carga-alerta').value);
-            if (!Number.isFinite(meta) || meta < 0 || meta >= 100 || !Number.isFinite(carga) || carga < 0 || carga >= 100) {
-                UI.toast('Informe percentuais válidos entre 0% e 99%.', 'error');
+            if (carga !== null && (!Number.isFinite(carga) || carga < 0 || carga >= 100)) {
+                UI.toast('Informe um limiar de alerta entre 0% e 99%, ou deixe vazio.', 'error');
                 return;
             }
             WorkspaceStore.state.settings = {
-                margemMetaPadrao: meta,
                 alertaCargaTributaria: carga,
-                mostrarDicasCampos: document.getElementById('set-dicas').checked,
                 salvarRascunhoAutomatico: document.getElementById('set-rascunho').checked
             };
             WorkspaceStore.save();
@@ -3631,15 +4051,15 @@
             WorkspaceStore.loadDemoScenario();
             UI.updateChrome();
             UI.renderCurrentView();
-            UI.toast('Cenário de demonstração carregado.', 'success');
+            UI.toast('Dados de exemplo carregados.', 'success');
         });
 
         document.getElementById('set-clear-btn').addEventListener('click', () => {
             UI.openModal(
-                'Confirmar limpeza de dados locais',
+                'Confirmar exclusão de dados',
                 `
-                <p style="font-size:14px;color:var(--color-silver);margin-bottom:18px;">
-                    Esta ação remove informações do negócio, catálogo, histórico local, rascunhos e histórico de conversa do navegador. Deseja continuar?
+                <p style="font-size:18.2px;color:var(--color-silver);margin-bottom:18px;">
+                    Esta ação apaga o perfil do negócio, o catálogo, o histórico de precificações, os rascunhos e as conversas salvos neste dispositivo. Não será possível desfazer. Deseja continuar?
                 </p>
                 <div class="wizard-footer">
                     <button type="button" class="btn btn-ghost" id="confirm-clear-cancel">Cancelar</button>
@@ -3666,39 +4086,228 @@
     /* =========================================================================
        9. INICIALIZAÇÃO E EVENTOS GLOBAIS
        ========================================================================= */
-    function init() {
+    async function init() {
+        const config = window.VALORIZAI_CONFIG || {};
+        if (!window.supabase?.createClient || !config.supabaseUrl || !config.supabaseAnonKey) {
+            window.location.replace('/auth.html?setup=1');
+            return;
+        }
+
+        const authClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey, {
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+        });
+        const { data: sessionData, error: sessionError } = await authClient.auth.getSession();
+        const session = sessionData?.session;
+        if (sessionError || !session?.access_token || !session.user?.id) {
+            window.location.replace('/auth.html');
+            return;
+        }
+
+        configureUserStorage(session.user.id);
+        let remoteBusinessProfile = null;
+        let remoteProducts = null;
+        let remotePricings = null;
+        let profileLoadError = null;
+        let operationalLoadError = null;
+        try {
+            const ensureResponse = await fetch('/api/business/ensure', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            });
+            const ensureResult = await ensureResponse.json().catch(() => ({}));
+            if (!ensureResponse.ok || !ensureResult.success) {
+                throw new Error(ensureResult.error?.message || 'Não foi possível preparar o perfil.');
+            }
+
+            const profileResponse = await fetch('/api/business/profile', {
+                headers: { Authorization: `Bearer ${session.access_token}` }
+            });
+            const profileResult = await profileResponse.json().catch(() => ({}));
+            if (!profileResponse.ok || !profileResult.success || !profileResult.data?.business) {
+                throw new Error(profileResult.error?.message || 'Não foi possível carregar o perfil.');
+            }
+            remoteBusinessProfile = profileResult.data.business;
+        } catch (error) {
+            profileLoadError = error;
+            console.error('Não foi possível sincronizar o perfil do negócio.', error);
+        }
+
+        try {
+            const [products, pricings] = await Promise.all([
+                ApiService.listProducts(),
+                ApiService.listPricings()
+            ]);
+            remoteProducts = products.map(mapProductFromApi);
+            remotePricings = pricings.map(mapPricingFromApi);
+        } catch (error) {
+            operationalLoadError = error;
+            console.error('Não foi possível sincronizar catálogo e histórico.', error);
+        }
+
         WorkspaceStore.load();
+        // O histórico do Nilo é recuperado do banco; localStorage é apenas cache da interface.
+        try {
+            const remoteChat = WorkspaceStore.state.niloConversationId
+                ? await ApiService.getNiloConversation(WorkspaceStore.state.niloConversationId)
+                : await ApiService.getLatestNiloConversation();
+            if (remoteChat.conversation?.id) {
+                WorkspaceStore.state.niloConversationId = remoteChat.conversation.id;
+                WorkspaceStore.state.chatHistory = (remoteChat.messages || []).map(message => ({
+                    role: message.role,
+                    text: message.content,
+                    at: message.created_at
+                }));
+                WorkspaceStore.save();
+            }
+        } catch (error) {
+            console.warn('Não foi possível sincronizar o histórico do Nilo.', error);
+        }
+        if (remoteProducts !== null) WorkspaceStore.state.catalog = remoteProducts;
+        if (remotePricings !== null) WorkspaceStore.state.pricings = remotePricings;
+        if (remoteBusinessProfile) {
+            const additional = remoteBusinessProfile.additional_data || {};
+            WorkspaceStore.state.business = {
+                ...WorkspaceStore.state.business,
+                nomeNegocio: remoteBusinessProfile.name || '',
+                segmento: remoteBusinessProfile.sector === 'servicos' ? 'servico' : (remoteBusinessProfile.sector || ''),
+                descricao: remoteBusinessProfile.description || '',
+                modeloOperacao: remoteBusinessProfile.operating_model || '',
+                margemMeta: remoteBusinessProfile.target_margin_percent ?? null,
+                empreendedor: additional.entrepreneur_name || '',
+                regimeInformativo: additional.tax_regime || '',
+                cidadeUf: additional.location_text || '',
+                observacoes: additional.notes || '',
+                atualizadoEm: remoteBusinessProfile.updated_at || null
+            };
+            WorkspaceStore.save();
+        }
 
         const shell = document.getElementById('app-shell');
-        if (localStorage.getItem(STORAGE_KEYS.SIDEBAR) === '1') {
-            shell.classList.add('sidebar-collapsed');
-            document.getElementById('sidebar-collapse-btn').setAttribute('aria-expanded', 'false');
-        }
+        const collapseButton = document.getElementById('sidebar-collapse-btn');
+        const mobileMenuButton = document.getElementById('mobile-menu-btn');
+        const isMobileNavigation = () => window.matchMedia('(max-width: 960px)').matches;
+
+        const setDesktopSidebarCollapsed = (collapsed) => {
+            shell.classList.toggle('sidebar-collapsed', collapsed);
+            localStorage.setItem(STORAGE_KEYS.SIDEBAR, collapsed ? '1' : '0');
+            collapseButton.setAttribute('aria-expanded', String(!collapsed));
+            collapseButton.setAttribute('aria-label', collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral');
+            collapseButton.title = collapsed ? 'Expandir menu' : 'Recolher menu';
+        };
+
+        const setMobileDrawerOpen = (open) => {
+            shell.classList.toggle('mobile-drawer-open', open);
+            mobileMenuButton.setAttribute('aria-expanded', String(open));
+            mobileMenuButton.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+        };
+
+        // Aplica o estado local imediatamente; a preferência da conta sincroniza em seguida.
+        setDesktopSidebarCollapsed(localStorage.getItem(STORAGE_KEYS.SIDEBAR) === '1');
+
+        const getSidebarSession = async () => {
+            const { data, error } = await authClient.auth.getSession();
+            return error ? null : data.session || null;
+        };
+
+        const loadSidebarPreference = async () => {
+            try {
+                const session = await getSidebarSession();
+                if (!session?.access_token) return;
+                const response = await fetch('/api/preferences/sidebar', {
+                    headers: { Authorization: `Bearer ${session.access_token}` }
+                });
+                if (!response.ok) return;
+                const result = await response.json();
+                if (typeof result.data?.collapsed === 'boolean') setDesktopSidebarCollapsed(result.data.collapsed);
+            } catch (error) {
+                console.warn('Não foi possível sincronizar a preferência da navegação.', error);
+            }
+        };
+
+        const saveSidebarPreference = async (collapsed) => {
+            try {
+                const session = await getSidebarSession();
+                if (!session?.access_token) return;
+                await fetch('/api/preferences/sidebar', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${session.access_token}`
+                    },
+                    body: JSON.stringify({ collapsed })
+                });
+            } catch (error) {
+                console.warn('Não foi possível salvar a preferência da navegação.', error);
+            }
+        };
 
         // Navegação Sidebar
         document.querySelectorAll('[data-nav]').forEach(el => {
             el.addEventListener('click', e => {
                 e.preventDefault();
                 UI.navigate(el.dataset.nav);
+                if (isMobileNavigation()) setMobileDrawerOpen(false);
             });
         });
 
-        // Recolher Sidebar Desktop
-        document.getElementById('sidebar-collapse-btn').addEventListener('click', () => {
-            const collapsed = shell.classList.toggle('sidebar-collapsed');
-            localStorage.setItem(STORAGE_KEYS.SIDEBAR, collapsed ? '1' : '0');
-            document.getElementById('sidebar-collapse-btn').setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        // Desktop: controle único de expandir/recolher, com preferência sincronizada na conta.
+        collapseButton.addEventListener('click', () => {
+            const collapsed = !shell.classList.contains('sidebar-collapsed');
+            setDesktopSidebarCollapsed(collapsed);
+            saveSidebarPreference(collapsed);
         });
 
-        // Drawer Mobile
-        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
-            shell.classList.add('mobile-drawer-open');
+        // Mobile: o hamburger alterna abrir/fechar o drawer.
+        mobileMenuButton.addEventListener('click', () => {
+            if (isMobileNavigation()) {
+                setMobileDrawerOpen(!shell.classList.contains('mobile-drawer-open'));
+                return;
+            }
+            if (shell.classList.contains('sidebar-collapsed')) {
+                setDesktopSidebarCollapsed(false);
+                saveSidebarPreference(false);
+            }
         });
-        document.getElementById('sidebar-close-mobile-btn').addEventListener('click', () => {
-            shell.classList.remove('mobile-drawer-open');
+        document.getElementById('sidebar-backdrop').addEventListener('click', () => setMobileDrawerOpen(false));
+        loadSidebarPreference();
+
+        // Nilo é global: abrir o painel preserva a tela atual.
+        const niloFab = document.getElementById('nilo-fab');
+        const niloHelpBubble = document.getElementById('nilo-help-bubble');
+        const niloPanel = document.getElementById('nilo-panel');
+        const niloPanelContent = document.getElementById('nilo-panel-content');
+        const closeNilo = () => {
+            UI.niloOpen = false;
+            niloPanel.hidden = true;
+            niloFab.setAttribute('aria-expanded', 'false');
+            niloHelpBubble.hidden = false;
+        };
+        const openNilo = () => {
+            UI.niloOpen = true;
+            niloPanel.hidden = false;
+            niloFab.setAttribute('aria-expanded', 'true');
+            niloHelpBubble.hidden = true;
+            renderConsultor(niloPanelContent);
+            document.getElementById('ai-question-input')?.focus();
+        };
+        niloFab.addEventListener('click', () => {
+            if (UI.niloOpen) {
+                closeNilo();
+            } else {
+                openNilo();
+            }
         });
-        document.getElementById('sidebar-backdrop').addEventListener('click', () => {
-            shell.classList.remove('mobile-drawer-open');
+        niloHelpBubble.addEventListener('click', openNilo);
+        document.getElementById('nilo-panel-close').addEventListener('click', closeNilo);
+        document.getElementById('nilo-clear-chat').addEventListener('click', () => {
+            WorkspaceStore.state.chatHistory = [];
+            WorkspaceStore.save();
+            if (UI.niloOpen) renderConsultor(niloPanelContent);
+            if (UI.currentView === 'consultor') renderConsultor(document.getElementById('main-viewport'));
         });
 
         // Ação Topbar Nova Precificação
@@ -3731,12 +4340,19 @@
                 UI.closeModal();
                 notifPop.classList.add('hidden');
                 notifBtn.setAttribute('aria-expanded', 'false');
-                shell.classList.remove('mobile-drawer-open');
+                setMobileDrawerOpen(false);
+                if (UI.niloOpen) closeNilo();
             }
         });
 
         UI.updateChrome();
         UI.renderCurrentView();
+        if (profileLoadError) {
+            UI.toast('Não foi possível sincronizar o perfil com sua conta. Suas informações locais foram preservadas; tente novamente mais tarde.', 'error');
+        }
+        if (operationalLoadError) {
+            UI.toast('Não foi possível atualizar catálogo e histórico. Os dados locais foram preservados.', 'error');
+        }
     }
 
     document.addEventListener('DOMContentLoaded', init);

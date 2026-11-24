@@ -1,6 +1,5 @@
-/* ValorizAI Official Design Tokens */
+/* ValorizAI — tokens semânticos do design system */
 :root {
-  /* Brand Palette */
   --color-midnight: #101827;
   --color-navy: #19263A;
   --color-navy-elevated: #1F2F47;
@@ -8,21 +7,20 @@
   --color-blue: #3986D8;
   --color-silver: #A8B5C7;
   --color-cloud: #F1F5F9;
-
-  /* Semantic Indicators */
-  --color-success: #55D6A0;
+  --color-success: #16A36A;
   --color-info: #3986D8;
   --color-warning: #F59E0B;
   --color-danger: #EF4444;
-
-  /* Typography */
-  --font-display: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-
-  /* Spacing & Radii */
+  --app-background: #EAF1F8;
+  --surface: #FFFFFF;
+  --text-primary: #19263A;
+  --text-secondary: #64748B;
+  --border: #DCE5EF;
+  --font-display: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Roboto', ui-monospace, monospace;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
-  --border-hairline: 1px solid rgba(168, 181, 199, 0.14);
+  --border-hairline: 1px solid var(--border);
 }

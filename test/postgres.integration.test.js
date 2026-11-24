@@ -20,7 +20,7 @@ after(async () => {
   await app.pool.end();
 });
 
-test('TLS do PostgreSQL valida o certificado CA', () => {
+test('TLS do PostgreSQL valida o certificado CA', { skip: !process.env.DATABASE_URL && !process.env.DB_HOST }, () => {
   const ssl = app.pool.options.ssl;
   assert.notEqual(ssl, false);
   assert.equal(ssl.rejectUnauthorized, true);
@@ -30,7 +30,7 @@ test('TLS do PostgreSQL valida o certificado CA', () => {
   assert.ok(Date.parse(ca.validTo) > Date.now());
 });
 
-test('autenticação PostgreSQL e schema/constraints (somente leitura)', async () => {
+test('autenticação PostgreSQL e schema/constraints (somente leitura)', { skip: !process.env.DATABASE_URL && !process.env.DB_HOST }, async () => {
   const auth = await app.pool.query('SELECT current_database() AS database, current_user AS db_user');
   assert.equal(auth.rows[0].database, 'postgres');
   assert.ok(auth.rows[0].db_user);
@@ -44,7 +44,7 @@ test('autenticação PostgreSQL e schema/constraints (somente leitura)', async (
   for (const value of ['produto', 'servico', 'comercio', 'industria', 'servicos', 'active', 'archived']) assert.ok(definitions.includes(value), `constraint products sem ${value}`);
 });
 
-test('GET /api/health confirma a conexão real sem expor configuração', async () => {
+test('GET /api/health confirma a conexão real sem expor configuração', { skip: !process.env.DATABASE_URL && !process.env.DB_HOST }, async () => {
   const response = await fetch(`${baseUrl}/api/health`);
   const body = await response.json();
   assert.equal(response.status, 200);

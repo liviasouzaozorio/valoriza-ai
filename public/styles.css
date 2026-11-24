@@ -8,7 +8,7 @@
 }
 
 html {
-    font-size: 16px;
+    font-size: 20.8px;
     color-scheme: dark;
 }
 
@@ -17,7 +17,7 @@ body {
     background-color: var(--color-midnight);
     color: var(--color-cloud);
     font-family: var(--font-sans);
-    font-size: 14px;
+    font-size: 18.2px;
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -155,12 +155,25 @@ a {
 
 .app-shell.sidebar-collapsed .sidebar-header {
     justify-content: center;
-    padding: 0 10px;
-    gap: 6px;
+    padding: 0 8px;
+    gap: 2px;
 }
 
-.sidebar-close-mobile {
-    display: none;
+.app-shell.sidebar-collapsed .sidebar-brand {
+    flex: 0 0 26px;
+    width: 26px;
+    justify-content: center;
+}
+
+.app-shell.sidebar-collapsed .brand-logo-symbol {
+    width: 26px;
+    height: 26px;
+}
+
+.app-shell.sidebar-collapsed .sidebar-collapse-btn {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
 }
 
 .sidebar-nav {
@@ -185,7 +198,7 @@ a {
     border-radius: var(--radius-md);
     background: transparent;
     color: var(--color-silver);
-    font-size: 14px;
+    font-size: 18.2px;
     font-weight: 500;
     text-align: left;
     white-space: nowrap;
@@ -228,7 +241,7 @@ a {
     background-color: var(--color-navy-elevated);
     border: var(--border-hairline);
     color: var(--color-cloud);
-    font-size: 12px;
+    font-size: 15.6px;
     font-weight: 500;
     white-space: nowrap;
     z-index: 60;
@@ -250,7 +263,7 @@ a {
 
 .sidebar-business-name {
     font-family: var(--font-display);
-    font-size: 13px;
+    font-size: 16.9px;
     font-weight: 600;
     color: var(--color-cloud);
     white-space: nowrap;
@@ -259,7 +272,7 @@ a {
 }
 
 .sidebar-business-meta {
-    font-size: 12px;
+    font-size: 15.6px;
     color: var(--color-silver);
     white-space: nowrap;
     overflow: hidden;
@@ -319,7 +332,7 @@ a {
 
 .topbar-title {
     font-family: var(--font-display);
-    font-size: 16px;
+    font-size: 20.8px;
     font-weight: 700;
     color: var(--color-cloud);
     white-space: nowrap;
@@ -330,7 +343,7 @@ a {
 }
 
 .topbar-date {
-    font-size: 13px;
+    font-size: 16.9px;
     color: var(--color-silver);
     white-space: nowrap;
     overflow: hidden;
@@ -383,20 +396,20 @@ a {
 }
 
 .page-heading {
-    font-size: 24px;
+    font-size: 31.2px;
     font-weight: 700;
     line-height: 1.25;
 }
 
 .page-display {
-    font-size: 32px;
+    font-size: 41.6px;
     font-weight: 700;
     line-height: 1.2;
 }
 
 .page-subtitle {
     margin-top: 6px;
-    font-size: 14px;
+    font-size: 18.2px;
     color: var(--color-silver);
     max-width: 68ch;
 }
@@ -432,14 +445,14 @@ a {
 }
 
 .card-title {
-    font-size: 18px;
+    font-size: 23.4px;
     font-weight: 600;
     line-height: 1.3;
 }
 
 .card-subtitle {
     margin-top: 4px;
-    font-size: 13px;
+    font-size: 16.9px;
     color: var(--color-silver);
 }
 
@@ -468,7 +481,7 @@ a {
 }
 
 .kpi-label {
-    font-size: 12px;
+    font-size: 15.6px;
     font-weight: 500;
     color: var(--color-silver);
 }
@@ -476,7 +489,7 @@ a {
 .kpi-value {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
-    font-size: 24px;
+    font-size: 31.2px;
     font-weight: 600;
     color: var(--color-cloud);
     line-height: 1.2;
@@ -495,7 +508,7 @@ a {
 }
 
 .kpi-meta {
-    font-size: 12px;
+    font-size: 15.6px;
     color: var(--color-silver);
     line-height: 1.4;
 }
@@ -535,7 +548,7 @@ a {
     padding: 9px 18px;
     border-radius: var(--radius-md);
     border: 1px solid transparent;
-    font-size: 14px;
+    font-size: 18.2px;
     font-weight: 500;
     white-space: nowrap;
     flex-shrink: 0;
@@ -554,7 +567,7 @@ a {
 .btn-sm {
     min-height: 36px;
     padding: 7px 14px;
-    font-size: 13px;
+    font-size: 16.9px;
 }
 
 .btn-primary {
@@ -640,7 +653,7 @@ a {
     background-color: var(--color-blue);
     color: #ffffff;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 14.3px;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
@@ -665,7 +678,7 @@ a {
     padding: 14px 16px;
     border-bottom: var(--border-hairline);
     font-family: var(--font-display);
-    font-size: 14px;
+    font-size: 18.2px;
     font-weight: 600;
 }
 
@@ -689,13 +702,13 @@ a {
 }
 
 .notification-item-title {
-    font-size: 13px;
+    font-size: 16.9px;
     font-weight: 600;
     color: var(--color-cloud);
 }
 
 .notification-item-desc {
-    font-size: 12px;
+    font-size: 15.6px;
     color: var(--color-silver);
 }
 
@@ -717,7 +730,7 @@ a {
 }
 
 .field-label {
-    font-size: 13px;
+    font-size: 16.9px;
     font-weight: 500;
     color: var(--color-cloud);
     display: flex;
@@ -727,7 +740,7 @@ a {
 }
 
 .field-req {
-    font-size: 11px;
+    font-size: 14.3px;
     color: var(--color-silver);
     font-weight: 400;
 }
@@ -742,7 +755,7 @@ a {
     border: 1px solid rgba(168, 181, 199, 0.2);
     border-radius: var(--radius-md);
     color: var(--color-cloud);
-    font-size: 14px;
+    font-size: 18.2px;
     transition: border-color 160ms ease, background-color 160ms ease;
 }
 
@@ -776,13 +789,13 @@ a {
 }
 
 .field-help {
-    font-size: 12px;
+    font-size: 15.6px;
     color: var(--color-silver);
     line-height: 1.45;
 }
 
 .field-error {
-    font-size: 12px;
+    font-size: 15.6px;
     color: var(--color-danger);
     font-weight: 500;
 }
@@ -797,7 +810,7 @@ a {
 .input-suffix {
     position: absolute;
     font-family: var(--font-mono);
-    font-size: 13px;
+    font-size: 16.9px;
     color: var(--color-silver);
     pointer-events: none;
 }
@@ -835,7 +848,7 @@ a {
     border-radius: var(--radius-sm);
     background: transparent;
     color: var(--color-silver);
-    font-size: 13px;
+    font-size: 16.9px;
     font-weight: 500;
     white-space: nowrap;
     transition: background-color 160ms ease, color 160ms ease;
@@ -880,20 +893,20 @@ a {
 
 .sector-option-title {
     font-family: var(--font-display);
-    font-size: 15px;
+    font-size: 19.5px;
     font-weight: 600;
     color: var(--color-cloud);
 }
 
 .sector-option-desc {
-    font-size: 12px;
+    font-size: 15.6px;
     color: var(--color-silver);
     line-height: 1.4;
 }
 
 /* Status Text (Accessible, non-pill) */
 .status-label {
-    font-size: 12px;
+    font-size: 15.6px;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
@@ -931,13 +944,13 @@ a {
 }
 
 .notice-bar-text {
-    font-size: 13px;
+    font-size: 16.9px;
     color: var(--color-cloud);
     line-height: 1.45;
 }
 
 .notice-bar-sub {
-    font-size: 12px;
+    font-size: 15.6px;
     color: var(--color-silver);
 }
 
@@ -1008,12 +1021,12 @@ a {
 }
 
 .empty-state-title {
-    font-size: 18px;
+    font-size: 23.4px;
     font-weight: 600;
 }
 
 .empty-state-desc {
-    font-size: 13px;
+    font-size: 16.9px;
     color: var(--color-silver);
     max-width: 52ch;
 }
@@ -1036,13 +1049,13 @@ a {
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: 16.9px;
 }
 
 .data-table th {
     text-align: left;
     padding: 12px 14px;
-    font-size: 12px;
+    font-size: 15.6px;
     font-weight: 600;
     color: var(--color-silver);
     border-bottom: var(--border-hairline);
@@ -1109,7 +1122,7 @@ a {
     align-items: center;
     justify-content: center;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 15.6px;
     font-weight: 600;
     color: var(--color-silver);
     flex-shrink: 0;
@@ -1128,7 +1141,7 @@ a {
 }
 
 .wizard-step-label {
-    font-size: 13px;
+    font-size: 16.9px;
     font-weight: 500;
     color: var(--color-silver);
     white-space: nowrap;
@@ -1191,7 +1204,7 @@ a {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 12px;
+    font-size: 15.6px;
     color: var(--color-silver);
 }
 
@@ -1221,7 +1234,7 @@ a {
     gap: 16px;
     flex-wrap: wrap;
     margin-top: 12px;
-    font-size: 12px;
+    font-size: 15.6px;
     color: var(--color-silver);
 }
 
@@ -1238,7 +1251,7 @@ a {
     border: 1px solid rgba(168, 181, 199, 0.28);
     border-radius: var(--radius-sm);
     color: var(--color-cloud);
-    font-size: 12px;
+    font-size: 15.6px;
     pointer-events: none;
     z-index: 80;
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
@@ -1274,14 +1287,14 @@ a {
 }
 
 .insight-title {
-    font-size: 14px;
+    font-size: 18.2px;
     font-weight: 600;
     color: var(--color-cloud);
     margin-bottom: 3px;
 }
 
 .insight-desc {
-    font-size: 13px;
+    font-size: 16.9px;
     color: var(--color-silver);
     line-height: 1.45;
 }
@@ -1317,7 +1330,7 @@ a {
     max-width: 85%;
     padding: 14px 16px;
     border-radius: var(--radius-md);
-    font-size: 14px;
+    font-size: 18.2px;
     line-height: 1.6;
 }
 
@@ -1375,7 +1388,7 @@ a {
     border: var(--border-hairline);
     background-color: var(--color-midnight);
     color: var(--color-silver);
-    font-size: 12px;
+    font-size: 15.6px;
     transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
 }
 
@@ -1427,7 +1440,7 @@ a {
 }
 
 .modal-title {
-    font-size: 18px;
+    font-size: 23.4px;
     font-weight: 600;
 }
 
@@ -1454,7 +1467,7 @@ a {
     background-color: var(--color-navy-elevated);
     border: 1px solid rgba(168, 181, 199, 0.24);
     color: var(--color-cloud);
-    font-size: 13px;
+    font-size: 16.9px;
     box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
     animation: viewFadeSlide 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -1494,7 +1507,7 @@ a {
     gap: 14px;
     padding-bottom: 10px;
     border-bottom: 1px solid rgba(168, 181, 199, 0.1);
-    font-size: 13px;
+    font-size: 16.9px;
 }
 
 .kv-row:last-child {
@@ -1546,11 +1559,7 @@ a {
         display: none;
     }
 
-    .sidebar-close-mobile {
-        display: inline-flex;
-    }
-
-    .workspace-main,
+.workspace-main,
     .app-shell.sidebar-collapsed .workspace-main {
         margin-left: 0;
     }
@@ -1609,5 +1618,1199 @@ a {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
+    }
+}
+
+
+
+/* --------------------------------------------------------------------------
+   ValorizAI — tema claro definitivo
+   -------------------------------------------------------------------------- */
+html { color-scheme: light; }
+body, .app-shell { background: var(--app-background); color: var(--text-primary); }
+h1, h2, h3, h4, .page-heading, .page-display, .card-title, .modal-title { color: var(--text-primary); }
+.sidebar { background: var(--color-navy); border-right: 1px solid rgba(255,255,255,.08); box-shadow: 4px 0 18px rgba(16,24,39,.08); }
+.sidebar-header, .sidebar-footer { border-color: rgba(255,255,255,.10); background: var(--color-navy); }
+.nav-item { color: #C1CCDA; }
+.nav-item:hover { background: rgba(255,255,255,.08); color: #FFFFFF; }
+.nav-item.active { background: rgba(85,214,160,.13); border-color: rgba(85,214,160,.24); color: #72E2B1; }
+.sidebar-divider { background: rgba(255,255,255,.12); }
+.sidebar-business-name { color: #FFFFFF; }
+.sidebar-business-meta { color: #B6C2D1; }
+.topbar { background: rgba(255,255,255,.94); border-bottom: 1px solid var(--border); box-shadow: 0 1px 5px rgba(25,38,58,.025); }
+.topbar-title { color: var(--text-primary); }
+.topbar-date, .topbar-sep, .page-subtitle, .card-subtitle, .kpi-label, .kpi-meta { color: var(--text-secondary); }
+.main-viewport { color: var(--text-primary); }
+.surface-card, .kpi-card, .notification-item, .modal-panel { background: var(--surface); border: 1px solid var(--border); box-shadow: 0 3px 12px rgba(25,38,58,.035); }
+.surface-card-interactive:hover, .kpi-card:hover { background: var(--surface); border-color: #B9CBE0; }
+.btn-primary { background: #3986D8; color: #FFFFFF; }
+.btn-primary:hover:not(:disabled) { background: #2875C5; }
+.btn-secondary { background: #EEF3F8; border-color: var(--border); color: var(--text-primary); }
+.btn-secondary:hover:not(:disabled) { background: #E3EBF4; color: var(--text-primary); }
+.btn-ghost { color: #52647A; border-color: var(--border); }
+.btn-ghost:hover:not(:disabled) { background: #F1F5F9; color: var(--text-primary); }
+.icon-btn { background: #FFFFFF; border: 1px solid var(--border); color: #64748B; }
+.icon-btn:hover { background: #F1F5F9; color: var(--text-primary); border-color: #CBD5E1; }
+.field-input, .field-select, .field-textarea, input:not([type="checkbox"]):not([type="radio"]), select, textarea { background: #FFFFFF; color: var(--text-primary); border-color: #CBD5E1; }
+.field-input::placeholder, .field-textarea::placeholder, input::placeholder, textarea::placeholder { color: #94A3B8; opacity: 1; }
+.field-input:focus, .field-select:focus, .field-textarea:focus, input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:focus { background: #FFFFFF; color: var(--text-primary); border-color: #3986D8; box-shadow: 0 0 0 3px rgba(57,134,216,.12); outline-color: #3986D8; }
+.popover-header, .modal-header { border-color: var(--border); color: var(--text-primary); }
+.notifications-popover { background: #FFFFFF; border-color: var(--border); box-shadow: 0 18px 40px rgba(25,38,58,.14); }
+.notification-item { background: #F8FAFC; }
+.notification-item-title { color: var(--text-primary); }
+.notification-item-desc { color: var(--text-secondary); }
+.modal-backdrop { background: rgba(15,23,42,.42); }
+.table-wrap, .data-table { color: var(--text-primary); }
+.data-table th { color: var(--text-secondary); }
+.data-table td { border-color: var(--border); }
+.sidebar-backdrop { background: rgba(15,23,42,.42); }
+.kpi-value { color: var(--text-primary); }
+.kpi-value.positive { color: #16865A; }
+.kpi-value.warning { color: #B77912; }
+.kpi-value.danger { color: #DC4545; }
+.toast { background: #FFFFFF; border: 1px solid var(--border); color: var(--text-primary); box-shadow: 0 12px 30px rgba(25,38,58,.14); }
+.nilo-launcher { position: fixed; top: 86px; right: 26px; z-index: 96; display: flex; flex-direction: column; align-items: flex-end; gap: 9px; }
+.nilo-help-bubble { position: relative; max-width: 230px; padding: 11px 15px; border: 1px solid #D6E6F8; border-radius: 14px 14px 4px 14px; background: #FFFFFF; color: #29435F; box-shadow: 0 7px 22px rgba(25,38,58,.13); font: inherit; font-size: 16.9px; line-height: 1.35; text-align: left; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease; }
+.nilo-help-bubble strong { color: #2875C5; font-weight: 700; }
+.nilo-help-bubble::after { content: ""; position: absolute; right: 17px; bottom: -6px; width: 10px; height: 10px; background: #FFFFFF; border-right: 1px solid #D6E6F8; border-bottom: 1px solid #D6E6F8; transform: rotate(45deg); }
+.nilo-help-bubble:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(25,38,58,.17); }
+.nilo-help-bubble[hidden] { display: none; }
+.nilo-fab { position: relative; width: 62px; height: 62px; border: 0; border-radius: 50%; background: linear-gradient(145deg,#3986D8,#246BB7); color: #FFFFFF; box-shadow: 0 8px 24px rgba(38,107,183,.30); display: grid; place-items: center; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease; }
+.nilo-fab:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(38,107,183,.36); }
+.nilo-fab img { width: 43px; height: 43px; object-fit: contain; }
+.nilo-panel { position: fixed; z-index: 94; right: 24px; top: 86px; bottom: auto; width: min(680px, calc(100vw - 48px)); height: min(760px, calc(100vh - 110px)); background: #FFFFFF; border: 1px solid var(--border); border-radius: 18px; box-shadow: 0 24px 70px rgba(25,38,58,.22); overflow: hidden; display: flex; flex-direction: column; }
+.nilo-panel[hidden] { display: none; }
+.nilo-panel-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--border); background:#FFFFFF; }
+.nilo-panel-title { display:flex; align-items:center; gap:10px; color:var(--text-primary); font-weight:700; }
+.nilo-panel-title img { width:34px; height:34px; object-fit:contain; }
+.nilo-panel-content { min-height:0; flex:1; overflow:auto; padding:16px; }
+.nilo-panel-content .page-header { display:none; }
+.nilo-panel-content .chat-layout > aside { display:block; padding:12px; }
+.nilo-panel-content .chat-layout > aside .nilo-avatar-box-sm { display:none; }
+.nilo-panel-content .chat-layout > aside .form-field { margin-bottom:0 !important; }
+.nilo-panel-content .chat-layout > aside > div:nth-child(3) { display:none; }
+.nilo-panel-content .chat-layout { display:flex; flex-direction:column; gap:12px; height:100%; }
+.nilo-panel-content .chat-panel { min-height:0; flex:1; background:#FFFFFF; border:0; box-shadow:none; }
+.nilo-panel-content .chat-messages { max-height:none; min-height:250px; }
+.nilo-panel-content .chat-composer { position:sticky; bottom:0; background:#FFFFFF; }
+.nilo-panel-content .empty-state-title { color:var(--text-primary); }
+.nilo-panel-content .empty-state-desc { color:var(--text-secondary); }
+@media (max-width: 680px) {
+  .nilo-launcher { top: 76px; right: 14px; gap: 7px; }
+  .nilo-help-bubble { max-width: 205px; padding: 9px 12px; font-size: 15.6px; }
+  .nilo-fab { width:56px; height:56px; }
+  .nilo-fab img { width:40px; height:40px; }
+  .nilo-panel { inset:10px; top:76px; width:auto; height:auto; bottom:10px; border-radius:16px; }
+  .nilo-panel-content { padding:10px; }
+}
+@media (prefers-reduced-motion: reduce) { .nilo-fab { transition:none; } }
+
+/* --------------------------------------------------------------------------
+   Correções de contraste do tema claro — formulários, setores e chat do Nilo
+   -------------------------------------------------------------------------- */
+body, .app-shell, .main-viewport { color: var(--text-primary); }
+
+/* Cabeçalhos e rótulos em superfícies claras */
+.main-viewport h1,
+.main-viewport h2,
+.main-viewport h3,
+.main-viewport h4,
+.main-viewport .page-heading,
+.main-viewport .page-display,
+.main-viewport .card-title,
+.main-viewport .field-label,
+.main-viewport .wizard-title,
+.main-viewport .section-title {
+    color: var(--text-primary);
+}
+.field-label { color: var(--text-primary); }
+.field-help, .field-req { color: var(--text-secondary); }
+
+/* Campos sempre brancos, inclusive ao focar ou preencher */
+.field-input,
+.field-select,
+.field-textarea,
+.nilo-panel-content input:not([type="checkbox"]):not([type="radio"]),
+.nilo-panel-content select,
+.nilo-panel-content textarea {
+    background-color: #FFFFFF;
+    color: #19263A;
+    caret-color: #19263A;
+}
+.field-input:focus,
+.field-select:focus,
+.field-textarea:focus,
+.nilo-panel-content input:not([type="checkbox"]):not([type="radio"]):focus,
+.nilo-panel-content select:focus,
+.nilo-panel-content textarea:focus {
+    background-color: #FFFFFF;
+    color: #19263A;
+}
+.field-input:disabled,
+.field-select:disabled,
+.field-textarea:disabled {
+    background-color: #F1F5F9;
+    color: #64748B;
+}
+
+/* Os três setores compartilham a mesma cor de texto e superfície */
+.sector-option,
+.sector-option:hover,
+.sector-option.active {
+    color: var(--text-primary);
+}
+.sector-option { background: #FFFFFF; }
+.sector-option:hover { background: #F8FAFC; }
+.sector-option.active {
+    background: #EFF6FF;
+    border-color: #3986D8;
+}
+.sector-option-title,
+.sector-option-desc {
+    color: var(--text-primary);
+}
+.sector-option-desc { color: var(--text-secondary); }
+
+/* Chat: nenhuma mensagem pode herdar texto branco no painel claro */
+.nilo-panel-content .chat-layout,
+.nilo-panel-content .chat-panel,
+.nilo-panel-content .chat-messages {
+    color: var(--text-primary);
+    background: #FFFFFF;
+}
+.chat-bubble.user {
+    background: #EAF2FC;
+    border-color: #C7DCF5;
+    color: #19263A;
+}
+.chat-bubble.assistant {
+    background: #F8FAFC;
+    border-color: #DCE5EF;
+    color: #19263A;
+}
+.chat-bubble.user *,
+.chat-bubble.assistant * {
+    color: inherit;
+}
+.chat-bubble.assistant strong,
+.chat-bubble.user strong {
+    color: #16865A;
+}
+.chat-bubble.error { color: #B42318; }
+.chat-composer {
+    background: #FFFFFF;
+    color: var(--text-primary);
+    border-top: 1px solid var(--border);
+}
+.chat-composer .field-input,
+.chat-composer .field-textarea {
+    background: #FFFFFF;
+    color: #19263A;
+}
+.prompt-chip {
+    background: #F1F5F9;
+    color: #19263A;
+    border-color: #DCE5EF;
+}
+.prompt-chip:hover {
+    background: #E8F0F8;
+    color: #19263A;
+}
+.nilo-panel-content .chat-layout > aside,
+.nilo-panel-content .chat-layout > aside * {
+    color: var(--text-primary);
+}
+.nilo-panel-content .chat-layout > aside .card-title,
+.nilo-panel-content .chat-layout > aside .field-label {
+    color: var(--text-primary);
+}
+/* Sobrescreve cores inline herdadas do antigo tema escuro em áreas claras */
+.main-viewport [style*="color:var(--color-cloud)"],
+.nilo-panel-content [style*="color:var(--color-cloud)"] {
+    color: var(--text-primary) !important;
+}
+.main-viewport [style*="color:var(--color-silver)"],
+.nilo-panel-content [style*="color:var(--color-silver)"] {
+    color: var(--text-secondary) !important;
+}
+
+
+
+/* Avisos informativos em páginas claras: texto legível sem depender de hover. */
+.main-viewport .notice-bar {
+    color: #19263A;
+}
+
+.main-viewport .notice-bar .notice-bar-text,
+.main-viewport .notice-bar .notice-bar-text strong {
+    color: #19263A !important;
+}
+
+.main-viewport .notice-bar .notice-bar-sub {
+    color: #64748B !important;
+}
+
+.main-viewport .notice-bar:hover,
+.main-viewport .notice-bar:hover .notice-bar-text,
+.main-viewport .notice-bar:hover .notice-bar-text strong,
+.main-viewport .notice-bar:hover .notice-bar-sub {
+    color: inherit;
+}
+.main-viewport .notice-bar:hover .notice-bar-text { color: #19263A !important; }
+.main-viewport .notice-bar:hover .notice-bar-text strong { color: #19263A !important; }
+.main-viewport .notice-bar:hover .notice-bar-sub { color: #64748B !important; }
+
+/* Correção específica: tabelas do catálogo, histórico e comparativos.
+   As linhas permanecem claras no estado normal e no hover; o texto não depende
+   do mouse para ficar legível. */
+.main-viewport .data-table tbody tr,
+.main-viewport .data-table tbody tr:hover {
+    background-color: #FFFFFF;
+}
+
+.main-viewport .data-table tbody tr:hover {
+    background-color: #F1F5F9;
+}
+
+.main-viewport .data-table tbody td,
+.main-viewport .data-table tbody tr:hover td {
+    color: #19263A;
+}
+
+.main-viewport .data-table tbody td [style*="color:var(--color-emerald)"],
+.main-viewport .data-table tbody tr:hover td [style*="color:var(--color-emerald)"] {
+    color: #16865A !important;
+}
+
+.main-viewport .data-table tbody td a,
+.main-viewport .data-table tbody td button,
+.main-viewport .data-table tbody td .icon-btn {
+    color: inherit;
+}
+
+.main-viewport .data-table tbody td .btn-primary,
+.main-viewport .data-table tbody td .btn-primary:hover {
+    color: #FFFFFF;
+}
+
+/* --------------------------------------------------------------------------
+   Fase 1 — contraste consistente em todas as superfícies claras
+   Inclui conteúdo dinâmico, modais e SVGs gerados pelo JavaScript.
+   -------------------------------------------------------------------------- */
+
+/* Texto-base das áreas claras */
+.main-viewport,
+.modal-body,
+.modal-panel {
+    color: var(--text-primary);
+}
+
+.main-viewport h1,
+.main-viewport h2,
+.main-viewport h3,
+.main-viewport h4,
+.main-viewport p,
+.modal-body h1,
+.modal-body h2,
+.modal-body h3,
+.modal-body h4,
+.modal-body p,
+.modal-body label,
+.modal-body li {
+    color: var(--text-primary);
+}
+
+.main-viewport .page-subtitle,
+.main-viewport .card-subtitle,
+.main-viewport .kpi-label,
+.main-viewport .kpi-meta,
+.main-viewport .field-help,
+.main-viewport .field-req,
+.main-viewport .empty-state-desc,
+.main-viewport .table-description,
+.modal-body .kv-key,
+.modal-body .field-help,
+.modal-body .field-req,
+.modal-body .empty-state-desc {
+    color: var(--text-secondary);
+}
+
+/* Detalhes de versões e demais conteúdos renderizados em modais */
+.modal-body .kv-row {
+    border-bottom-color: var(--border);
+}
+
+.modal-body .kv-val {
+    color: var(--text-primary);
+}
+
+/* Tabelas renderizadas em modais também usam superfícies claras. */
+.modal-body .data-table thead tr,
+.modal-body .data-table tbody tr,
+.modal-body .data-table tbody tr:hover {
+    background-color: #FFFFFF;
+}
+
+.modal-body .data-table thead th {
+    color: #64748B;
+    border-bottom-color: #DCE5EF;
+}
+
+.modal-body .data-table tbody td,
+.modal-body .data-table tbody tr:hover td {
+    color: #19263A;
+    border-bottom-color: #E2E8F0;
+}
+
+.modal-body .data-table tbody tr:hover {
+    background-color: #F1F5F9;
+}
+
+.modal-body .chart-legend,
+.main-viewport .chart-legend {
+    color: var(--text-secondary);
+}
+
+.modal-body .chart-svg text,
+.main-viewport .chart-svg text {
+    fill: #64748B;
+}
+
+/* Cores de destaque para texto precisam continuar legíveis sobre branco */
+.main-viewport .kpi-value.positive,
+.main-viewport .status-label.success,
+.modal-body .status-label.success {
+    color: #16865A;
+}
+
+/* Campos e controles em telas claras */
+.main-viewport input:not([type="checkbox"]):not([type="radio"]),
+.main-viewport select,
+.main-viewport textarea,
+.modal-body input:not([type="checkbox"]):not([type="radio"]),
+.modal-body select,
+.modal-body textarea {
+    background-color: #FFFFFF;
+    color: var(--text-primary);
+    border-color: #CBD5E1;
+}
+
+.main-viewport input:not([type="checkbox"]):not([type="radio"])::placeholder,
+.main-viewport textarea::placeholder,
+.modal-body input:not([type="checkbox"]):not([type="radio"])::placeholder,
+.modal-body textarea::placeholder {
+    color: #64748B;
+    opacity: 1;
+}
+
+.main-viewport input:disabled,
+.main-viewport select:disabled,
+.main-viewport textarea:disabled,
+.modal-body input:disabled,
+.modal-body select:disabled,
+.modal-body textarea:disabled {
+    background-color: #F1F5F9;
+    color: #64748B;
+    opacity: 1;
+}
+
+/* Corrige estilos inline legados nos conteúdos claros sem afetar sidebar e superfícies escuras */
+.main-viewport [style*="color:var(--color-cloud)"],
+.modal-body [style*="color:var(--color-cloud)"],
+.nilo-panel-content [style*="color:var(--color-cloud)"] {
+    color: var(--text-primary) !important;
+}
+
+.main-viewport [style*="color:var(--color-silver)"],
+.modal-body [style*="color:var(--color-silver)"],
+.nilo-panel-content [style*="color:var(--color-silver)"] {
+    color: var(--text-secondary) !important;
+}
+
+.main-viewport [style*="color:var(--color-emerald)"],
+.modal-body [style*="color:var(--color-emerald)"],
+.nilo-panel-content [style*="color:var(--color-emerald)"] {
+    color: #16865A !important;
+}
+
+/* Revisão da precificação: títulos claros sobre os cards navy */
+.review-summary-card,
+.review-summary-card h3,
+.review-summary-card .kv-key,
+.review-summary-card .kv-val {
+    color: #F1F5F9;
+}
+
+.review-summary-card .kv-key {
+    color: #A8B5C7;
+}
+
+.review-summary-card .kv-val {
+    color: #F8FAFC;
+}
+
+.review-summary-card .kv-row {
+    border-bottom-color: rgba(220, 229, 239, 0.18);
+}
+
+.review-summary-card h3 {
+    color: #F8FAFC !important;
+}
+
+.review-summary-card .kv-val[style*="color:var(--color-emerald)"] {
+    color: #55D6A0 !important;
+}
+
+/* Resultado da precificação: cada superfície usa sua própria escala de contraste.
+   O cabeçalho fica no card claro; somente os quatro indicadores ficam em cards navy. */
+.pricing-result-metrics > div:first-child .kpi-label {
+    color: #64748B !important;
+}
+.pricing-result-metrics > div:first-child .mono {
+    color: #16865A !important;
+}
+.pricing-result-metrics > div:first-child > div > div[style*="color:var(--color-silver)"] {
+    color: #64748B !important;
+}
+.pricing-result-metrics > div:first-child strong {
+    color: #19263A !important;
+}
+.pricing-result-metric-card .kpi-label {
+    color: #F1F5F9 !important;
+    opacity: 1;
+}
+.pricing-result-metric-card .kpi-value {
+    color: #F8FAFC !important;
+}
+.pricing-result-metric-card .kpi-value.positive {
+    color: #55D6A0 !important;
+}
+.pricing-result-metric-card .kpi-value.warning {
+    color: #FBBF24 !important;
+}
+.pricing-result-metric-card .kpi-value.danger {
+    color: #FCA5A5 !important;
+}
+
+/* Resultado da simulação: painel claro, portanto rótulos e valores escuros. */
+.simulation-result-content .kpi-label {
+    color: #64748B !important;
+}
+.simulation-result-content > div:first-child > div[style*="color:var(--color-silver)"] {
+    color: #64748B !important;
+}
+.simulation-result-details .kv-key {
+    color: #64748B !important;
+}
+.simulation-result-details .kv-val {
+    color: #19263A !important;
+}
+.simulation-result-details .kv-val[style*="color:var(--color-warning)"] {
+    color: #B77912 !important;
+}
+.simulation-result-details .kv-val[style*="color:var(--color-emerald)"] {
+    color: #16865A !important;
+}
+
+
+
+/* Reforço de contraste no indicador de lucro da prévia de precificação.
+   O valor fica em card navy e deve permanecer verde-claro, mesmo com regras globais. */
+.main-viewport .pricing-result-metric-card .kpi-value.positive {
+    color: #55D6A0 !important;
+    -webkit-text-fill-color: #55D6A0 !important;
+    opacity: 1 !important;
+}
+
+
+/* ValorizAI — refinamentos de usabilidade da rodada de validação */
+.simulation-result-details .kv-key {
+    color: #475569 !important;
+}
+
+.simulation-result-details .kv-val {
+    color: #19263A !important;
+}
+
+.simulation-result-details .kv-val[style*="color:var(--color-warning)"] {
+    color: #A16207 !important;
+}
+
+.simulation-result-details .kv-val[style*="color:var(--color-emerald)"] {
+    color: #16865A !important;
+}
+
+.simulation-result-explainer {
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    border: 1px solid #DCE5EF;
+    border-radius: 10px;
+    background: #F8FAFC;
+    color: #475569;
+    font-size: 15.6px;
+    line-height: 1.55;
+}
+
+.nilo-profile-card {
+    padding: 22px;
+}
+
+.nilo-profile-heading {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 20px;
+}
+
+.nilo-profile-avatar {
+    display: grid;
+    place-items: center;
+    width: 112px;
+    min-width: 112px;
+    height: 112px;
+    padding: 8px;
+    overflow: hidden;
+    border: 1px solid #DCE8F5;
+    border-radius: 18px;
+    background: linear-gradient(145deg, #F0F7FF, #E7F1FC);
+}
+
+.nilo-profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.nilo-profile-copy h2 {
+    margin: 0 0 3px;
+    color: #19263A;
+    font-size: 24.7px;
+    line-height: 1.25;
+}
+
+.nilo-profile-copy > span {
+    display: block;
+    color: #3986D8;
+    font-size: 15.6px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.nilo-profile-copy p {
+    color: #52647A;
+    font-size: 16.9px;
+    line-height: 1.5;
+}
+
+.nilo-profile-card .field-help {
+    color: #64748B;
+}
+
+.sidebar-collapse-btn .sidebar-icon-collapse {
+    display: block;
+}
+
+.sidebar-collapse-btn .sidebar-icon-expand {
+    display: none;
+}
+
+.app-shell.sidebar-collapsed .sidebar-collapse-btn .sidebar-icon-collapse {
+    display: none;
+}
+
+.app-shell.sidebar-collapsed .sidebar-collapse-btn .sidebar-icon-expand {
+    display: block;
+}
+
+@media (max-width: 680px) {
+    .nilo-profile-heading {
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .nilo-profile-avatar {
+        width: 84px;
+        min-width: 84px;
+        height: 84px;
+        border-radius: 14px;
+    }
+
+    .nilo-profile-card {
+        padding: 16px;
+    }
+}
+
+
+/* Campos: dicas contextuais por ícone, sem texto permanente abaixo dos inputs. */
+.form-field > .field-label,
+label.field-label {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start !important;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+/* Mantém o ícone junto ao texto do campo, sem distribuir os elementos pela linha. */
+.field-label > .field-info,
+.field-label > .field-required {
+    flex: 0 0 auto;
+    margin-left: 0;
+}
+
+.field-label > .field-info {
+    margin-inline-start: 1px;
+}
+
+.field-info {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    color: #64748B;
+    cursor: help;
+    vertical-align: middle;
+    outline: none;
+}
+
+.field-info svg {
+    display: block;
+    width: 15px;
+    height: 15px;
+}
+
+.field-info:hover,
+.field-info:focus-visible {
+    color: #2875C5;
+}
+
+.field-info::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 9px);
+    z-index: 120;
+    width: max-content;
+    max-width: min(290px, calc(100vw - 48px));
+    padding: 9px 11px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 8px;
+    background: #19263A;
+    color: #F8FAFC;
+    box-shadow: 0 8px 24px rgba(15,23,42,.22);
+    font-size: 15.6px;
+    font-weight: 400;
+    line-height: 1.5;
+    white-space: normal;
+    text-align: left;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, 4px);
+    transition: opacity .14s ease, transform .14s ease, visibility .14s ease;
+}
+
+.field-info:hover::after,
+.field-info:focus-visible::after,
+.field-info:focus::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+}
+
+.field-required {
+    display: inline-block;
+    color: #DC2626;
+    font-size: 20.8px;
+    font-weight: 800;
+    line-height: 1;
+    margin-left: 1px;
+}
+
+/* Navegação desktop: a seta fica no menu aberto; o hamburger aparece no topo
+   somente quando o menu lateral está recolhido. */
+.app-shell.sidebar-collapsed .sidebar-collapse-btn {
+    display: none;
+}
+
+.app-shell.sidebar-collapsed .mobile-menu-btn {
+    display: inline-flex;
+}
+
+@media (max-width: 960px) {
+    .mobile-menu-btn {
+        display: inline-flex;
+    }
+
+    .sidebar-collapse-btn {
+        display: none;
+    }
+}
+
+
+/* Acessibilidade visual — escala tipográfica ligeiramente ampliada.
+   Mantém a hierarquia original e prioriza leitura em formulários, cards e tabelas. */
+body {
+    font-size: 20.2px;
+}
+
+.nav-item {
+    font-size: 19.5px;
+}
+
+.sidebar-business-name {
+    font-size: 18.2px;
+}
+
+.sidebar-business-meta,
+.topbar-date {
+    font-size: 17.6px;
+}
+
+.topbar-title {
+    font-size: 22.1px;
+}
+
+.page-heading {
+    font-size: 33.8px;
+}
+
+.page-display {
+    font-size: 44.2px;
+}
+
+.page-subtitle {
+    font-size: 19.5px;
+    line-height: 1.6;
+}
+
+.surface-card {
+    padding: 24px;
+}
+
+.card-title {
+    font-size: 26.0px;
+}
+
+.card-subtitle {
+    font-size: 18.9px;
+    line-height: 1.55;
+}
+
+.kpi-label {
+    font-size: 17.6px;
+    line-height: 1.45;
+}
+
+.kpi-value {
+    font-size: 33.8px;
+}
+
+.kpi-meta {
+    font-size: 16.9px;
+}
+
+.field-label {
+    font-size: 18.9px;
+    line-height: 1.45;
+}
+
+.field-input,
+.field-select,
+.field-textarea {
+    font-size: 20.2px;
+    min-height: 44px;
+}
+
+.field-help,
+.field-req {
+    font-size: 16.9px;
+    line-height: 1.55;
+}
+
+.btn {
+    font-size: 18.9px;
+}
+
+.data-table {
+    font-size: 18.9px;
+}
+
+.data-table th {
+    font-size: 16.9px;
+}
+
+.data-table td {
+    line-height: 1.5;
+}
+
+.kv-key,
+.kv-val {
+    font-size: 18.2px;
+    line-height: 1.5;
+}
+
+/* Corrige o rótulo do setor na Identificação: o ícone acompanha o título,
+   em vez de ser distribuído ao centro/fim da linha. */
+.field-label:has(> .field-info) {
+    justify-content: flex-start !important;
+    gap: 5px;
+}
+
+/* Cards com mais respiro para leitura sem aumentar excessivamente a interface. */
+.kpi-card {
+    padding: 20px;
+}
+
+.simulation-result-explainer {
+    font-size: 17.6px;
+    line-height: 1.6;
+}
+
+@media (max-width: 680px) {
+    body {
+        font-size: 19.5px;
+    }
+
+    .main-viewport .page-heading {
+        font-size: 31.2px;
+    }
+
+    .main-viewport .page-display {
+        font-size: 39.0px;
+    }
+
+    .surface-card {
+        padding: 20px;
+    }
+
+    .card-title {
+        font-size: 24.1px;
+    }
+
+    .data-table {
+        font-size: 17.6px;
+    }
+}
+
+
+/* Ajuste fino de escala e posicionamento das telas principais.
+   Custos e rentabilidade permanece intencionalmente fora deste escopo. */
+#main-viewport[data-view="precificacao"],
+#main-viewport[data-view="simulacao"],
+#main-viewport[data-view="catalogo"],
+#main-viewport[data-view="dashboard"],
+#main-viewport[data-view="historico"],
+#main-viewport[data-view="negocio"] {
+    padding-top: 42px;
+}
+
+#main-viewport[data-view="precificacao"] #wiz-step-container,
+#main-viewport[data-view="precificacao"] .wizard-stepper {
+    width: min(100%, 1180px);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#main-viewport[data-view="precificacao"] .surface-card {
+    padding: 27px;
+}
+
+#main-viewport[data-view="precificacao"] .pricing-result-metrics .mono {
+    font-size: 1.08em;
+}
+
+#main-viewport[data-view="precificacao"] .pricing-result-metric-card {
+    padding: 16px !important;
+}
+
+#main-viewport[data-view="precificacao"] .pricing-result-metric-card .kpi-value {
+    font-size: 28.6px !important;
+}
+
+#main-viewport[data-view="simulacao"] > .grid-2 {
+    width: min(100%, 1200px);
+    margin-left: auto;
+    margin-right: auto;
+    gap: 22px;
+}
+
+#main-viewport[data-view="simulacao"] > .grid-2 > .surface-card {
+    padding: 27px;
+}
+
+#main-viewport[data-view="simulacao"] .simulation-result-content .mono {
+    font-size: 45.5px !important;
+}
+
+#main-viewport[data-view="simulacao"] .simulation-result-details .kv-key,
+#main-viewport[data-view="simulacao"] .simulation-result-details .kv-val {
+    font-size: 20.2px;
+}
+
+#main-viewport[data-view="catalogo"] > .surface-card,
+#main-viewport[data-view="historico"] > .surface-card {
+    width: min(100%, 1240px);
+    margin: 0 auto;
+    padding: 27px;
+}
+
+#main-viewport[data-view="catalogo"] .data-table,
+#main-viewport[data-view="historico"] .data-table {
+    font-size: 20.2px;
+}
+
+#main-viewport[data-view="catalogo"] .data-table td,
+#main-viewport[data-view="historico"] .data-table td {
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
+#main-viewport[data-view="dashboard"] > .page-header,
+#main-viewport[data-view="dashboard"] > .kpi-grid,
+#main-viewport[data-view="dashboard"] > .dashboard-bottom-grid {
+    width: min(100%, 1240px);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#main-viewport[data-view="dashboard"] .kpi-card {
+    padding: 23px;
+}
+
+#main-viewport[data-view="dashboard"] .kpi-label {
+    font-size: 18.9px;
+}
+
+#main-viewport[data-view="dashboard"] .kpi-value {
+    font-size: 36.4px;
+}
+
+#main-viewport[data-view="dashboard"] .kpi-meta {
+    font-size: 18.2px;
+}
+
+#main-viewport[data-view="dashboard"] .surface-card {
+    padding: 27px;
+}
+
+#main-viewport[data-view="dashboard"] .data-table {
+    font-size: 19.5px;
+}
+
+#main-viewport[data-view="negocio"] > .page-header,
+#main-viewport[data-view="negocio"] #business-form {
+    width: min(100%, 1120px);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#main-viewport[data-view="negocio"] #business-form {
+    padding: 28px;
+}
+
+#main-viewport[data-view="negocio"] .field-label {
+    font-size: 20.2px;
+}
+
+#main-viewport[data-view="negocio"] .field-input,
+#main-viewport[data-view="negocio"] .field-select,
+#main-viewport[data-view="negocio"] .field-textarea {
+    font-size: 21.4px;
+    min-height: 46px;
+}
+
+@media (max-width: 680px) {
+    #main-viewport[data-view="precificacao"],
+    #main-viewport[data-view="simulacao"],
+    #main-viewport[data-view="catalogo"],
+    #main-viewport[data-view="dashboard"],
+    #main-viewport[data-view="historico"],
+    #main-viewport[data-view="negocio"] {
+        padding-top: 24px;
+    }
+
+    #main-viewport[data-view="precificacao"] .surface-card,
+    #main-viewport[data-view="simulacao"] > .grid-2 > .surface-card,
+    #main-viewport[data-view="catalogo"] > .surface-card,
+    #main-viewport[data-view="historico"] > .surface-card,
+    #main-viewport[data-view="dashboard"] .surface-card,
+    #main-viewport[data-view="negocio"] #business-form {
+        padding: 20px;
+    }
+
+    #main-viewport[data-view="simulacao"] > .grid-2 {
+        gap: 16px;
+    }
+}
+
+
+/* Escala de leitura — ampliação adicional de aproximadamente 20% no conteúdo principal.
+   Mantém navegação global e estrutura dos cards estáveis; não altera Custos e rentabilidade. */
+#main-viewport .page-heading { font-size: 40.3px; }
+#main-viewport .page-display { font-size: 53.3px; }
+#main-viewport .page-subtitle { font-size: 23.4px; }
+#main-viewport .card-title { font-size: 31.2px; }
+#main-viewport .card-subtitle { font-size: 22.8px; }
+#main-viewport .kpi-label { font-size: 22.1px; }
+#main-viewport .kpi-value { font-size: 40.3px; }
+#main-viewport .kpi-meta { font-size: 21.4px; }
+#main-viewport .field-label { font-size: 23.4px; }
+#main-viewport .field-input,
+#main-viewport .field-select,
+#main-viewport .field-textarea { font-size: 24.1px; }
+#main-viewport .field-help,
+#main-viewport .field-req,
+#main-viewport .field-error { font-size: 20.2px; }
+#main-viewport .btn { font-size: 22.8px; }
+#main-viewport .btn-sm { font-size: 20.8px; }
+#main-viewport .data-table { font-size: 24.1px; }
+#main-viewport .data-table th { font-size: 20.8px; }
+#main-viewport .kv-key,
+#main-viewport .kv-val { font-size: 22.1px; }
+#main-viewport .notice-bar-text { font-size: 20.8px; }
+#main-viewport .notice-bar-sub { font-size: 19.5px; }
+#main-viewport .status-label { font-size: 19.5px; }
+#main-viewport .sector-option-title { font-size: 23.4px; }
+#main-viewport .sector-option-desc { font-size: 19.5px; }
+#main-viewport .empty-state-desc,
+#main-viewport .table-description { font-size: 20.8px; }
+#main-viewport .simulation-result-explainer { font-size: 20.8px; }
+#main-viewport[data-view="dashboard"] .kpi-label { font-size: 22.8px; }
+#main-viewport[data-view="dashboard"] .kpi-value { font-size: 44.2px; }
+#main-viewport[data-view="dashboard"] .kpi-meta { font-size: 21.8px; }
+#main-viewport[data-view="precificacao"] .pricing-result-metric-card .kpi-value { font-size: 33.8px !important; }
+#main-viewport[data-view="simulacao"] .simulation-result-content .mono { font-size: 54.6px !important; }
+#main-viewport[data-view="simulacao"] .simulation-result-details .kv-key,
+#main-viewport[data-view="simulacao"] .simulation-result-details .kv-val { font-size: 24.1px; }
+#main-viewport[data-view="catalogo"] .data-table,
+#main-viewport[data-view="historico"] .data-table { font-size: 24.1px; }
+#main-viewport[data-view="negocio"] .field-label { font-size: 24.1px; }
+#main-viewport[data-view="negocio"] .field-input,
+#main-viewport[data-view="negocio"] .field-select,
+#main-viewport[data-view="negocio"] .field-textarea { font-size: 25.4px; }
+
+@media (max-width: 680px) {
+    #main-viewport .page-heading { font-size: 36.4px; }
+    #main-viewport .page-display { font-size: 45.5px; }
+    #main-viewport .card-title { font-size: 27.3px; }
+    #main-viewport .kpi-value { font-size: 36.4px; }
+    #main-viewport .data-table { font-size: 20.8px; }
+    #main-viewport .field-input,
+    #main-viewport .field-select,
+    #main-viewport .field-textarea { font-size: 22.1px; }
+}
+
+
+/* Quinto card — evolução histórica em destaque, centralizado ao final de Custos e rentabilidade. */
+#main-viewport[data-view="analises"] .analysis-evolution-feature {
+    width: min(100%, 1040px);
+    margin: 24px auto 0;
+    padding: 30px 34px;
+}
+
+#main-viewport[data-view="analises"] .analysis-evolution-feature .chart-container,
+#main-viewport[data-view="analises"] .analysis-evolution-feature .chart-svg {
+    width: 100%;
+}
+
+#main-viewport[data-view="analises"] .analysis-evolution-feature .chart-svg {
+    min-height: 300px;
+}
+
+@media (max-width: 680px) {
+    #main-viewport[data-view="analises"] .analysis-evolution-feature {
+        width: 100%;
+        margin-top: 16px;
+        padding: 20px;
+    }
+
+    #main-viewport[data-view="analises"] .analysis-evolution-feature .chart-svg {
+        min-height: 220px;
+    }
+}
+
+
+/* Global readability and layout refinement — 30% larger typography */
+.main-viewport {
+    max-width: 1500px;
+    padding: 32px;
+}
+
+.surface-card {
+    padding: 28px;
+}
+
+.kpi-grid {
+    grid-template-columns: repeat(auto-fit, minmax(235px, 1fr));
+    gap: 22px;
+}
+
+.grid-2,
+.dashboard-charts-grid,
+.dashboard-bottom-grid {
+    gap: 24px;
+}
+
+.kpi-card {
+    padding: 24px;
+    min-height: 132px;
+}
+
+#main-viewport[data-view="analises"] .grid-2 > .surface-card {
+    min-width: 0;
+}
+
+#main-viewport[data-view="analises"] #ana-chart-evo {
+    min-height: 360px;
+}
+
+#main-viewport[data-view="analises"] #ana-chart-evo .chart-svg {
+    width: 100%;
+    min-height: 320px;
+}
+
+.chart-legend {
+    gap: 12px 18px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 980px) {
+    .main-viewport {
+        padding: 24px;
+    }
+
+    .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 680px) {
+    .main-viewport {
+        padding: 18px 14px;
+    }
+
+    .surface-card {
+        padding: 20px;
+    }
+
+    .kpi-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .grid-2,
+    .grid-3,
+    .dashboard-charts-grid,
+    .dashboard-bottom-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    #main-viewport[data-view="analises"] #ana-chart-evo .chart-svg {
+        min-height: 250px;
     }
 }

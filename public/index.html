@@ -16,6 +16,13 @@
     <link rel="stylesheet" href="/img-valorizaai/tokens/tokens.css">
     <link rel="stylesheet" href="/styles.css">
 
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/auth-config.js"></script>
+    <style>html.auth-checking body{visibility:hidden}</style>
+    <script src="/auth-guard.js"></script>
+    <script src="/logout.js" defer></script>
+
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
     <script src="/script.js" defer></script>
 </head>
@@ -27,53 +34,40 @@
         <!-- Sidebar Navigation -->
         <aside id="sidebar" class="sidebar" aria-label="Navegação principal">
             <div class="sidebar-header">
-                <a href="#dashboard" class="sidebar-brand" data-nav="dashboard" aria-label="ValorizAI — Ir para o Dashboard">
+                <a href="#dashboard" class="sidebar-brand" data-nav="dashboard" aria-label="ValorizAI — Ir para a Visão geral">
                     <img src="/img-valorizaai/logos/valorizai-horizontal-gradient-dark.svg" alt="ValorizAI" class="brand-logo-full">
                     <img src="/img-valorizaai/logos/valorizai-symbol-gradient-dark.svg" alt="ValorizAI" class="brand-logo-symbol">
                 </a>
                 <button type="button" id="sidebar-collapse-btn" class="icon-btn sidebar-collapse-btn" aria-label="Recolher menu lateral" aria-expanded="true" title="Recolher menu">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <svg class="sidebar-icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M15 18l-6-6 6-6"></path>
-                    </svg>
-                </button>
-                <button type="button" id="sidebar-close-mobile-btn" class="icon-btn sidebar-close-mobile" aria-label="Fechar menu">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M18 6L6 18M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
 
             <nav class="sidebar-nav" id="sidebar-nav">
-                <button type="button" class="nav-item active" data-nav="dashboard" data-tooltip="Dashboard">
+                <button type="button" class="nav-item active" data-nav="dashboard" data-tooltip="Visão geral">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <rect x="3" y="3" width="7" height="9" rx="1.5"></rect>
                         <rect x="14" y="3" width="7" height="5" rx="1.5"></rect>
                         <rect x="14" y="12" width="7" height="9" rx="1.5"></rect>
                         <rect x="3" y="16" width="7" height="5" rx="1.5"></rect>
                     </svg>
-                    <span class="nav-label">Dashboard</span>
+                    <span class="nav-label">Visão geral</span>
                 </button>
 
-                <button type="button" class="nav-item" data-nav="negocio" data-tooltip="Meu negócio">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M3 21h18"></path>
-                        <path d="M5 21V7l8-4v18"></path>
-                        <path d="M19 21V11l-6-4"></path>
-                        <path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01"></path>
-                    </svg>
-                    <span class="nav-label">Meu negócio</span>
-                </button>
 
-                <button type="button" class="nav-item" data-nav="catalogo" data-tooltip="Catálogo">
+
+                <button type="button" class="nav-item" data-nav="catalogo" data-tooltip="Produtos e serviços">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                         <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
                         <line x1="12" y1="22.08" x2="12" y2="12"></line>
                     </svg>
-                    <span class="nav-label">Catálogo</span>
+                    <span class="nav-label">Produtos e serviços</span>
                 </button>
 
-                <button type="button" class="nav-item" data-nav="precificacao" data-tooltip="Precificação">
+                <button type="button" class="nav-item" data-nav="precificacao" data-tooltip="Nova precificação">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <rect x="4" y="2" width="16" height="20" rx="2"></rect>
                         <line x1="8" y1="6" x2="16" y2="6"></line>
@@ -83,7 +77,7 @@
                         <line x1="14" y1="14" x2="16" y2="14"></line>
                         <line x1="8" y1="18" x2="16" y2="18"></line>
                     </svg>
-                    <span class="nav-label">Precificação</span>
+                    <span class="nav-label">Nova precificação</span>
                 </button>
 
                 <button type="button" class="nav-item" data-nav="simulacao" data-tooltip="Simulação rápida">
@@ -101,23 +95,34 @@
                     <span class="nav-label">Histórico</span>
                 </button>
 
-                <button type="button" class="nav-item" data-nav="analises" data-tooltip="Análises">
+                <button type="button" class="nav-item" data-nav="analises" data-tooltip="Custos e rentabilidade">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <line x1="18" y1="20" x2="18" y2="10"></line>
                         <line x1="12" y1="20" x2="12" y2="4"></line>
                         <line x1="6" y1="20" x2="6" y2="14"></line>
                     </svg>
-                    <span class="nav-label">Análises</span>
+                    <span class="nav-label">Custos e rentabilidade</span>
                 </button>
 
-                <button type="button" class="nav-item" data-nav="consultor" data-tooltip="Consultor IA">
+                <button type="button" class="nav-item" data-nav="negocio" data-tooltip="Perfil da empresa">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        <path d="M3 21h18"></path>
+                        <path d="M5 21V7l8-4v18"></path>
+                        <path d="M19 21V11l-6-4"></path>
+                        <path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01"></path>
                     </svg>
-                    <span class="nav-label">Consultor IA</span>
+                    <span class="nav-label">Perfil da empresa</span>
                 </button>
 
                 <div class="sidebar-divider" role="separator"></div>
+
+                <button type="button" class="nav-item" data-nav="conta" data-tooltip="Minha conta">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="8" r="4"></circle>
+                        <path d="M4 21a8 8 0 0 1 16 0"></path>
+                    </svg>
+                    <span class="nav-label">Minha conta</span>
+                </button>
 
                 <button type="button" class="nav-item" data-nav="configuracoes" data-tooltip="Configurações">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -125,6 +130,15 @@
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                     </svg>
                     <span class="nav-label">Configurações</span>
+                </button>
+
+                <button type="button" id="logout-btn" class="nav-item" data-tooltip="Sair">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span class="nav-label">Sair</span>
                 </button>
             </nav>
 
@@ -148,7 +162,7 @@
                         </svg>
                     </button>
                     <div class="topbar-context">
-                        <span id="topbar-view-title" class="topbar-title">Dashboard</span>
+                        <span id="topbar-view-title" class="topbar-title">Visão geral</span>
                         <span class="topbar-sep" aria-hidden="true">·</span>
                         <span id="topbar-date" class="topbar-date"></span>
                     </div>
@@ -198,6 +212,26 @@
             <div id="modal-body" class="modal-body"></div>
         </div>
     </div>
+
+    <!-- Nilo flutuante global: acessível em todas as páginas -->
+    <div class="nilo-launcher" id="nilo-launcher">
+        <button type="button" id="nilo-help-bubble" class="nilo-help-bubble" aria-label="Precisa de ajuda? Abrir conversa com Nilo">
+            Precisa de ajuda? <strong>Fale comigo!</strong>
+        </button>
+        <button type="button" id="nilo-fab" class="nilo-fab" aria-label="Abrir conversa com Nilo" aria-expanded="false" aria-controls="nilo-panel">
+            <img src="/img-valorizaai/nilo/nilo-apresentacao.svg" alt="">
+        </button>
+    </div>
+    <section id="nilo-panel" class="nilo-panel" role="dialog" aria-label="Assistente Nilo" hidden>
+        <header class="nilo-panel-header">
+            <div class="nilo-panel-title">
+                <img src="/img-valorizaai/nilo/nilo-apresentacao.svg" alt="">
+                <span>Nilo <small style="display:block;font-size:11px;font-weight:400;color:#64748B;">Assistente ValorizAI</small></span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;"><button type="button" id="nilo-clear-chat" class="btn btn-ghost btn-sm">Limpar</button><button type="button" id="nilo-panel-close" class="icon-btn" aria-label="Fechar Nilo">×</button></div>
+        </header>
+        <div id="nilo-panel-content" class="nilo-panel-content"></div>
+    </section>
 
     <!-- Toast Feedback Region -->
     <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>

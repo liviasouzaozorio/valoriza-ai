@@ -90,3 +90,14 @@ O projeto está sendo desenvolvido continuamente como parte de uma **Iniciação
 
 Desenvolver uma solução acessível que ajude **microempreendedores a transformar dados financeiros e operacionais em informações úteis para precificação, análise e tomada de decisão**, aproximando tecnologia, dados e gestão logística.
 
+
+## 🔐 Configuração de preferências da interface
+
+A preferência de recolhimento da navegação é salva por usuário autenticado.
+
+1. Configure no ambiente do servidor `SUPABASE_URL` e `SUPABASE_ANON_KEY` (a mesma URL/chave pública configurada no frontend).
+2. Configure `DATABASE_URL` para o PostgreSQL do projeto.
+3. Execute as migrations do diretório `supabase/migrations` no banco Supabase.
+4. Reinicie o servidor.
+
+A API valida o access token consultando o Supabase Auth antes de ler ou gravar a preferência. A migration cria `public.user_preferences` com RLS e políticas limitadas ao próprio usuário. Não use a chave `service_role` no navegador.
