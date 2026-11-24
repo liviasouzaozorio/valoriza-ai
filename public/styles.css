@@ -2703,3 +2703,32 @@ body {
     #main-viewport .field-select,
     #main-viewport .field-textarea { font-size: 17px; }
 }
+
+
+/* Quinto card — evolução histórica em destaque, centralizado ao final de Custos e rentabilidade. */
+#main-viewport[data-view="analises"] .analysis-evolution-feature {
+    width: min(100%, 1040px);
+    margin: 24px auto 0;
+    padding: 30px 34px;
+}
+
+#main-viewport[data-view="analises"] .analysis-evolution-feature .chart-container,
+#main-viewport[data-view="analises"] .analysis-evolution-feature .chart-svg {
+    width: 100%;
+}
+
+#main-viewport[data-view="analises"] .analysis-evolution-feature .chart-svg {
+    min-height: 300px;
+}
+
+@media (max-width: 680px) {
+    #main-viewport[data-view="analises"] .analysis-evolution-feature {
+        width: 100%;
+        margin-top: 16px;
+        padding: 20px;
+    }
+
+    #main-viewport[data-view="analises"] .analysis-evolution-feature .chart-svg {
+        min-height: 220px;
+    }
+}
