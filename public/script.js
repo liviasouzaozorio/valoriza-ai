@@ -4181,20 +4181,25 @@
 
         // Nilo é global: abrir o painel preserva a tela atual.
         const niloFab = document.getElementById('nilo-fab');
+        const niloHelpBubble = document.getElementById('nilo-help-bubble');
         const niloPanel = document.getElementById('nilo-panel');
         const niloPanelContent = document.getElementById('nilo-panel-content');
         const closeNilo = () => {
             UI.niloOpen = false;
             niloPanel.hidden = true;
             niloFab.setAttribute('aria-expanded', 'false');
+            niloHelpBubble.hidden = false;
         };
-        niloFab.addEventListener('click', () => {
+        const openNilo = () => {
             UI.niloOpen = true;
             niloPanel.hidden = false;
             niloFab.setAttribute('aria-expanded', 'true');
+            niloHelpBubble.hidden = true;
             renderConsultor(niloPanelContent);
             document.getElementById('ai-question-input')?.focus();
-        });
+        };
+        niloFab.addEventListener('click', openNilo);
+        niloHelpBubble.addEventListener('click', openNilo);
         document.getElementById('nilo-panel-close').addEventListener('click', closeNilo);
         document.getElementById('nilo-clear-chat').addEventListener('click', () => {
             WorkspaceStore.state.chatHistory = [];
