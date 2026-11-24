@@ -5,10 +5,19 @@
        1. CONSTANTES E DEFINIÇÕES DE SETORES
        ========================================================================= */
     const STORAGE_KEYS = {
-        WORKSPACE: 'valorizai_workspace_v1',
-        DRAFT: 'valorizai_wizard_draft_v1',
-        SIDEBAR: 'valorizai_sidebar_collapsed_v1'
+        LEGACY_WORKSPACE: 'valorizai_workspace_v1',
+        WORKSPACE: null,
+        DRAFT: null,
+        SIDEBAR: null
     };
+
+    function configureUserStorage(userId) {
+        if (!userId || typeof userId !== 'string') throw new Error('Conta autenticada inválida.');
+        const suffix = userId;
+        STORAGE_KEYS.WORKSPACE = `valorizai_workspace_v1:${suffix}`;
+        STORAGE_KEYS.DRAFT = `valorizai_wizard_draft_v1:${suffix}`;
+        STORAGE_KEYS.SIDEBAR = `valorizai_sidebar_collapsed_v1:${suffix}`;
+    }
 
     const NILO_ASSETS = {
         boasVindas: '/img-valorizaai/nilo/nilo-boas-vindas.svg',
@@ -446,14 +455,16 @@
         },
         save() {
             try {
+                if (!STORAGE_KEYS.WORKSPACE) return false;
                 localStorage.setItem(STORAGE_KEYS.WORKSPACE, JSON.stringify(this.state));
+                return true;
             } catch {
-                // Ignora indisponibilidade de storage
+                return false;
             }
         },
         resetAll() {
             this.state = defaultWorkspaceState();
-            localStorage.removeItem(STORAGE_KEYS.WORKSPACE);
+            if (STORAGE_KEYS.WORKSPACE) localStorage.removeItem(STORAGE_KEYS.WORKSPACE);
         },
         loadDemoScenario() {
             const now = Date.now();
@@ -3750,8 +3761,71 @@
     /* =========================================================================
        9. INICIALIZAÇÃO E EVENTOS GLOBAIS
        ========================================================================= */
-    function init() {
+    async function init() {
+        const config = window.VALORIZAI_CONFIG || {};
+        if (!window.supabase?.createClient || !config.supabaseUrl || !config.supabaseAnonKey) {
+            window.location.replace('/auth.html?setup=1');
+            return;
+        }
+
+        const authClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey, {
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+        });
+        const { data: sessionData, error: sessionError } = await authClient.auth.getSession();
+        const session = sessionData?.session;
+        if (sessionError || !session?.access_token || !session.user?.id) {
+            window.location.replace('/auth.html');
+            return;
+        }
+
+        configureUserStorage(session.user.id);
+        let remoteBusinessProfile = null;
+        let profileLoadError = null;
+        try {
+            const ensureResponse = await fetch('/api/business/ensure', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            });
+            const ensureResult = await ensureResponse.json().catch(() => ({}));
+            if (!ensureResponse.ok || !ensureResult.success) {
+                throw new Error(ensureResult.error?.message || 'Não foi possível preparar o perfil.');
+            }
+
+            const profileResponse = await fetch('/api/business/profile', {
+                headers: { Authorization: `Bearer ${session.access_token}` }
+            });
+            const profileResult = await profileResponse.json().catch(() => ({}));
+            if (!profileResponse.ok || !profileResult.success || !profileResult.data?.business) {
+                throw new Error(profileResult.error?.message || 'Não foi possível carregar o perfil.');
+            }
+            remoteBusinessProfile = profileResult.data.business;
+        } catch (error) {
+            profileLoadError = error;
+            console.error('Não foi possível sincronizar o perfil do negócio.', error);
+        }
+
         WorkspaceStore.load();
+        if (remoteBusinessProfile) {
+            const additional = remoteBusinessProfile.additional_data || {};
+            WorkspaceStore.state.business = {
+                ...WorkspaceStore.state.business,
+                nomeNegocio: remoteBusinessProfile.name || '',
+                segmento: remoteBusinessProfile.sector === 'servicos' ? 'servico' : (remoteBusinessProfile.sector || ''),
+                descricao: remoteBusinessProfile.description || '',
+                modeloOperacao: remoteBusinessProfile.operating_model || '',
+                margemMeta: remoteBusinessProfile.target_margin_percent ?? null,
+                empreendedor: additional.entrepreneur_name || '',
+                regimeInformativo: additional.tax_regime || '',
+                cidadeUf: additional.location_text || '',
+                observacoes: additional.notes || '',
+                atualizadoEm: remoteBusinessProfile.updated_at || null
+            };
+            WorkspaceStore.save();
+        }
 
         const shell = document.getElementById('app-shell');
         const collapseButton = document.getElementById('sidebar-collapse-btn');
@@ -3776,10 +3850,7 @@
         setDesktopSidebarCollapsed(localStorage.getItem(STORAGE_KEYS.SIDEBAR) === '1');
 
         const getSidebarSession = async () => {
-            const config = window.VALORIZAI_CONFIG || {};
-            if (!window.supabase?.createClient || !config.supabaseUrl || !config.supabaseAnonKey) return null;
-            const client = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
-            const { data, error } = await client.auth.getSession();
+            const { data, error } = await authClient.auth.getSession();
             return error ? null : data.session || null;
         };
 
@@ -3899,6 +3970,9 @@
 
         UI.updateChrome();
         UI.renderCurrentView();
+        if (profileLoadError) {
+            UI.toast('Não foi possível sincronizar o perfil com sua conta. Suas informações locais foram preservadas; tente novamente mais tarde.', 'error');
+        }
     }
 
     document.addEventListener('DOMContentLoaded', init);
