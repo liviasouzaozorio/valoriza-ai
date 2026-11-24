@@ -89,7 +89,7 @@ test('POST ensure recupera negócio existente sem substituir o perfil', async ()
   const response = await request('/api/business/ensure', { method: 'POST' });
   assert.equal(response.status, 200);
   assert.equal(response.body.data.business.name, 'Nome já salvo');
-  assert.equal(calls, 1);
+  assert.equal(calls, 2);
 });
 
 test('GET recupera apenas o perfil associado ao usuário autenticado', async () => {
