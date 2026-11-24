@@ -881,6 +881,18 @@
 
     const ChartRenderer = {
         renderPriceEvolutionChart(container, pricings) {
+            if (pricings.length < 2) {
+                const single = pricings[0] || null;
+                const message = single
+                    ? `Há apenas uma versão registrada para este item (v${single.versao}). Salve uma nova versão para comparar a evolução de custos e preços.`
+                    : 'Ainda não há precificações salvas para traçar a evolução ao longo do tempo.';
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p class="empty-state-desc">${message}</p>
+                    </div>`;
+                return;
+            }
+
             if (!pricings.length) {
                 container.innerHTML = `
                     <div class="empty-state">
@@ -1175,7 +1187,7 @@
             insights.push({
                 tone: 'info',
                 title: 'Maior custo unitário registrado entre os itens ativos',
-                desc: `"${highestCost.itemNome}" possui custo de ${Formatter.brl(highestCost.custoTotal)} e preço sugerido de ${Formatter.brl(highestCost.precoSugerido)}. Esse é o maior custo por unidade/atendimento entre os itens ativos; não significa, por si só, maior gasto total do negócio.`
+                desc: `"${highestCost.itemNome}" possui custo de ${Formatter.brl(highestCost.custoTotal)} por ${highestCost.unidade || 'unidade de comercialização'} e preço sugerido de ${Formatter.brl(highestCost.precoSugerido)}. É o maior valor unitário registrado; unidades de comercialização diferentes não são diretamente comparáveis e isso não representa gasto total do negócio.`
             });
         }
 
@@ -1413,7 +1425,7 @@
                     <div class="kpi-value ${avgMargin === null || target === null ? '' : (avgMargin >= target ? 'positive' : 'warning')}">
                         ${avgMargin === null ? '—' : Formatter.percent(avgMargin)}
                     </div>
-                    <div class="kpi-meta">${avgMargin === null ? 'Sem margem planejada válida nas últimas versões' : 'Média das últimas versões dos itens ativos · não representa vendas'}</div>
+                    <div class="kpi-meta">${avgMargin === null ? 'Sem margem planejada válida nas últimas versões' : 'Média simples das margens válidas nas últimas versões · não representa vendas'}</div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-label">${target === null ? 'Meta de margem' : `Margem abaixo da meta (${Formatter.percent(target, 0)})`}</div>
