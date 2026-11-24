@@ -1413,14 +1413,14 @@
                     <div class="kpi-value ${avgMargin === null || target === null ? '' : (avgMargin >= target ? 'positive' : 'warning')}">
                         ${avgMargin === null ? '—' : Formatter.percent(avgMargin)}
                     </div>
-                    <div class="kpi-meta">${avgMargin === null ? 'Aguardando precificações de itens ativos' : 'Média das últimas versões dos itens ativos · não representa vendas'}</div>
+                    <div class="kpi-meta">${avgMargin === null ? 'Sem margem planejada válida nas últimas versões' : 'Média das últimas versões dos itens ativos · não representa vendas'}</div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-label">${target === null ? 'Meta de margem' : `Margem abaixo da meta (${Formatter.percent(target, 0)})`}</div>
                     <div class="kpi-value ${target === null ? '' : (belowTargetCount > 0 ? 'warning' : (activePricingCount > 0 ? 'positive' : ''))}">
                         ${target === null || activePricingCount === 0 ? '—' : belowTargetCount}
                     </div>
-                    <div class="kpi-meta">${target === null ? 'Defina uma meta em Meu negócio' : (activePricingCount === 0 ? 'Aguardando precificações de itens ativos' : (belowTargetCount === 0 ? 'Todos os itens precificados estão na meta ou acima' : 'Itens que merecem revisão'))}</div>
+                    <div class="kpi-meta">${target === null ? 'Defina uma meta em Meu negócio' : (activePricingCount === 0 ? 'Sem margens válidas para comparar' : (belowTargetCount === 0 ? 'Todos os itens com margem válida estão na meta ou acima' : 'Itens que merecem revisão'))}</div>
                 </div>
             </div>
 
@@ -1499,7 +1499,11 @@
                     <p style="font-size:13px;color:var(--color-silver);padding-top:6px;">
                         ${belowTargetCount > 0
                             ? 'Identifiquei pontos de atenção nas suas margens planejadas. Vale revisar os itens destacados antes de atualizar sua tabela de vendas.'
-                            : (belowTargetCount === null ? 'As margens planejadas dos itens ativos estão disponíveis para acompanhamento. Defina uma meta em Meu negócio se quiser compará-las.' : 'As margens planejadas dos itens ativos estão na meta ou acima dela. Isso não representa vendas realizadas.')}
+                            : (activePricingCount === 0
+                                ? 'Ainda não há margens planejadas válidas nas últimas versões dos itens ativos para fazer essa leitura.'
+                                : (belowTargetCount === null
+                                    ? 'As margens planejadas dos itens ativos estão disponíveis para acompanhamento. Defina uma meta em Meu negócio se quiser compará-las.'
+                                    : 'As margens planejadas dos itens ativos estão na meta ou acima dela. Isso não representa vendas realizadas.'))}
                     </p>
                 </div>
                 <div class="insights-list">
