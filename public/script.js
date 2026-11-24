@@ -1553,10 +1553,7 @@
 
             <form id="business-form" class="surface-card" novalidate>
                 <div style="margin-bottom:22px;">
-                    <div class="field-label" style="margin-bottom:10px;">
-                        <span>Segmento principal de atuação</span>
-                        <span class="field-req">Opcional para começar</span>
-                    </div>
+                    <div class="field-label" style="margin-bottom:10px;">Segmento principal de atuação</div>
                     <div class="sector-selector-grid" id="biz-sector-grid">
                         ${Object.values(SETORES).map(s => `
                             <button type="button" class="sector-option ${selectedSegment === s.id ? 'active' : ''}" data-sector="${s.id}">
@@ -2347,7 +2344,6 @@
     function renderWizardStep2(container) {
         const w = UI.wizard;
         const sectorCfg = SETORES[w.setor] || SETORES.comercio;
-        const showHelp = WorkspaceStore.state.settings.mostrarDicasCampos;
 
         container.innerHTML = `
             <div class="surface-card">
@@ -3888,20 +3884,13 @@
             <div style="margin-bottom:20px;">
                 <form id="settings-form" class="surface-card">
                     <h2 class="card-title" style="margin-bottom:6px;">Metas e preferências da interface</h2>
-                    <p class="card-subtitle" style="margin-bottom:18px;">Ajuste os parâmetros de leitura de margem e exibição de ajudas nos formulários.</p>
+                    <p class="card-subtitle" style="margin-bottom:18px;">Ajuste os parâmetros de leitura de margem e salvamento automático de rascunhos.</p>
 
                     <div class="form-grid">
                         <div class="form-field">
                             <label class="field-label" for="set-carga-alerta"><span>Alerta de impostos + taxas (%)</span>${fieldInfoIcon('Destaca quando a soma percentual sobre o preço atingir este limiar. Deixe vazio para não ativar esse alerta.')}</label>
                             <input id="set-carga-alerta" class="field-input mono" type="text" inputmode="decimal" value="${settings.alertaCargaTributaria ?? ''}">
                             <span class="field-help">Destaca quando a soma percentual sobre o preço atingir este limiar. Deixe vazio para não ativar esse alerta.</span>
-                        </div>
-
-                        <div class="form-field form-field-full">
-                            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;">
-                                <input id="set-dicas" type="checkbox" ${settings.mostrarDicasCampos ? 'checked' : ''} style="width:16px;height:16px;">
-                                <span>Exibir textos explicativos abaixo de cada campo de custo</span>
-                            </label>
                         </div>
 
                         <div class="form-field form-field-full">
@@ -3939,7 +3928,6 @@
             }
             WorkspaceStore.state.settings = {
                 alertaCargaTributaria: carga,
-                mostrarDicasCampos: document.getElementById('set-dicas').checked,
                 salvarRascunhoAutomatico: document.getElementById('set-rascunho').checked
             };
             WorkspaceStore.save();
@@ -4172,7 +4160,14 @@
 
         // Mobile: o hamburger alterna abrir/fechar o drawer.
         mobileMenuButton.addEventListener('click', () => {
-            setMobileDrawerOpen(!shell.classList.contains('mobile-drawer-open'));
+            if (isMobileNavigation()) {
+                setMobileDrawerOpen(!shell.classList.contains('mobile-drawer-open'));
+                return;
+            }
+            if (shell.classList.contains('sidebar-collapsed')) {
+                setDesktopSidebarCollapsed(false);
+                saveSidebarPreference(false);
+            }
         });
         document.getElementById('sidebar-backdrop').addEventListener('click', () => setMobileDrawerOpen(false));
         loadSidebarPreference();
