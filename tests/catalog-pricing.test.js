@@ -152,7 +152,7 @@ test('PATCH product scopes updates by both item and authenticated business', asy
     method: 'PATCH', body: { name: 'Bolo atualizado' }
   });
   assert.equal(response.status, 200);
-  assert.match(seen.sql, /WHERE id = \d+ AND business_id = \d+/);
+  assert.match(seen.sql, /WHERE id = \$2 AND business_id = \$3/);
   assert.deepEqual(seen.params, ['Bolo atualizado', productId, businessId]);
 });
 
