@@ -65,10 +65,39 @@ O segmento `servico` utilizado na interface é normalizado para `servicos` no ba
 8. Confirme que uma segunda conta não consegue consultar ou alterar o perfil da primeira.
 9. Abra `/index.html` sem sessão e confirme o redirecionamento para `/auth.html`.
 
-## 7. Limites desta entrega
+## 7. Persistência operacional atualmente integrada
 
-A Entrega 1 integra somente autenticação, criação/recuperação do negócio, perfil e workspace local individualizado. Catálogo, precificações, histórico do Nilo, importação do backup legado e dashboards continuam fora do escopo.
+Além da autenticação e do perfil, a aplicação possui integração autenticada para:
 
-A chave antiga `valorizai_workspace_v1` é preservada como backup independente e não é importada automaticamente para nenhuma conta.
+- **Produtos e serviços:** listagem, cadastro e atualização em `public.products`, sempre vinculados ao negócio derivado da sessão.
+- **Precificações:** cálculo oficial no servidor por `POST /api/pricings/calculate`; gravação de versões e snapshots em `public.precificacoes`; consulta do histórico por conta.
+- **Nilo:** conversas e mensagens são persistidas em `public.nilo_conversations` e `public.nilo_messages`. O contexto financeiro é enviado apenas quando selecionado/disponível.
+- **Preferência do menu lateral:** sincronização autenticada da preferência de recolhimento.
+- **Dashboards:** indicadores são montados a partir do catálogo e das precificações carregados pela API; não representam vendas ou faturamento realizados.
 
-A rota `/perguntar` ainda precisa receber autenticação obrigatória e validação de propriedade antes da integração do histórico do Nilo com o banco.
+As rotas privadas validam o token Supabase e derivam o usuário e o negócio no servidor. O cliente não deve enviar um `owner_user_id` ou escolher o `business_id` de destino. Como o backend usa uma conexão PostgreSQL própria, toda consulta e alteração precisa manter filtros explícitos de propriedade, mesmo com RLS habilitado no banco.
+
+O armazenamento local por usuário continua sendo utilizado para rascunhos, preferências e cache de interface. Ele não substitui a persistência remota do perfil, catálogo, precificações ou conversas. A chave legada `valorizai_workspace_v1` é preservada como backup independente e não é importada automaticamente para nenhuma conta.
+
+## 8. Validação manual recomendada
+
+1. Entre com uma conta existente e confira o perfil do negócio.
+2. Cadastre ou atualize um produto/serviço e confira se aparece no catálogo.
+3. Gere uma precificação, salve e confira a nova versão no histórico.
+4. Atualize a página e confirme a recuperação dos dados.
+5. Faça logout e login novamente; confirme perfil, catálogo, histórico e dashboards.
+6. Entre na mesma conta em uma janela anônima e repita a conferência. A janela anônima ajuda a testar uma sessão isolada, mas não prova sozinha a gravação no banco.
+7. Envie uma pergunta ao Nilo, atualize a página e confira se a conversa é recuperada.
+8. Quando houver uma segunda conta de teste autorizada, confirme que ela não consegue consultar ou alterar os registros da primeira.
+
+Não crie registros fictícios em uma conta real sem autorização. Para verificar persistência diretamente, faça consultas somente de leitura nas tabelas do projeto Supabase correto.
+
+## 9. Limitações e itens ainda pendentes
+
+- A integração está implementada, mas a validação ponta a ponta precisa continuar em navegador com sessão real, inclusive isolamento entre contas.
+- Registros legados de precificação sem vínculo de negócio/produto e sem snapshots são preservados; não são associados automaticamente e não devem alimentar indicadores atuais.
+- Constraints adicionadas como `NOT VALID` precisam de uma estratégia explícita de tratamento dos dados legados antes de serem validadas.
+- A proteção contra senhas comprometidas deve ser revisada nas configurações do Supabase Auth.
+- A aplicação não implementa recuperação de senha nesta etapa.
+
+A conclusão da integração deve ser baseada em testes autenticados e consultas de leitura, não apenas na presença dos dados após atualizar a página.
