@@ -341,6 +341,10 @@
                 maximumFractionDigits: decimals
             })}%`;
         },
+        multiplier(value) {
+            const n = nullableFiniteNumber(value);
+            return n === null ? '—' : `${n.toFixed(2)}x`;
+        },
         dateShort(iso) {
             if (!iso) return '—';
             const d = new Date(iso);
@@ -1026,7 +1030,8 @@
         },
 
         renderPlannedMarginChart(container, pricings, targetMargin) {
-            if (!pricings.length) {
+            const validPricings = pricings.filter(p => nullableFiniteNumber(p.margemPlanejada) !== null);
+            if (!validPricings.length) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <p class="empty-state-desc">Nenhuma margem planejada registrada ainda. Salve uma precificação para acompanhar este indicador.</p>
@@ -1036,7 +1041,7 @@
 
             // Agrupa pela versão mais recente de cada item
             const latestByItem = new Map();
-            [...pricings].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm)).forEach(p => {
+            [...validPricings].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm)).forEach(p => {
                 latestByItem.set(p.catalogItemId || p.itemNome, p);
             });
             const rows = Array.from(latestByItem.values()).slice(-6);
@@ -3310,7 +3315,7 @@
                                     <td>${SETORES[p.setor]?.nome || p.setor}</td>
                                     <td class="num">${Formatter.brl(p.custoTotal)}</td>
                                     <td class="num" style="color:var(--color-emerald);font-weight:600;">${Formatter.brl(p.precoSugerido)}</td>
-                                    <td class="num">${p.markup.toFixed(2)}x</td>
+                                    <td class="num">${Formatter.multiplier(p.markup)}</td>
                                     <td class="num" style="${target === null ? '' : `color:${p.margemPlanejada < target ? 'var(--color-warning)' : 'var(--color-emerald)'};`}">${Formatter.percent(p.margemPlanejada)}</td>
                                     <td style="text-align:right;white-space:nowrap;">
                                         <div style="display:inline-flex;gap:6px;">
@@ -3361,7 +3366,7 @@
                 <div class="kv-row"><span class="kv-key">Setor · Unidade</span><span class="kv-val">${sectorCfg?.nome || p.setor} · ${Formatter.escapeHtml(p.unidade)}</span></div>
                 <div class="kv-row"><span class="kv-key">Custo total unitário</span><span class="kv-val mono">${Formatter.brl(p.custoTotal)}</span></div>
                 <div class="kv-row"><span class="kv-key">Preço sugerido</span><span class="kv-val mono" style="color:var(--color-emerald);">${Formatter.brl(p.precoSugerido)}</span></div>
-                <div class="kv-row"><span class="kv-key">Markup · Margem planejada</span><span class="kv-val mono">${p.markup.toFixed(2)}x · ${Formatter.percent(p.margemPlanejada)}</span></div>
+                <div class="kv-row"><span class="kv-key">Markup · Margem planejada</span><span class="kv-val mono">${Formatter.multiplier(p.markup)} · ${Formatter.percent(p.margemPlanejada)}</span></div>
                 <div class="kv-row"><span class="kv-key">Impostos e taxas (${Formatter.percent(p.percentualImpostosTaxas)})</span><span class="kv-val mono">${Formatter.brl(p.valorImpostosTaxas)}</span></div>
                 <div class="kv-row"><span class="kv-key">Lucro estimado / unidade</span><span class="kv-val mono">${Formatter.brl(p.lucroEstimado)}</span></div>
             </div>
@@ -3504,7 +3509,7 @@
                                         <td>${Formatter.escapeHtml(p.itemNome)} <span class="mono" style="color:var(--color-silver);">v${p.versao}</span></td>
                                         <td class="num">${Formatter.brl(p.custoTotal)}</td>
                                         <td class="num" style="color:var(--color-emerald);">${Formatter.brl(p.precoSugerido)}</td>
-                                        <td class="num">${Number(p.markup).toFixed(2)}x</td>
+                                        <td class="num">${Formatter.multiplier(p.markup)}</td>
                                         <td class="num">${Formatter.percent(p.margemPlanejada)}</td>
                                     </tr>
                                 `).join('')}
