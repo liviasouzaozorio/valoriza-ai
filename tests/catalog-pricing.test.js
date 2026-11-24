@@ -378,3 +378,37 @@ test('POST pricing calculate requires authentication and returns a server result
   assert.equal(response.body.data.result.precoSugerido, 24.67);
   assert.equal(response.body.data.result.calculationVersion, 'server-v1');
 });
+
+
+test('POST pricing calculate accepts the service sector used by the full pricing wizard', async () => {
+  app.pool.query = async sql => {
+    if (sql.includes('SELECT id FROM public.businesses')) return { rows: [{ id: businessId }] };
+    throw new Error('Unexpected SQL query');
+  };
+  const response = await request('/api/pricings/calculate', {
+    method: 'POST',
+    body: {
+      sector: 'servico',
+      costs: {
+        tempoExecucao: 2,
+        custoHoraProdutiva: 35,
+        maoObraContratada: 0,
+        deslocamento: 15,
+        materiaisUtilizados: 100,
+        ferramentasLicencas: 0,
+        outrosEspecificos: 0
+      },
+      taxes: {
+        impostosVenda: 16,
+        taxaPagamento: 0,
+        comissao: 0,
+        taxaMarketplace: 0,
+        margemDesejada: 16
+      }
+    }
+  });
+  assert.equal(response.status, 200);
+  assert.equal(response.body.data.result.sector, 'servico');
+  assert.equal(response.body.data.result.custoTotal, 185);
+  assert.equal(response.body.data.result.calculationVersion, 'server-v1');
+});
