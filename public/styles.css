@@ -8,7 +8,7 @@
 }
 
 html {
-    font-size: 12.5px;
+    font-size: 8.8px;
     color-scheme: dark;
 }
 
@@ -17,7 +17,7 @@ body {
     background-color: var(--color-midnight);
     color: var(--color-cloud);
     font-family: var(--font-sans);
-    font-size: 10.9px;
+    font-size: 8px;
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -198,7 +198,7 @@ a {
     border-radius: var(--radius-md);
     background: transparent;
     color: var(--color-silver);
-    font-size: 10.9px;
+    font-size: 8px;
     font-weight: 500;
     text-align: left;
     white-space: nowrap;
@@ -241,7 +241,7 @@ a {
     background-color: var(--color-navy-elevated);
     border: var(--border-hairline);
     color: var(--color-cloud);
-    font-size: 9.4px;
+    font-size: 8px;
     font-weight: 500;
     white-space: nowrap;
     z-index: 60;
@@ -263,7 +263,7 @@ a {
 
 .sidebar-business-name {
     font-family: var(--font-display);
-    font-size: 10.1px;
+    font-size: 8px;
     font-weight: 600;
     color: var(--color-cloud);
     white-space: nowrap;
@@ -272,7 +272,7 @@ a {
 }
 
 .sidebar-business-meta {
-    font-size: 9.4px;
+    font-size: 8px;
     color: var(--color-silver);
     white-space: nowrap;
     overflow: hidden;
@@ -332,7 +332,7 @@ a {
 
 .topbar-title {
     font-family: var(--font-display);
-    font-size: 12.5px;
+    font-size: 8.8px;
     font-weight: 700;
     color: var(--color-cloud);
     white-space: nowrap;
@@ -343,7 +343,7 @@ a {
 }
 
 .topbar-date {
-    font-size: 10.1px;
+    font-size: 8px;
     color: var(--color-silver);
     white-space: nowrap;
     overflow: hidden;
@@ -396,20 +396,20 @@ a {
 }
 
 .page-heading {
-    font-size: 18.7px;
+    font-size: 13.1px;
     font-weight: 700;
     line-height: 1.25;
 }
 
 .page-display {
-    font-size: 25px;
+    font-size: 17.5px;
     font-weight: 700;
     line-height: 1.2;
 }
 
 .page-subtitle {
     margin-top: 6px;
-    font-size: 10.9px;
+    font-size: 8px;
     color: var(--color-silver);
     max-width: 68ch;
 }
@@ -445,14 +445,14 @@ a {
 }
 
 .card-title {
-    font-size: 14px;
+    font-size: 9.8px;
     font-weight: 600;
     line-height: 1.3;
 }
 
 .card-subtitle {
     margin-top: 4px;
-    font-size: 10.1px;
+    font-size: 8px;
     color: var(--color-silver);
 }
 
@@ -481,7 +481,7 @@ a {
 }
 
 .kpi-label {
-    font-size: 9.4px;
+    font-size: 8px;
     font-weight: 500;
     color: var(--color-silver);
 }
@@ -489,7 +489,7 @@ a {
 .kpi-value {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
-    font-size: 18.7px;
+    font-size: 13.1px;
     font-weight: 600;
     color: var(--color-cloud);
     line-height: 1.2;
@@ -508,7 +508,7 @@ a {
 }
 
 .kpi-meta {
-    font-size: 9.4px;
+    font-size: 8px;
     color: var(--color-silver);
     line-height: 1.4;
 }
@@ -548,7 +548,7 @@ a {
     padding: 9px 18px;
     border-radius: var(--radius-md);
     border: 1px solid transparent;
-    font-size: 10.9px;
+    font-size: 8px;
     font-weight: 500;
     white-space: nowrap;
     flex-shrink: 0;
@@ -567,7 +567,7 @@ a {
 .btn-sm {
     min-height: 36px;
     padding: 7px 14px;
-    font-size: 10.1px;
+    font-size: 8px;
 }
 
 .btn-primary {
@@ -653,7 +653,7 @@ a {
     background-color: var(--color-blue);
     color: #ffffff;
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
@@ -678,7 +678,7 @@ a {
     padding: 14px 16px;
     border-bottom: var(--border-hairline);
     font-family: var(--font-display);
-    font-size: 10.9px;
+    font-size: 8px;
     font-weight: 600;
 }
 
@@ -702,13 +702,13 @@ a {
 }
 
 .notification-item-title {
-    font-size: 10.1px;
+    font-size: 8px;
     font-weight: 600;
     color: var(--color-cloud);
 }
 
 .notification-item-desc {
-    font-size: 9.4px;
+    font-size: 8px;
     color: var(--color-silver);
 }
 
@@ -730,7 +730,7 @@ a {
 }
 
 .field-label {
-    font-size: 10.1px;
+    font-size: 8px;
     font-weight: 500;
     color: var(--color-cloud);
     display: flex;
@@ -740,7 +740,7 @@ a {
 }
 
 .field-req {
-    font-size: 9px;
+    font-size: 8px;
     color: var(--color-silver);
     font-weight: 400;
 }
@@ -755,7 +755,7 @@ a {
     border: 1px solid rgba(168, 181, 199, 0.2);
     border-radius: var(--radius-md);
     color: var(--color-cloud);
-    font-size: 10.9px;
+    font-size: 8px;
     transition: border-color 160ms ease, background-color 160ms ease;
 }
 
@@ -789,13 +789,13 @@ a {
 }
 
 .field-help {
-    font-size: 9.4px;
+    font-size: 8px;
     color: var(--color-silver);
     line-height: 1.45;
 }
 
 .field-error {
-    font-size: 9.4px;
+    font-size: 8px;
     color: var(--color-danger);
     font-weight: 500;
 }
@@ -810,7 +810,7 @@ a {
 .input-suffix {
     position: absolute;
     font-family: var(--font-mono);
-    font-size: 10.1px;
+    font-size: 8px;
     color: var(--color-silver);
     pointer-events: none;
 }
@@ -848,7 +848,7 @@ a {
     border-radius: var(--radius-sm);
     background: transparent;
     color: var(--color-silver);
-    font-size: 10.1px;
+    font-size: 8px;
     font-weight: 500;
     white-space: nowrap;
     transition: background-color 160ms ease, color 160ms ease;
@@ -893,20 +893,20 @@ a {
 
 .sector-option-title {
     font-family: var(--font-display);
-    font-size: 11.7px;
+    font-size: 8.2px;
     font-weight: 600;
     color: var(--color-cloud);
 }
 
 .sector-option-desc {
-    font-size: 9.4px;
+    font-size: 8px;
     color: var(--color-silver);
     line-height: 1.4;
 }
 
 /* Status Text (Accessible, non-pill) */
 .status-label {
-    font-size: 9.4px;
+    font-size: 8px;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
@@ -944,13 +944,13 @@ a {
 }
 
 .notice-bar-text {
-    font-size: 10.1px;
+    font-size: 8px;
     color: var(--color-cloud);
     line-height: 1.45;
 }
 
 .notice-bar-sub {
-    font-size: 9.4px;
+    font-size: 8px;
     color: var(--color-silver);
 }
 
@@ -1021,12 +1021,12 @@ a {
 }
 
 .empty-state-title {
-    font-size: 14px;
+    font-size: 9.8px;
     font-weight: 600;
 }
 
 .empty-state-desc {
-    font-size: 10.1px;
+    font-size: 8px;
     color: var(--color-silver);
     max-width: 52ch;
 }
@@ -1049,13 +1049,13 @@ a {
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 10.1px;
+    font-size: 8px;
 }
 
 .data-table th {
     text-align: left;
     padding: 12px 14px;
-    font-size: 9.4px;
+    font-size: 8px;
     font-weight: 600;
     color: var(--color-silver);
     border-bottom: var(--border-hairline);
@@ -1122,7 +1122,7 @@ a {
     align-items: center;
     justify-content: center;
     font-family: var(--font-mono);
-    font-size: 9.4px;
+    font-size: 8px;
     font-weight: 600;
     color: var(--color-silver);
     flex-shrink: 0;
@@ -1141,7 +1141,7 @@ a {
 }
 
 .wizard-step-label {
-    font-size: 10.1px;
+    font-size: 8px;
     font-weight: 500;
     color: var(--color-silver);
     white-space: nowrap;
@@ -1204,7 +1204,7 @@ a {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 9.4px;
+    font-size: 8px;
     color: var(--color-silver);
 }
 
@@ -1234,7 +1234,7 @@ a {
     gap: 16px;
     flex-wrap: wrap;
     margin-top: 12px;
-    font-size: 9.4px;
+    font-size: 8px;
     color: var(--color-silver);
 }
 
@@ -1251,7 +1251,7 @@ a {
     border: 1px solid rgba(168, 181, 199, 0.28);
     border-radius: var(--radius-sm);
     color: var(--color-cloud);
-    font-size: 9.4px;
+    font-size: 8px;
     pointer-events: none;
     z-index: 80;
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
@@ -1287,14 +1287,14 @@ a {
 }
 
 .insight-title {
-    font-size: 10.9px;
+    font-size: 8px;
     font-weight: 600;
     color: var(--color-cloud);
     margin-bottom: 3px;
 }
 
 .insight-desc {
-    font-size: 10.1px;
+    font-size: 8px;
     color: var(--color-silver);
     line-height: 1.45;
 }
@@ -1330,7 +1330,7 @@ a {
     max-width: 85%;
     padding: 14px 16px;
     border-radius: var(--radius-md);
-    font-size: 10.9px;
+    font-size: 8px;
     line-height: 1.6;
 }
 
@@ -1388,7 +1388,7 @@ a {
     border: var(--border-hairline);
     background-color: var(--color-midnight);
     color: var(--color-silver);
-    font-size: 9.4px;
+    font-size: 8px;
     transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
 }
 
@@ -1440,7 +1440,7 @@ a {
 }
 
 .modal-title {
-    font-size: 14px;
+    font-size: 9.8px;
     font-weight: 600;
 }
 
@@ -1467,7 +1467,7 @@ a {
     background-color: var(--color-navy-elevated);
     border: 1px solid rgba(168, 181, 199, 0.24);
     color: var(--color-cloud);
-    font-size: 10.1px;
+    font-size: 8px;
     box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
     animation: viewFadeSlide 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -1507,7 +1507,7 @@ a {
     gap: 14px;
     padding-bottom: 10px;
     border-bottom: 1px solid rgba(168, 181, 199, 0.1);
-    font-size: 10.1px;
+    font-size: 8px;
 }
 
 .kv-row:last-child {
@@ -1670,7 +1670,7 @@ h1, h2, h3, h4, .page-heading, .page-display, .card-title, .modal-title { color:
 .kpi-value.danger { color: #DC4545; }
 .toast { background: #FFFFFF; border: 1px solid var(--border); color: var(--text-primary); box-shadow: 0 12px 30px rgba(25,38,58,.14); }
 .nilo-launcher { position: fixed; top: 86px; right: 26px; z-index: 96; display: flex; flex-direction: column; align-items: flex-end; gap: 9px; }
-.nilo-help-bubble { position: relative; max-width: 230px; padding: 11px 15px; border: 1px solid #D6E6F8; border-radius: 14px 14px 4px 14px; background: #FFFFFF; color: #29435F; box-shadow: 0 7px 22px rgba(25,38,58,.13); font: inherit; font-size: 10.1px; line-height: 1.35; text-align: left; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease; }
+.nilo-help-bubble { position: relative; max-width: 230px; padding: 11px 15px; border: 1px solid #D6E6F8; border-radius: 14px 14px 4px 14px; background: #FFFFFF; color: #29435F; box-shadow: 0 7px 22px rgba(25,38,58,.13); font: inherit; font-size: 8px; line-height: 1.35; text-align: left; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease; }
 .nilo-help-bubble strong { color: #2875C5; font-weight: 700; }
 .nilo-help-bubble::after { content: ""; position: absolute; right: 17px; bottom: -6px; width: 10px; height: 10px; background: #FFFFFF; border-right: 1px solid #D6E6F8; border-bottom: 1px solid #D6E6F8; transform: rotate(45deg); }
 .nilo-help-bubble:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(25,38,58,.17); }
@@ -1697,7 +1697,7 @@ h1, h2, h3, h4, .page-heading, .page-display, .card-title, .modal-title { color:
 .nilo-panel-content .empty-state-desc { color:var(--text-secondary); }
 @media (max-width: 680px) {
   .nilo-launcher { top: 76px; right: 14px; gap: 7px; }
-  .nilo-help-bubble { max-width: 205px; padding: 9px 12px; font-size: 9.4px; }
+  .nilo-help-bubble { max-width: 205px; padding: 9px 12px; font-size: 8px; }
   .nilo-fab { width:56px; height:56px; }
   .nilo-fab img { width:40px; height:40px; }
   .nilo-panel { inset:10px; top:76px; width:auto; height:auto; bottom:10px; border-radius:16px; }
@@ -2147,7 +2147,7 @@ body, .app-shell, .main-viewport { color: var(--text-primary); }
     border-radius: 10px;
     background: #F8FAFC;
     color: #475569;
-    font-size: 9.4px;
+    font-size: 8px;
     line-height: 1.55;
 }
 
@@ -2184,21 +2184,21 @@ body, .app-shell, .main-viewport { color: var(--text-primary); }
 .nilo-profile-copy h2 {
     margin: 0 0 3px;
     color: #19263A;
-    font-size: 14.8px;
+    font-size: 10.4px;
     line-height: 1.25;
 }
 
 .nilo-profile-copy > span {
     display: block;
     color: #3986D8;
-    font-size: 9.4px;
+    font-size: 8px;
     font-weight: 600;
     margin-bottom: 8px;
 }
 
 .nilo-profile-copy p {
     color: #52647A;
-    font-size: 10.1px;
+    font-size: 8px;
     line-height: 1.5;
 }
 
@@ -2301,7 +2301,7 @@ label.field-label {
     background: #19263A;
     color: #F8FAFC;
     box-shadow: 0 8px 24px rgba(15,23,42,.22);
-    font-size: 9.4px;
+    font-size: 8px;
     font-weight: 400;
     line-height: 1.5;
     white-space: normal;
@@ -2324,7 +2324,7 @@ label.field-label {
 .field-required {
     display: inline-block;
     color: #DC2626;
-    font-size: 12.5px;
+    font-size: 8.8px;
     font-weight: 800;
     line-height: 1;
     margin-left: 1px;
@@ -2354,36 +2354,36 @@ label.field-label {
 /* Acessibilidade visual — escala tipográfica ligeiramente ampliada.
    Mantém a hierarquia original e prioriza leitura em formulários, cards e tabelas. */
 body {
-    font-size: 12.1px;
+    font-size: 8.5px;
 }
 
 .nav-item {
-    font-size: 11.7px;
+    font-size: 8.2px;
 }
 
 .sidebar-business-name {
-    font-size: 10.9px;
+    font-size: 8px;
 }
 
 .sidebar-business-meta,
 .topbar-date {
-    font-size: 10.6px;
+    font-size: 8px;
 }
 
 .topbar-title {
-    font-size: 13.3px;
+    font-size: 9.3px;
 }
 
 .page-heading {
-    font-size: 20.3px;
+    font-size: 14.2px;
 }
 
 .page-display {
-    font-size: 26.5px;
+    font-size: 18.5px;
 }
 
 .page-subtitle {
-    font-size: 11.7px;
+    font-size: 8.2px;
     line-height: 1.6;
 }
 
@@ -2392,55 +2392,55 @@ body {
 }
 
 .card-title {
-    font-size: 15.6px;
+    font-size: 10.9px;
 }
 
 .card-subtitle {
-    font-size: 11.3px;
+    font-size: 8px;
     line-height: 1.55;
 }
 
 .kpi-label {
-    font-size: 10.6px;
+    font-size: 8px;
     line-height: 1.45;
 }
 
 .kpi-value {
-    font-size: 20.3px;
+    font-size: 14.2px;
 }
 
 .kpi-meta {
-    font-size: 10.1px;
+    font-size: 8px;
 }
 
 .field-label {
-    font-size: 11.3px;
+    font-size: 8px;
     line-height: 1.45;
 }
 
 .field-input,
 .field-select,
 .field-textarea {
-    font-size: 12.1px;
+    font-size: 8.5px;
     min-height: 44px;
 }
 
 .field-help,
 .field-req {
-    font-size: 10.1px;
+    font-size: 8px;
     line-height: 1.55;
 }
 
 .btn {
-    font-size: 11.3px;
+    font-size: 8px;
 }
 
 .data-table {
-    font-size: 11.3px;
+    font-size: 8px;
 }
 
 .data-table th {
-    font-size: 10.1px;
+    font-size: 8px;
 }
 
 .data-table td {
@@ -2449,7 +2449,7 @@ body {
 
 .kv-key,
 .kv-val {
-    font-size: 10.9px;
+    font-size: 8px;
     line-height: 1.5;
 }
 
@@ -2466,21 +2466,21 @@ body {
 }
 
 .simulation-result-explainer {
-    font-size: 10.6px;
+    font-size: 8px;
     line-height: 1.6;
 }
 
 @media (max-width: 680px) {
     body {
-        font-size: 11.7px;
+        font-size: 8.2px;
     }
 
     .main-viewport .page-heading {
-        font-size: 18.7px;
+        font-size: 13.1px;
     }
 
     .main-viewport .page-display {
-        font-size: 23.4px;
+        font-size: 16.4px;
     }
 
     .surface-card {
@@ -2488,11 +2488,11 @@ body {
     }
 
     .card-title {
-        font-size: 14.5px;
+        font-size: 10.1px;
     }
 
     .data-table {
-        font-size: 10.6px;
+        font-size: 8px;
     }
 }
 
@@ -2528,7 +2528,7 @@ body {
 }
 
 #main-viewport[data-view="precificacao"] .pricing-result-metric-card .kpi-value {
-    font-size: 17.2px !important;
+    font-size: 12px !important;
 }
 
 #main-viewport[data-view="simulacao"] > .grid-2 {
@@ -2543,12 +2543,12 @@ body {
 }
 
 #main-viewport[data-view="simulacao"] .simulation-result-content .mono {
-    font-size: 27.3px !important;
+    font-size: 19.1px !important;
 }
 
 #main-viewport[data-view="simulacao"] .simulation-result-details .kv-key,
 #main-viewport[data-view="simulacao"] .simulation-result-details .kv-val {
-    font-size: 12.1px;
+    font-size: 8.5px;
 }
 
 #main-viewport[data-view="catalogo"] > .surface-card,
@@ -2560,7 +2560,7 @@ body {
 
 #main-viewport[data-view="catalogo"] .data-table,
 #main-viewport[data-view="historico"] .data-table {
-    font-size: 12.1px;
+    font-size: 8.5px;
 }
 
 #main-viewport[data-view="catalogo"] .data-table td,
@@ -2582,15 +2582,15 @@ body {
 }
 
 #main-viewport[data-view="dashboard"] .kpi-label {
-    font-size: 11.3px;
+    font-size: 8px;
 }
 
 #main-viewport[data-view="dashboard"] .kpi-value {
-    font-size: 21.8px;
+    font-size: 15.3px;
 }
 
 #main-viewport[data-view="dashboard"] .kpi-meta {
-    font-size: 10.9px;
+    font-size: 8px;
 }
 
 #main-viewport[data-view="dashboard"] .surface-card {
@@ -2598,7 +2598,7 @@ body {
 }
 
 #main-viewport[data-view="dashboard"] .data-table {
-    font-size: 11.7px;
+    font-size: 8.2px;
 }
 
 #main-viewport[data-view="negocio"] > .page-header,
@@ -2613,13 +2613,13 @@ body {
 }
 
 #main-viewport[data-view="negocio"] .field-label {
-    font-size: 12.1px;
+    font-size: 8.5px;
 }
 
 #main-viewport[data-view="negocio"] .field-input,
 #main-viewport[data-view="negocio"] .field-select,
 #main-viewport[data-view="negocio"] .field-textarea {
-    font-size: 12.8px;
+    font-size: 9px;
     min-height: 46px;
 }
 
@@ -2650,58 +2650,58 @@ body {
 
 /* Escala de leitura — ampliação adicional de aproximadamente 20% no conteúdo principal.
    Mantém navegação global e estrutura dos cards estáveis; não altera Custos e rentabilidade. */
-#main-viewport .page-heading { font-size: 24.2px; }
-#main-viewport .page-display { font-size: 32px; }
-#main-viewport .page-subtitle { font-size: 14px; }
-#main-viewport .card-title { font-size: 18.7px; }
-#main-viewport .card-subtitle { font-size: 13.7px; }
-#main-viewport .kpi-label { font-size: 13.3px; }
-#main-viewport .kpi-value { font-size: 24.2px; }
-#main-viewport .kpi-meta { font-size: 12.8px; }
-#main-viewport .field-label { font-size: 14px; }
+#main-viewport .page-heading { font-size: 16.9px; }
+#main-viewport .page-display { font-size: 22.4px; }
+#main-viewport .page-subtitle { font-size: 9.8px; }
+#main-viewport .card-title { font-size: 13.1px; }
+#main-viewport .card-subtitle { font-size: 9.6px; }
+#main-viewport .kpi-label { font-size: 9.3px; }
+#main-viewport .kpi-value { font-size: 16.9px; }
+#main-viewport .kpi-meta { font-size: 9px; }
+#main-viewport .field-label { font-size: 9.8px; }
 #main-viewport .field-input,
 #main-viewport .field-select,
-#main-viewport .field-textarea { font-size: 14.5px; }
+#main-viewport .field-textarea { font-size: 10.1px; }
 #main-viewport .field-help,
 #main-viewport .field-req,
-#main-viewport .field-error { font-size: 12.1px; }
-#main-viewport .btn { font-size: 13.7px; }
-#main-viewport .btn-sm { font-size: 12.5px; }
-#main-viewport .data-table { font-size: 14.5px; }
-#main-viewport .data-table th { font-size: 12.5px; }
+#main-viewport .field-error { font-size: 8.5px; }
+#main-viewport .btn { font-size: 9.6px; }
+#main-viewport .btn-sm { font-size: 8.8px; }
+#main-viewport .data-table { font-size: 10.1px; }
+#main-viewport .data-table th { font-size: 8.8px; }
 #main-viewport .kv-key,
-#main-viewport .kv-val { font-size: 13.3px; }
-#main-viewport .notice-bar-text { font-size: 12.5px; }
-#main-viewport .notice-bar-sub { font-size: 11.7px; }
-#main-viewport .status-label { font-size: 11.7px; }
-#main-viewport .sector-option-title { font-size: 14px; }
-#main-viewport .sector-option-desc { font-size: 11.7px; }
+#main-viewport .kv-val { font-size: 9.3px; }
+#main-viewport .notice-bar-text { font-size: 8.8px; }
+#main-viewport .notice-bar-sub { font-size: 8.2px; }
+#main-viewport .status-label { font-size: 8.2px; }
+#main-viewport .sector-option-title { font-size: 9.8px; }
+#main-viewport .sector-option-desc { font-size: 8.2px; }
 #main-viewport .empty-state-desc,
-#main-viewport .table-description { font-size: 12.5px; }
-#main-viewport .simulation-result-explainer { font-size: 12.5px; }
-#main-viewport[data-view="dashboard"] .kpi-label { font-size: 13.7px; }
-#main-viewport[data-view="dashboard"] .kpi-value { font-size: 26.5px; }
-#main-viewport[data-view="dashboard"] .kpi-meta { font-size: 13.1px; }
-#main-viewport[data-view="precificacao"] .pricing-result-metric-card .kpi-value { font-size: 20.3px !important; }
-#main-viewport[data-view="simulacao"] .simulation-result-content .mono { font-size: 32.8px !important; }
+#main-viewport .table-description { font-size: 8.8px; }
+#main-viewport .simulation-result-explainer { font-size: 8.8px; }
+#main-viewport[data-view="dashboard"] .kpi-label { font-size: 9.6px; }
+#main-viewport[data-view="dashboard"] .kpi-value { font-size: 18.5px; }
+#main-viewport[data-view="dashboard"] .kpi-meta { font-size: 9.2px; }
+#main-viewport[data-view="precificacao"] .pricing-result-metric-card .kpi-value { font-size: 14.2px !important; }
+#main-viewport[data-view="simulacao"] .simulation-result-content .mono { font-size: 23px !important; }
 #main-viewport[data-view="simulacao"] .simulation-result-details .kv-key,
-#main-viewport[data-view="simulacao"] .simulation-result-details .kv-val { font-size: 14.5px; }
+#main-viewport[data-view="simulacao"] .simulation-result-details .kv-val { font-size: 10.1px; }
 #main-viewport[data-view="catalogo"] .data-table,
-#main-viewport[data-view="historico"] .data-table { font-size: 14.5px; }
-#main-viewport[data-view="negocio"] .field-label { font-size: 14.5px; }
+#main-viewport[data-view="historico"] .data-table { font-size: 10.1px; }
+#main-viewport[data-view="negocio"] .field-label { font-size: 10.1px; }
 #main-viewport[data-view="negocio"] .field-input,
 #main-viewport[data-view="negocio"] .field-select,
-#main-viewport[data-view="negocio"] .field-textarea { font-size: 15.2px; }
+#main-viewport[data-view="negocio"] .field-textarea { font-size: 10.6px; }
 
 @media (max-width: 680px) {
-    #main-viewport .page-heading { font-size: 21.8px; }
-    #main-viewport .page-display { font-size: 27.3px; }
-    #main-viewport .card-title { font-size: 16.4px; }
-    #main-viewport .kpi-value { font-size: 21.8px; }
-    #main-viewport .data-table { font-size: 12.5px; }
+    #main-viewport .page-heading { font-size: 15.3px; }
+    #main-viewport .page-display { font-size: 19.1px; }
+    #main-viewport .card-title { font-size: 11.5px; }
+    #main-viewport .kpi-value { font-size: 15.3px; }
+    #main-viewport .data-table { font-size: 8.8px; }
     #main-viewport .field-input,
     #main-viewport .field-select,
-    #main-viewport .field-textarea { font-size: 13.3px; }
+    #main-viewport .field-textarea { font-size: 9.3px; }
 }
 
 
