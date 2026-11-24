@@ -151,3 +151,54 @@ test('bloqueia token inválido antes de consultar o banco', async () => {
   assert.equal(response.status, 401);
   assert.equal(queried, false);
 });
+
+test('Nilo exige autenticação antes de consultar conversas', async () => {
+  let queried = false;
+  app.pool.query = async () => { queried = true; throw new Error('não deveria consultar'); };
+  const response = await request('/api/nilo/conversations/latest', { token: null });
+  assert.equal(response.status, 401);
+  assert.equal(queried, false);
+});
+
+test('Nilo recupera somente a conversa pertencente ao usuário autenticado', async () => {
+  const conversationId = '00000000-0000-4000-8000-000000000099';
+  const calls = [];
+  app.pool.query = async (sql, params) => {
+    calls.push({ sql, params });
+    if (sql.includes('FROM public.nilo_conversations')) {
+      return { rows: [{ id: conversationId, business_id: null, title: 'Conversa geral' }] };
+    }
+    return { rows: [{ id: 'message-1', role: 'user', content: 'Olá', created_at: '2026-11-23T10:00:00Z' }] };
+  };
+  const response = await request(`/api/nilo/conversations/${conversationId}`);
+  assert.equal(response.status, 200);
+  assert.equal(response.body.data.conversation.business_id, null);
+  assert.equal(response.body.data.messages[0].content, 'Olá');
+  assert.deepEqual(calls[0].params, [conversationId, userId]);
+  assert.match(calls[0].sql, /owner_user_id = \$2/);
+  assert.deepEqual(calls[1].params, [conversationId]);
+});
+
+test('Nilo retorna histórico vazio sem exigir cadastro de empresa', async () => {
+  app.pool.query = async (sql, params) => {
+    assert.match(sql, /WHERE owner_user_id = \$1/);
+    assert.deepEqual(params, [userId]);
+    return { rows: [] };
+  };
+  const response = await request('/api/nilo/conversations/latest');
+  assert.equal(response.status, 200);
+  assert.equal(response.body.data.conversation, null);
+  assert.deepEqual(response.body.data.messages, []);
+});
+
+test('POST Nilo rejeita sessão inválida antes de chamar o banco', async () => {
+  let queried = false;
+  app.pool.query = async () => { queried = true; throw new Error('não deveria consultar'); };
+  const response = await request('/perguntar', {
+    method: 'POST',
+    token: 'invalid-token',
+    body: { pergunta: 'Como calcular margem?' }
+  });
+  assert.equal(response.status, 401);
+  assert.equal(queried, false);
+});
