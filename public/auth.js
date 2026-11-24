@@ -124,8 +124,8 @@
 
       if (!data.user) throw new Error('Não foi possível confirmar a criação da conta.');
       if (!data.session) {
-        feedback('register-feedback', 'Conta criada. Confirme seu e-mail, se solicitado, e depois entre para configurar seu negócio.', true);
         switchView('login');
+        feedback('login-feedback', 'Conta criada. Confirme seu e-mail, se solicitado, e depois entre para configurar seu negócio.', true);
         return;
       }
 
