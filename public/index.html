@@ -213,10 +213,15 @@
         </div>
     </div>
 
-    <!-- Nilo flutuante global -->
-    <button type="button" id="nilo-fab" class="nilo-fab" aria-label="Abrir conversa com Nilo" aria-expanded="false" aria-controls="nilo-panel">
-        <img src="/img-valorizaai/nilo/nilo-apresentacao.svg" alt="">
-    </button>
+    <!-- Nilo flutuante global: acessível em todas as páginas -->
+    <div class="nilo-launcher" id="nilo-launcher">
+        <button type="button" id="nilo-help-bubble" class="nilo-help-bubble" aria-label="Precisa de ajuda? Abrir conversa com Nilo">
+            Precisa de ajuda? <strong>Fale comigo!</strong>
+        </button>
+        <button type="button" id="nilo-fab" class="nilo-fab" aria-label="Abrir conversa com Nilo" aria-expanded="false" aria-controls="nilo-panel">
+            <img src="/img-valorizaai/nilo/nilo-apresentacao.svg" alt="">
+        </button>
+    </div>
     <section id="nilo-panel" class="nilo-panel" role="dialog" aria-label="Assistente Nilo" hidden>
         <header class="nilo-panel-header">
             <div class="nilo-panel-title">
