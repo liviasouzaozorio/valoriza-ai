@@ -3005,3 +3005,14 @@ body {
         transform: translateX(-76px);
     }
 }
+
+
+/* Correção definitiva: o controle do menu no topo fica sempre visível no desktop e mobile. */
+.topbar .topbar-left > #mobile-menu-btn {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    flex: 0 0 38px;
+    position: relative;
+    z-index: 31;
+}
