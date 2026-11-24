@@ -3179,6 +3179,9 @@
     function renderAnalyses(root) {
         const { pricings, catalog, business } = WorkspaceStore.state;
         const target = business.margemMeta === null || business.margemMeta === '' || business.margemMeta === undefined ? null : Number(business.margemMeta);
+        const activePricingRecords = getActivePricingRecords(pricings, catalog);
+        const activeCatalogItems = catalog.filter(item => item.status !== 'Arquivado');
+        const itemsWithPricing = activeCatalogItems.filter(item => activePricingRecords.some(p => p.catalogItemId === item.id));
 
         root.innerHTML = `
             <div class="page-header">
@@ -3191,28 +3194,31 @@
         `;
 
         const body = document.getElementById('analises-body');
-        if (pricings.length === 0) {
+        if (activePricingRecords.length === 0) {
             body.innerHTML = `
                 <div class="surface-card empty-state">
                     <div class="empty-state-nilo">
                         <img src="${NILO_ASSETS.analisando}" alt="Nilo" class="nilo-figure nilo-float">
                     </div>
-                    <h2 class="empty-state-title">Sem dados suficientes para análise</h2>
-                    <p class="empty-state-desc">Registre ao menos uma precificação no histórico para destravar comparativos de composição de custos, evolução entre versões e margens planejadas.</p>
+                    <h2 class="empty-state-title">Sem precificações de itens ativos</h2>
+                    <p class="empty-state-desc">As análises atuais consideram apenas itens ativos do catálogo. Os registros de itens arquivados continuam disponíveis no Histórico.</p>
                     <div class="empty-state-actions">
-                        <button type="button" class="btn btn-primary" id="ana-start-btn">Ir para Precificação</button>
+                        <button type="button" class="btn btn-primary" id="ana-start-btn">Ir para Produtos e serviços</button>
                     </div>
                 </div>
             `;
-            document.getElementById('ana-start-btn').addEventListener('click', () => UI.navigate('precificacao'));
+            document.getElementById('ana-start-btn').addEventListener('click', () => UI.navigate('catalogo'));
             return;
         }
 
-        const itemsWithPricing = catalog.filter(c => pricings.some(p => p.catalogItemId === c.id));
-        const selectedId = UI.analysisSelectedItemId;
+        let selectedId = UI.analysisSelectedItemId;
+        if (selectedId !== 'all' && !itemsWithPricing.some(item => item.id === selectedId)) {
+            selectedId = 'all';
+            UI.analysisSelectedItemId = 'all';
+        }
         const filteredPricings = selectedId === 'all'
-            ? pricings
-            : pricings.filter(p => p.catalogItemId === selectedId);
+            ? activePricingRecords
+            : activePricingRecords.filter(p => p.catalogItemId === selectedId);
 
         const ordered = [...filteredPricings].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm));
         const latestFocus = ordered[ordered.length - 1];
@@ -3223,7 +3229,7 @@
                     <div class="toolbar-group">
                         <label for="ana-item-select" style="font-size:13px;font-weight:500;color:var(--color-silver);">Escopo da análise:</label>
                         <select id="ana-item-select" class="field-select" style="width:auto;min-width:240px;">
-                            <option value="all" ${selectedId === 'all' ? 'selected' : ''}>Todos os itens precificados (${pricings.length} registros)</option>
+                            <option value="all" ${selectedId === 'all' ? 'selected' : ''}>Todos os itens ativos (${activePricingRecords.length} registros)</option>
                             ${itemsWithPricing.map(item => `<option value="${item.id}" ${selectedId === item.id ? 'selected' : ''}>${Formatter.escapeHtml(item.nome)}</option>`).join('')}
                         </select>
                     </div>
@@ -3288,7 +3294,7 @@
                                         <td>${Formatter.escapeHtml(p.itemNome)} <span class="mono" style="color:var(--color-silver);">v${p.versao}</span></td>
                                         <td class="num">${Formatter.brl(p.custoTotal)}</td>
                                         <td class="num" style="color:var(--color-emerald);">${Formatter.brl(p.precoSugerido)}</td>
-                                        <td class="num">${p.markup.toFixed(2)}x</td>
+                                        <td class="num">${Number(p.markup).toFixed(2)}x</td>
                                         <td class="num">${Formatter.percent(p.margemPlanejada)}</td>
                                     </tr>
                                 `).join('')}
