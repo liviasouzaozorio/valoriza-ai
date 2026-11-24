@@ -538,7 +538,7 @@ app.post('/api/pricings', async (req,res) => {
     b.impostos = authoritative.percentualImpostosTaxas;
     b.desired_margin_percent = authoritative.margemPlanejada;
     b.effective_margin_percent = authoritative.margemEfetivaCalculada;
-    b.direct_cost = authoritative.custoTotal;
+    b.direct_cost = null;
     b.allocated_fixed_cost = null;
     b.variable_expenses_percent = authoritative.percentualImpostosTaxas;
     b.setor = authoritative.sector === 'servico' ? 'servicos' : authoritative.sector;
