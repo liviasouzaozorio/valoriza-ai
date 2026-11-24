@@ -149,12 +149,12 @@
             camposCusto: [
                 {
                     id: 'quantidadeLote',
-                    label: 'Quantidade produzida no lote',
+                    label: 'Quantidade total produzida no lote',
                     categoria: 'Parâmetro de lote',
                     tipo: 'integer',
                     obrigatorio: true,
                     placeholder: '1',
-                    help: 'Informe quantas unidades são fabricadas com os valores de lote abaixo (use 1 se preencher tudo por unidade).'
+                    help: 'Informe a quantidade produzida antes de considerar perdas. O ValorizAI usa a taxa de perdas para estimar as unidades boas e distribuir os custos do lote.'
                 },
                 {
                     id: 'materiaPrima',
