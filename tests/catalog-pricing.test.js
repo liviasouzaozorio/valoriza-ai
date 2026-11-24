@@ -195,3 +195,67 @@ test('Nilo rejects unauthenticated requests before any database operation', asyn
   assert.equal(response.status, 401);
   assert.equal(calls, 0);
 });
+
+test('POST pricing persists a version under the authenticated business and owned product', async () => {
+  const calls = [];
+  const saved = {
+    id: 42,
+    business_id: businessId,
+    product_id: productId,
+    pricing_type: 'full',
+    custo_total: 18.5,
+    preco_sugerido: 32,
+    margem_lucro: 25,
+    data_criacao: '2026-11-24T03:00:00.000Z'
+  };
+  app.pool.query = async (sql, params) => {
+    calls.push({ sql, params });
+    if (sql.includes('SELECT id FROM public.businesses')) return { rows: [{ id: businessId }] };
+    if (sql.includes('SELECT id FROM public.products')) return { rows: [{ id: productId }] };
+    if (sql.includes('INSERT INTO public.precificacoes')) return { rows: [saved] };
+    throw new Error('Unexpected SQL query');
+  };
+  const response = await request('/api/pricings', {
+    method: 'POST',
+    body: {
+      business_id: '00000000-0000-4000-8000-000000000099',
+      product_id: productId,
+      pricing_type: 'full',
+      custo_total: 18.5,
+      preco_sugerido: 32,
+      margem_lucro: 25,
+      input_snapshot: { costs: { materials: 18.5 } },
+      result_snapshot: { price: 32 },
+      calculation_version: 'test-v1'
+    }
+  });
+  assert.equal(response.status, 201);
+  assert.equal(response.body.data.pricing.business_id, businessId);
+  assert.equal(response.body.data.pricing.id, 42);
+  assert.equal(calls.length, 3);
+  assert.deepEqual(calls[0].params, [userId]);
+  assert.deepEqual(calls[1].params, [productId, businessId]);
+  assert.equal(calls[2].params[0], businessId);
+  assert.equal(calls[2].params[1], productId);
+});
+
+test('POST pricing rejects non-finite numeric values before inserting', async () => {
+  let insertAttempted = false;
+  app.pool.query = async (sql) => {
+    if (sql.includes('SELECT id FROM public.businesses')) return { rows: [{ id: businessId }] };
+    if (sql.includes('INSERT INTO public.precificacoes')) insertAttempted = true;
+    return { rows: [] };
+  };
+  const response = await request('/api/pricings', {
+    method: 'POST',
+    body: {
+      pricing_type: 'quick',
+      custo_total: Number.NaN,
+      input_snapshot: {},
+      result_snapshot: {}
+    }
+  });
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error.code, 'INVALID_PRICING_NUMBER');
+  assert.equal(insertAttempted, false);
+});
