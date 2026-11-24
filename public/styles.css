@@ -2996,3 +2996,13 @@ body {
     }
 }
 
+/* Evita que o botão de cadastro do catálogo fique sob o atalho flutuante do Nilo. */
+#main-viewport[data-view="catalogo"] > .page-header .page-header-actions {
+    transform: translateX(-96px);
+}
+
+@media (max-width: 680px) {
+    #main-viewport[data-view="catalogo"] > .page-header .page-header-actions {
+        transform: translateX(-76px);
+    }
+}
