@@ -2955,6 +2955,7 @@
             calculation_version: 'frontend-preview-v1'
         });
         if (!WorkspaceStore.state.catalog.some(c => c.id === item.id)) WorkspaceStore.state.catalog.unshift(item);
+        const authoritative = saved.result_snapshot?.server_calculation || {};
         const record = {
             id: String(saved.id),
             catalogItemId: item.id,
@@ -2963,7 +2964,16 @@
             setor,
             unidade: item.unidade,
             criadoEm: saved.data_criacao || createdAt,
-            ...uiRecord,
+            custoTotal: nullableFiniteNumber(saved.custo_total),
+            precoSugerido: nullableFiniteNumber(saved.preco_sugerido),
+            markup: nullableFiniteNumber(saved.markup),
+            margemPlanejada: nullableFiniteNumber(saved.margem_lucro),
+            margemEfetivaCalculada: nullableFiniteNumber(saved.effective_margin_percent),
+            percentualImpostosTaxas: nullableFiniteNumber(saved.impostos),
+            valorImpostosTaxas: nullableFiniteNumber(authoritative.valorImpostosTaxas),
+            lucroEstimado: nullableFiniteNumber(authoritative.lucroEstimado),
+            fonteCalculo: saved.calculation_version || 'server-v1',
+            categoriasCusto: Array.isArray(authoritative.categoriasCusto) ? authoritative.categoriasCusto : [],
             detalhesCustos: result.costsNormalized,
             taxas: result.taxesNormalized
         };
