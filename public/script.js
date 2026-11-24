@@ -426,6 +426,21 @@
         }
     };
 
+
+    function fieldInfoIcon(description) {
+        if (!description) return '';
+        const safeDescription = Formatter.escapeHtml(description);
+        return `<span class="field-info" tabindex="0" role="img" aria-label="Informações do campo: ${safeDescription}" data-tooltip="${safeDescription}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 8h.01"></path>
+            </svg>
+        </span>`;
+    }
+
+    function fieldRequiredMark(required) {
+        return required ? '<span class="field-required" aria-label="Campo obrigatório">*</span>' : '';
+    }
+
     /* =========================================================================
        3. GERENCIAMENTO DE ESTADO LOCAL (SEPARADO DE RASCUNHOS)
        ========================================================================= */
@@ -1554,7 +1569,7 @@
 
                 <div class="form-grid">
                     <div class="form-field form-field-full">
-                        <label class="field-label" for="biz-margem-meta">Meta de margem da empresa (%) <span class="field-req">Opcional</span></label>
+                        <label class="field-label" for="biz-margem-meta"><span>Meta de margem da empresa (%)</span>${fieldInfoIcon('Defina uma meta de margem para acompanhar seus resultados. Se não tiver uma meta, deixe em branco.')}</label>
                         <input id="biz-margem-meta" class="field-input mono" type="text" inputmode="decimal" value="${b.margemMeta ?? ''}" placeholder="Ex: 25">
                         <span class="field-help">Use uma meta definida pela sua estratégia. Se deixar vazio, o ValorizAI não classificará margens como acima ou abaixo de uma meta.</span>
                     </div>
@@ -1888,7 +1903,7 @@
             <form id="cat-item-form" novalidate>
                 <div class="form-grid">
                     <div class="form-field form-field-full">
-                        <label class="field-label" for="modal-item-nome">Nome do produto ou serviço <span class="field-req">Obrigatório</span></label>
+                        <label class="field-label" for="modal-item-nome">Nome do produto ou serviço ${fieldRequiredMark(true)}</label>
                         <input id="modal-item-nome" class="field-input" type="text" value="${Formatter.escapeHtml(existing?.nome || '')}" placeholder="Ex: Bolo artesanal 1kg, Camiseta algodão, Consultoria mensal">
                         <span class="field-error hidden" id="err-item-nome"></span>
                     </div>
@@ -2204,7 +2219,7 @@
                 fieldsBox.innerHTML = `
                     <div class="form-grid">
                         <div class="form-field form-field-full">
-                            <label class="field-label" for="wiz-catalog-select">Item do catálogo <span class="field-req">Obrigatório</span></label>
+                            <label class="field-label" for="wiz-catalog-select">Item do catálogo ${fieldRequiredMark(true)}</label>
                             <select id="wiz-catalog-select" class="field-select">
                                 <option value="">Selecione um item...</option>
                                 ${activeCatalog.map(c => `<option value="${c.id}" ${w.catalogItemId === c.id ? 'selected' : ''}>${Formatter.escapeHtml(c.nome)} (${SETORES[c.setor]?.nome} · ${Formatter.escapeHtml(c.unidade)})</option>`).join('')}
@@ -2227,7 +2242,7 @@
             } else {
                 fieldsBox.innerHTML = `
                     <div style="margin-bottom:18px;">
-                        <div class="field-label" style="margin-bottom:8px;">Setor da operação <span class="field-req">Obrigatório</span></div>
+                        <div class="field-label" style="margin-bottom:8px;">Setor da operação ${fieldRequiredMark(true)}</div>
                         <div class="sector-selector-grid">
                             ${Object.values(SETORES).map(s => `
                                 <button type="button" class="sector-option ${w.setor === s.id ? 'active' : ''}" data-wiz-sector="${s.id}">
@@ -2239,17 +2254,17 @@
                     </div>
                     <div class="form-grid">
                         <div class="form-field">
-                            <label class="field-label" for="wiz-item-nome">Nome do produto ou serviço <span class="field-req">Obrigatório</span></label>
+                            <label class="field-label" for="wiz-item-nome">Nome do produto ou serviço ${fieldRequiredMark(true)}</label>
                             <input id="wiz-item-nome" class="field-input" type="text" value="${Formatter.escapeHtml(w.itemNome)}" placeholder="Ex: Café especial 250g ou Revisão elétrica">
                             <span class="field-error hidden" id="err-s1-nome"></span>
                         </div>
                         <div class="form-field">
-                            <label class="field-label" for="wiz-item-unidade">Unidade de comercialização <span class="field-req">Obrigatório</span></label>
+                            <label class="field-label" for="wiz-item-unidade">Unidade de comercialização ${fieldRequiredMark(true)}</label>
                             <input id="wiz-item-unidade" class="field-input" type="text" value="${Formatter.escapeHtml(w.unidade || SETORES[w.setor].unidadePadrao)}" placeholder="Ex: Unidade, Hora, Projeto, Caixa">
                             <span class="field-error hidden" id="err-s1-unidade"></span>
                         </div>
                         <div class="form-field form-field-full">
-                            <label class="field-label" for="wiz-item-desc">Descrição complementar <span class="field-req">Opcional</span></label>
+                            <label class="field-label" for="wiz-item-desc">Descrição complementar</label>
                             <input id="wiz-item-desc" class="field-input" type="text" value="${Formatter.escapeHtml(w.descricao)}" placeholder="Detalhes que ajudam a diferenciar esta versão de preço">
                         </div>
                     </div>
@@ -2359,8 +2374,9 @@
                         return `
                             <div class="form-field">
                                 <label class="field-label" for="cost-${field.id}">
-                                    <span>${field.label}</span>
-                                    <span class="field-req">${field.obrigatorio ? 'Obrigatório' : 'Opcional'}</span>
+                                    <span>${Formatter.escapeHtml(field.label)}</span>
+                                    ${fieldInfoIcon(field.help)}
+                                    ${fieldRequiredMark(field.obrigatorio)}
                                 </label>
                                 <div class="input-with-prefix">
                                     ${prefix}
@@ -2375,7 +2391,6 @@
                                     >
                                     ${suffix}
                                 </div>
-                                ${showHelp ? `<span class="field-help">${field.help}</span>` : ''}
                                 <span class="field-error hidden" id="err-cost-${field.id}"></span>
                             </div>
                         `;
@@ -2566,14 +2581,14 @@
                     ${taxFields.map(f => `
                         <div class="form-field ${f.id === 'margemDesejada' ? 'form-field-full' : ''}">
                             <label class="field-label" for="tax-${f.id}">
-                                <span>${f.label}</span>
-                                <span class="field-req">${f.obrigatorio ? 'Obrigatório' : 'Opcional'}</span>
+                                <span>${Formatter.escapeHtml(f.label)}</span>
+                                ${fieldInfoIcon(f.help)}
+                                ${fieldRequiredMark(f.obrigatorio)}
                             </label>
                             <div class="input-with-prefix">
                                 <input id="tax-${f.id}" class="field-input mono has-suffix" type="text" inputmode="decimal" data-tax-field="${f.id}" value="${Formatter.escapeHtml(t[f.id] ?? '')}" placeholder="${f.placeholder}">
                                 <span class="input-suffix">%</span>
                             </div>
-                            <span class="field-help">${f.help}</span>
                             <span class="field-error hidden" id="err-tax-${f.id}"></span>
                         </div>
                     `).join('')}
@@ -3062,7 +3077,7 @@
                     <h2 class="card-title" style="margin-bottom:14px;">Parâmetros da hipótese</h2>
                     <div class="form-grid">
                         <div class="form-field">
-                            <label class="field-label" for="sim-nome">Nome da simulação <span class="field-req">Opcional</span></label>
+                            <label class="field-label" for="sim-nome">Nome da simulação</label>
                             <input id="sim-nome" class="field-input" type="text" value="${Formatter.escapeHtml(sim.nome)}" placeholder="Ex: Teste kit promocional">
                         </div>
                         <div class="form-field">
@@ -3076,21 +3091,18 @@
 
                         ${sectorCfg.camposCusto.slice(0, 4).map(f => `
                             <div class="form-field">
-                                <label class="field-label" for="sim-cost-${f.id}">${f.label}</label>
+                                <label class="field-label" for="sim-cost-${f.id}"><span>${Formatter.escapeHtml(f.label)}</span>${fieldInfoIcon(f.help)}</label>
                                 <input id="sim-cost-${f.id}" class="field-input mono" type="text" inputmode="decimal" data-sim-cost="${f.id}" value="${Formatter.escapeHtml(sim.costs[f.id] ?? '')}" placeholder="${f.placeholder}">
-                                <span class="field-help">${Formatter.escapeHtml(f.help)}</span>
                             </div>
                         `).join('')}
 
                         <div class="form-field">
-                            <label class="field-label" for="sim-taxas">Impostos e taxas sobre a venda (%)</label>
+                            <label class="field-label" for="sim-taxas"><span>Impostos e taxas sobre a venda (%)</span>${fieldInfoIcon('Some os percentuais cobrados sobre cada venda, como imposto, maquininha, comissão e taxa de aplicativo. Exemplo: 6% + 3% = 9%.')}</label>
                             <input id="sim-taxas" class="field-input mono" type="text" inputmode="decimal" value="${Formatter.escapeHtml(sim.taxasTotais)}" placeholder="Ex: 10">
-                            <span class="field-help">Some os percentuais cobrados sobre cada venda, como imposto, maquininha, comissão e taxa de aplicativo. Exemplo: 6% + 3% = 9%.</span>
                         </div>
                         <div class="form-field">
-                            <label class="field-label" for="sim-margem">Quanto você quer ganhar sobre o preço de venda? (%)</label>
+                            <label class="field-label" for="sim-margem"><span>Quanto você quer ganhar sobre o preço de venda? (%)</span>${fieldInfoIcon('É a parte do preço que deve sobrar como lucro estimado. Exemplo: em R$ 100 de venda, 20% de margem representam R$ 20.')}${fieldRequiredMark(true)}</label>
                             <input id="sim-margem" class="field-input mono" type="text" inputmode="decimal" value="${Formatter.escapeHtml(sim.margemDesejada)}" placeholder="Ex: 20">
-                            <span class="field-help">É a parte do preço que deve sobrar como lucro estimado. Exemplo: em R$ 100 de venda, 20% de margem representam R$ 20.</span>
                         </div>
                     </div>
 
@@ -3880,7 +3892,7 @@
 
                     <div class="form-grid">
                         <div class="form-field">
-                            <label class="field-label" for="set-carga-alerta">Alerta de impostos + taxas (%) <span class="field-req">Opcional</span></label>
+                            <label class="field-label" for="set-carga-alerta"><span>Alerta de impostos + taxas (%)</span>${fieldInfoIcon('Destaca quando a soma percentual sobre o preço atingir este limiar. Deixe vazio para não ativar esse alerta.')}</label>
                             <input id="set-carga-alerta" class="field-input mono" type="text" inputmode="decimal" value="${settings.alertaCargaTributaria ?? ''}">
                             <span class="field-help">Destaca quando a soma percentual sobre o preço atingir este limiar. Deixe vazio para não ativar esse alerta.</span>
                         </div>
