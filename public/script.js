@@ -84,6 +84,7 @@
             id: 'comercio',
             nome: 'Comércio',
             subtitulo: 'Revenda, lojas físicas, e-commerce e varejo',
+            orientacaoCustos: 'Informe quanto cada unidade vendida custa para o negócio. Quando uma despesa for mensal, divida pelo número de unidades que espera vender no mês.',
             itemTipoPadrao: 'Produto revendido',
             unidadePadrao: 'Unidade',
             camposCusto: [
@@ -94,7 +95,7 @@
                     tipo: 'currency',
                     obrigatorio: true,
                     placeholder: '0,00',
-                    help: 'Valor pago ao fornecedor por 1 unidade do produto (antes de adicionar frete).'
+                    help: 'Quanto você paga ao fornecedor por uma unidade, sem incluir o frete. Exemplo: se cada peça custa R$ 25, informe 25,00.'
                 },
                 {
                     id: 'freteEntrada',
@@ -103,7 +104,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Divida o frete pago na compra do pedido pela quantidade total de unidades recebidas.'
+                    help: 'Divida o frete total da compra pela quantidade de unidades recebidas. Exemplo: R$ 60 de frete ÷ 20 unidades = R$ 3 por unidade.'
                 },
                 {
                     id: 'seguroDespesasAquisicao',
@@ -112,7 +113,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Rateio por unidade de seguros, DIFAL na entrada ou taxas alfandegárias/emissão.'
+                    help: 'Some os gastos extras para receber a mercadoria e divida pela quantidade de unidades. Informe apenas a parte correspondente a uma unidade.'
                 },
                 {
                     id: 'embalagem',
@@ -121,7 +122,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Caixa, sacola, etiqueta, plástico bolha ou material de proteção usado por venda.'
+                    help: 'Quanto você gasta com a embalagem de uma venda: caixa, sacola, etiqueta ou proteção. Se não usar embalagem, deixe em branco.'
                 },
                 {
                     id: 'outrosVariaveis',
@@ -130,7 +131,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Brindes, montagem rápida ou insumos específicos por unidade vendida.'
+                    help: 'Outros gastos que acontecem a cada venda, como brinde ou montagem. Informe o valor por unidade, não o total do mês.'
                 },
                 {
                     id: 'custosOperacionaisRateados',
@@ -139,7 +140,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Parcela unitária de aluguel, energia e internet. Nunca informe o valor mensal cheio sem dividir pelo volume.'
+                    help: 'Divida os custos fixos do mês (como aluguel, energia e internet) pela quantidade que espera vender no mês. Informe somente o valor de uma unidade.'
                 }
             ]
         },
@@ -147,6 +148,7 @@
             id: 'industria',
             nome: 'Indústria',
             subtitulo: 'Produção própria, artesanal e fabricação em lotes',
+            orientacaoCustos: 'Na indústria, informe os gastos do lote inteiro, não o custo de uma única peça. O sistema distribui esses valores pela quantidade produzida e considera as perdas informadas.',
             itemTipoPadrao: 'Produto fabricado',
             unidadePadrao: 'Unidade (do lote)',
             camposCusto: [
@@ -157,7 +159,7 @@
                     tipo: 'integer',
                     obrigatorio: true,
                     placeholder: '1',
-                    help: 'Informe a quantidade produzida antes de considerar perdas. O ValorizAI usa a taxa de perdas para estimar as unidades boas e distribuir os custos do lote.'
+                    help: 'Quantas unidades saem da produção antes de descontar perdas. Exemplo: se produzir 100 peças, informe 100. A perda será considerada no campo próprio.'
                 },
                 {
                     id: 'materiaPrima',
@@ -166,7 +168,7 @@
                     tipo: 'currency',
                     obrigatorio: true,
                     placeholder: '0,00',
-                    help: 'Total gasto com a matéria-prima principal para produzir o lote informado acima.'
+                    help: 'Quanto foi gasto, no total, com a matéria-prima principal para fabricar todo esse lote — não o valor de uma peça.'
                 },
                 {
                     id: 'insumos',
@@ -175,7 +177,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Componentes secundários, aditivos, linhas, parafusos ou temperos consumidos no lote.'
+                    help: 'Total gasto com materiais complementares usados no lote, como linhas, parafusos, aditivos ou temperos.'
                 },
                 {
                     id: 'embalagemProducao',
@@ -184,7 +186,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Rótulos, frascos, caixas ou invólucros que integram o produto acabado no lote.'
+                    help: 'Total gasto com rótulos, frascos, caixas ou embalagens usadas nas unidades deste lote.'
                 },
                 {
                     id: 'maoObraDireta',
@@ -193,7 +195,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Custo das horas da equipe diretamente envolvida na produção deste lote.'
+                    help: 'Some o custo das horas das pessoas que trabalharam diretamente na fabricação deste lote. Exemplo: 5 horas × R$ 20 = R$ 100.'
                 },
                 {
                     id: 'cifRateado',
@@ -202,7 +204,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Rateio proporcional de aluguel fabril, manutenção de máquinas e supervisão para este lote.'
+                    help: 'Parcela dos custos da fábrica atribuída a este lote, como aluguel, manutenção e supervisão. Não informe o valor mensal inteiro.'
                 },
                 {
                     id: 'energiaTransformacao',
@@ -211,7 +213,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Energia elétrica, gás, água ou combustível consumidos diretamente no processo produtivo do lote.'
+                    help: 'Valor de energia, gás, água ou combustível usado para produzir este lote. Se a conta for compartilhada, estime a parte consumida na produção.'
                 },
                 {
                     id: 'perdasProducao',
@@ -220,7 +222,7 @@
                     tipo: 'percent',
                     obrigatorio: false,
                     placeholder: '0',
-                    help: 'Percentual esperado de quebra, refugo ou aparas que impactam os insumos do lote.'
+                    help: 'Percentual de unidades que normalmente não ficam prontas para venda por quebra, defeito ou sobra de material. Exemplo: se costuma perder 5 em cada 100 unidades, informe 5.'
                 }
             ]
         },
@@ -228,6 +230,7 @@
             id: 'servico',
             nome: 'Serviços',
             subtitulo: 'Horas técnicas, projetos, atendimentos e especialidade',
+            orientacaoCustos: 'Informe os custos para entregar um serviço completo. Considere o tempo de trabalho, o valor da sua hora e os gastos extras daquele atendimento ou projeto.',
             itemTipoPadrao: 'Serviço',
             unidadePadrao: 'Atendimento / Projeto',
             camposCusto: [
@@ -238,7 +241,7 @@
                     tipo: 'decimal',
                     obrigatorio: true,
                     placeholder: '1',
-                    help: 'Total de horas dedicadas para realizar este serviço ou entrega completa.'
+                    help: 'Quantas horas você ou sua equipe levam para concluir o serviço, incluindo o tempo de preparação e execução. Exemplo: 2 horas e 30 minutos = 2,5.'
                 },
                 {
                     id: 'custoHoraProdutiva',
@@ -247,7 +250,7 @@
                     tipo: 'currency',
                     obrigatorio: true,
                     placeholder: 'Ex: 40,00',
-                    help: 'Some os custos fixos do negócio e a retirada mensal desejada. Depois, divida pelas horas do mês que você consegue cobrar dos clientes. Esse valor será multiplicado pelo tempo informado acima.'
+                    help: 'Para estimar: some os custos mensais do negócio e o valor que precisa receber pelo seu trabalho. Divida pelas horas que realmente consegue cobrar dos clientes no mês. Exemplo: R$ 4.000 ÷ 100 horas = R$ 40 por hora.'
                 },
                 {
                     id: 'maoObraContratada',
@@ -256,7 +259,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: 'Ex: 50,00',
-                    help: 'Informe quanto você vai pagar a outra pessoa para ajudar neste serviço específico. Se fizer tudo sozinho e não houver pagamento extra, deixe em branco.'
+                    help: 'Quanto você pagará a um ajudante ou profissional por este serviço específico. Se não houver outra pessoa envolvida, deixe em branco.'
                 },
                 {
                     id: 'deslocamento',
@@ -265,7 +268,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Combustível, transporte, estacionamento, pedágio ou alimentação vinculada ao serviço.'
+                    help: 'Gastos para chegar ao cliente ou realizar o atendimento, como combustível, transporte, estacionamento ou pedágio.'
                 },
                 {
                     id: 'materiaisUtilizados',
@@ -274,7 +277,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Peças, insumos ou consumíveis aplicados diretamente durante a execução.'
+                    help: 'Materiais que serão usados ou consumidos durante este serviço, como peças, produtos ou materiais de trabalho.'
                 },
                 {
                     id: 'ferramentasLicencas',
@@ -283,7 +286,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Rateio de softwares, assinaturas ou desgaste de equipamentos usados no trabalho.'
+                    help: 'Parte do custo de ferramentas, softwares ou equipamentos usada neste serviço. Se tiver uma assinatura mensal, estime a parcela correspondente.'
                 },
                 {
                     id: 'outrosEspecificos',
@@ -292,7 +295,7 @@
                     tipo: 'currency',
                     obrigatorio: false,
                     placeholder: '0,00',
-                    help: 'Taxas de emissão, ART, impressões ou custos pontuais exigidos pelo projeto.'
+                    help: 'Outras despesas específicas deste trabalho, como taxas, impressões ou documentos técnicos.'
                 }
             ]
         }
@@ -2348,7 +2351,7 @@
                 <div class="card-header">
                     <div>
                         <h2 class="card-title">Etapa 2 — Estrutura de custos (${sectorCfg.nome})</h2>
-                        <p class="card-subtitle">Item: <strong>${Formatter.escapeHtml(w.itemNome)}</strong> · Unidade: ${Formatter.escapeHtml(w.unidade)}. Preencha os custos na unidade correspondente sem misturar contas mensais brutas.</p>
+                        <p class="card-subtitle">Item: <strong>${Formatter.escapeHtml(w.itemNome)}</strong> · Unidade: ${Formatter.escapeHtml(w.unidade)}. ${Formatter.escapeHtml(sectorCfg.orientacaoCustos)}</p>
                     </div>
                 </div>
 
@@ -3069,6 +3072,7 @@
             <div class="grid-2">
                 <section class="surface-card">
                     <h2 class="card-title" style="margin-bottom:14px;">Parâmetros da hipótese</h2>
+                    <p class="card-subtitle" style="margin-bottom:14px;">${Formatter.escapeHtml(sectorCfg.orientacaoCustos)} Na simulação rápida, são exibidos os principais campos de cada setor.</p>
                     <div class="form-grid">
                         <div class="form-field">
                             <label class="field-label" for="sim-nome">Nome da simulação</label>
