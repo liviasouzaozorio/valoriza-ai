@@ -35,13 +35,14 @@
 
     function mapPricingFromApi(row) {
         const input = row.input_snapshot || {};
-        const result = row.result_snapshot || {};
-        const extra = result.ui_record || result;
+        const snapshot = row.result_snapshot || {};
+        const serverResult = snapshot.server_calculation || {};
+        const extra = snapshot.ui_record || snapshot;
         return {
             id: String(row.id),
             catalogItemId: row.product_id || '',
             itemNome: row.product_name || input.item_name || 'Item sem nome',
-            versao: Number(result.version || 1),
+            versao: Number(extra.versao || snapshot.version || 1),
             setor: row.setor === 'servicos' ? 'servico' : (row.setor || input.sector || 'comercio'),
             unidade: row.unit || '',
             criadoEm: row.data_criacao,
@@ -50,10 +51,12 @@
             markup: nullableFiniteNumber(row.markup ?? extra.markup),
             margemPlanejada: nullableFiniteNumber(row.margem_lucro ?? extra.margemPlanejada),
             percentualImpostosTaxas: nullableFiniteNumber(row.impostos ?? extra.percentualImpostosTaxas),
-            valorImpostosTaxas: nullableFiniteNumber(extra.valorImpostosTaxas),
-            lucroEstimado: nullableFiniteNumber(extra.lucroEstimado),
-            fonteCalculo: extra.fonteCalculo || 'persistido',
-            categoriasCusto: Array.isArray(extra.categoriasCusto) ? extra.categoriasCusto : [],
+            valorImpostosTaxas: nullableFiniteNumber(serverResult.valorImpostosTaxas ?? extra.valorImpostosTaxas),
+            lucroEstimado: nullableFiniteNumber(serverResult.lucroEstimado ?? extra.lucroEstimado),
+            fonteCalculo: row.calculation_version || serverResult.calculationVersion || extra.fonteCalculo || 'persistido',
+            categoriasCusto: Array.isArray(serverResult.categoriasCusto)
+                ? serverResult.categoriasCusto
+                : (Array.isArray(extra.categoriasCusto) ? extra.categoriasCusto : []),
             detalhesCustos: input.costs || {},
             taxas: input.taxes || {}
         };
@@ -865,64 +868,69 @@
             }
 
             const ordered = [...pricings].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm));
+            const priceValues = ordered.map(p => nullableFiniteNumber(p.precoSugerido));
+            const costValues = ordered.map(p => nullableFiniteNumber(p.custoTotal));
+            const validValues = [...priceValues, ...costValues].filter(value => value !== null && value >= 0);
+            if (!validValues.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p class="empty-state-desc">Há registros no histórico, mas ainda não existem custos ou preços válidos para desenhar este gráfico.</p>
+                    </div>`;
+                return;
+            }
+
             const width = 580;
             const height = 240;
             const pad = { top: 20, right: 24, bottom: 38, left: 72 };
             const innerW = width - pad.left - pad.right;
             const innerH = height - pad.top - pad.bottom;
-
-            const maxVal = Math.max(...ordered.map(p => Math.max(p.precoSugerido, p.custoTotal)), 10) * 1.15;
+            const maxVal = Math.max(...validValues, 10) * 1.15;
             const stepX = ordered.length > 1 ? innerW / (ordered.length - 1) : innerW / 2;
-
-            const getX = idx => ordered.length === 1 ? pad.left + innerW / 2 : pad.left + idx * stepX;
+            const getX = idx => ordered.length > 1 ? pad.left + idx * stepX : pad.left + innerW / 2;
             const getY = val => pad.top + innerH - (val / maxVal) * innerH;
-
+            const buildPath = values => {
+                let path = '';
+                let activeSegment = false;
+                values.forEach((value, index) => {
+                    if (value === null || value < 0) {
+                        activeSegment = false;
+                        return;
+                    }
+                    path += `${activeSegment ? ' L' : ' M'} ${getX(index)},${getY(value)}`;
+                    activeSegment = true;
+                });
+                return path.trim();
+            };
+            const pricePath = buildPath(priceValues);
+            const costPath = buildPath(costValues);
             const yTicks = [0, 0.33, 0.66, 1].map(ratio => ({
                 val: maxVal * ratio,
                 y: getY(maxVal * ratio)
             }));
 
-            const pricePoints = ordered.map((p, i) => `${getX(i)},${getY(p.precoSugerido)}`).join(' ');
-            const costPoints = ordered.map((p, i) => `${getX(i)},${getY(p.custoTotal)}`).join(' ');
-
-            const areaPath = ordered.length > 1
-                ? `M ${getX(0)},${getY(0)} ` +
-                  ordered.map((p, i) => `L ${getX(i)},${getY(p.precoSugerido)}`).join(' ') +
-                  ` L ${getX(ordered.length - 1)},${getY(0)} Z`
-                : '';
-
             container.innerHTML = `
-                <svg class="chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolução dos preços sugeridos e custos">
-                    <defs>
-                        <linearGradient id="chartPriceArea" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="#3986D8" stop-opacity="0.28"/>
-                            <stop offset="100%" stop-color="#3986D8" stop-opacity="0"/>
-                        </linearGradient>
-                    </defs>
+                <svg class="chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolução dos preços sugeridos e custos; valores ausentes não são representados como zero">
                     ${yTicks.map(t => `
                         <line x1="${pad.left}" y1="${t.y}" x2="${width - pad.right}" y2="${t.y}" stroke="rgba(168,181,199,0.12)" stroke-dasharray="3,3" />
                         <text x="${pad.left - 8}" y="${t.y + 4}" text-anchor="end" fill="#A8B5C7" font-size="11" font-family="JetBrains Mono, monospace">${Formatter.brl(t.val)}</text>
                     `).join('')}
-                    ${areaPath ? `<path d="${areaPath}" fill="url(#chartPriceArea)" />` : ''}
-                    ${ordered.length > 1 ? `
-                        <polyline fill="none" stroke="#3986D8" stroke-width="2.5" stroke-linejoin="round" points="${pricePoints}" />
-                        <polyline fill="none" stroke="#A8B5C7" stroke-width="1.8" stroke-dasharray="5,4" points="${costPoints}" />
-                    ` : ''}
+                    ${pricePath ? `<path d="${pricePath}" fill="none" stroke="#3986D8" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />` : ''}
+                    ${costPath ? `<path d="${costPath}" fill="none" stroke="#A8B5C7" stroke-width="1.8" stroke-dasharray="5,4" stroke-linejoin="round" stroke-linecap="round" />` : ''}
                     ${ordered.map((p, i) => {
                         const x = getX(i);
-                        const yp = getY(p.precoSugerido);
-                        const yc = getY(p.custoTotal);
+                        const price = priceValues[i];
+                        const cost = costValues[i];
                         const label = Formatter.dateShort(p.criadoEm).slice(0, 5);
                         return `
                             <text x="${x}" y="${height - 12}" text-anchor="middle" fill="#A8B5C7" font-size="11" font-family="Inter, sans-serif">${label}</text>
-                            <circle cx="${x}" cy="${yc}" r="3.5" fill="#A8B5C7" stroke="#101827" stroke-width="1.5" />
-                            <circle class="chart-point" data-idx="${i}" cx="${x}" cy="${yp}" r="5" fill="#55D6A0" stroke="#101827" stroke-width="2" style="cursor:pointer" />
+                            ${cost !== null && cost >= 0 ? `<circle cx="${x}" cy="${getY(cost)}" r="3.5" fill="#A8B5C7" stroke="#101827" stroke-width="1.5" />` : ''}
+                            ${price !== null && price >= 0 ? `<circle class="chart-point" data-idx="${i}" cx="${x}" cy="${getY(price)}" r="5" fill="#55D6A0" stroke="#101827" stroke-width="2" style="cursor:pointer" />` : ''}
                         `;
                     }).join('')}
                 </svg>
                 <div class="chart-legend">
-                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#3986D8"></span> Preço sugerido (R$)</span>
-                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#A8B5C7"></span> Custo unitário (R$)</span>
+                    ${priceValues.some(value => value !== null && value >= 0) ? '<span class="chart-legend-entry"><span class="legend-swatch" style="background:#3986D8"></span> Preço sugerido (R$)</span>' : '<span class="chart-legend-entry">Preço sugerido indisponível nos registros exibidos</span>'}
+                    ${costValues.some(value => value !== null && value >= 0) ? '<span class="chart-legend-entry"><span class="legend-swatch" style="background:#A8B5C7"></span> Custo unitário (R$)</span>' : '<span class="chart-legend-entry">Custo unitário indisponível nos registros exibidos</span>'}
                 </div>
             `;
 
@@ -941,22 +949,30 @@
         },
 
         renderCostDistributionChart(container, categorias, totalCusto) {
-            if (!categorias || !categorias.length || totalCusto <= 0) {
+            const total = nullableFiniteNumber(totalCusto);
+            const validCategories = Array.isArray(categorias)
+                ? categorias.filter(category => category && typeof category.nome === 'string' &&
+                    nullableFiniteNumber(category.valor) !== null && Number(category.valor) > 0)
+                : [];
+            if (total === null || total <= 0 || !validCategories.length) {
+                const message = total === null || total <= 0
+                    ? 'O custo total desta versão não está disponível para análise.'
+                    : 'O custo total está registrado, mas a composição por categoria não está disponível.';
                 container.innerHTML = `
                     <div class="empty-state">
-                        <p class="empty-state-desc">Selecione ou registre uma precificação para visualizar a distribuição dos custos.</p>
+                        <p class="empty-state-desc">${message}</p>
                     </div>`;
                 return;
             }
 
             const colors = ['#3986D8', '#55D6A0', '#F59E0B', '#A8B5C7'];
-            const maxVal = Math.max(...categorias.map(c => c.valor), 1);
+            const maxVal = Math.max(...validCategories.map(c => Number(c.valor)), 1);
 
             container.innerHTML = `
                 <div style="display:flex;flex-direction:column;gap:14px;">
-                    ${categorias.map((cat, idx) => {
-                        const pct = (cat.valor / totalCusto) * 100;
-                        const barW = Math.max(4, (cat.valor / maxVal) * 100);
+                    ${validCategories.map((cat, idx) => {
+                        const pct = (Number(cat.valor) / total) * 100;
+                        const barW = Math.max(4, (Number(cat.valor) / maxVal) * 100);
                         const color = colors[idx % colors.length];
                         return `
                             <div>
@@ -975,31 +991,37 @@
         },
 
         renderPlannedMarginChart(container, pricings, targetMargin) {
-            const validPricings = pricings.filter(p => nullableFiniteNumber(p.margemPlanejada) !== null);
-            if (!validPricings.length) {
+            // Seleciona primeiro a última versão de cada item; uma margem ausente na versão atual
+            // não pode fazer o gráfico reutilizar silenciosamente a margem de uma versão antiga.
+            const latestByItem = new Map();
+            [...pricings].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm)).forEach(p => {
+                latestByItem.set(getPricingItemKey(p), p);
+            });
+            const rows = Array.from(latestByItem.values())
+                .filter(p => {
+                    const margin = nullableFiniteNumber(p.margemPlanejada);
+                    return margin !== null && margin >= 0 && margin < 100;
+                })
+                .slice(-6);
+            if (!rows.length) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <p class="empty-state-desc">Nenhuma margem planejada registrada ainda. Salve uma precificação para acompanhar este indicador.</p>
+                        <p class="empty-state-desc">Nenhuma margem planejada válida disponível nas últimas versões dos itens ativos. Confira os dados antes de comparar com a meta.</p>
                     </div>`;
                 return;
             }
 
-            // Agrupa pela versão mais recente de cada item
-            const latestByItem = new Map();
-            [...validPricings].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm)).forEach(p => {
-                latestByItem.set(p.catalogItemId || p.itemNome, p);
-            });
-            const rows = Array.from(latestByItem.values()).slice(-6);
-            const hasTarget = targetMargin !== null && Number.isFinite(Number(targetMargin));
-            const maxMargin = Math.max(hasTarget ? Number(targetMargin) : 0, ...rows.map(r => r.margemPlanejada), 40);
+            const parsedTarget = nullableFiniteNumber(targetMargin);
+            const hasTarget = parsedTarget !== null && parsedTarget >= 0 && parsedTarget < 100;
+            const maxMargin = Math.max(hasTarget ? parsedTarget : 0, ...rows.map(r => Number(r.margemPlanejada)), 40);
 
             container.innerHTML = `
                 <div style="display:flex;flex-direction:column;gap:14px;">
                     ${rows.map(r => {
-                        const belowTarget = hasTarget && r.margemPlanejada < Number(targetMargin);
+                        const belowTarget = hasTarget && Number(r.margemPlanejada) < parsedTarget;
                         const color = !hasTarget ? 'var(--color-blue)' : (belowTarget ? 'var(--color-warning)' : 'var(--color-emerald)');
                         const barW = Math.min(100, Math.max(4, (r.margemPlanejada / maxMargin) * 100));
-                        const targetPos = hasTarget ? Math.min(100, (Number(targetMargin) / maxMargin) * 100) : null;
+                        const targetPos = hasTarget ? Math.min(100, (parsedTarget / maxMargin) * 100) : null;
                         return `
                             <div>
                                 <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:5px;font-size:13px;">
@@ -1008,7 +1030,7 @@
                                 </div>
                                 <div style="position:relative;height:10px;border-radius:999px;background:var(--color-midnight);border:var(--border-hairline);">
                                     <div class="chart-bar-anim" style="width:${barW}%;height:100%;background:${color};border-radius:999px;"></div>
-                                    ${hasTarget ? `<div title="Meta: ${Formatter.percent(targetMargin, 0)}" style="position:absolute;top:-3px;bottom:-3px;left:${targetPos}%;width:2px;background:var(--color-cloud);opacity:0.65;"></div>` : ''}
+                                    ${hasTarget ? `<div title="Meta: ${Formatter.percent(parsedTarget, 0)}" style="position:absolute;top:-3px;bottom:-3px;left:${targetPos}%;width:2px;background:var(--color-cloud);opacity:0.65;"></div>` : ''}
                                 </div>
                             </div>
                         `;
@@ -1016,7 +1038,7 @@
                 </div>
                 ${hasTarget ? `<div class="chart-legend">
                     <span class="chart-legend-entry"><span class="legend-swatch" style="background:#55D6A0"></span> Margem planejada dentro da meta</span>
-                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#F59E0B"></span> Abaixo da meta (${Formatter.percent(targetMargin, 0)})</span>
+                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#F59E0B"></span> Abaixo da meta (${Formatter.percent(parsedTarget, 0)})</span>
                 </div>` : '<p class="chart-legend">Defina uma meta de margem em Meu negócio para ativar a comparação.</p>'}
             `;
         }
@@ -1033,11 +1055,11 @@
     function getActivePricingRecords(pricings, catalog) {
         const catalogById = new Map(catalog.filter(item => item.id).map(item => [item.id, item]));
         return pricings.filter(pricing => {
-            if (!pricing.catalogItemId) return true;
+            // Sem vínculo não é possível provar que o item continua ativo.
+            // Esses registros permanecem no Histórico, mas não entram nos indicadores atuais.
+            if (!pricing.catalogItemId) return false;
             const catalogItem = catalogById.get(pricing.catalogItemId);
-            // Registros históricos sem vínculo no catálogo continuam visíveis;
-            // itens explicitamente arquivados saem dos indicadores atuais.
-            return !catalogItem || catalogItem.status !== 'Arquivado';
+            return Boolean(catalogItem && catalogItem.status !== 'Arquivado');
         });
     }
 
@@ -1081,11 +1103,32 @@
 
         const activePricingRecords = getActivePricingRecords(pricings, catalog);
         const latestPricings = getLatestPricingPerItem(activePricingRecords);
-        const validMarginPricings = latestPricings.filter(p => nullableFiniteNumber(p.margemPlanejada) !== null);
+        const validMarginPricings = latestPricings.filter(p => {
+            const margin = nullableFiniteNumber(p.margemPlanejada);
+            return margin !== null && margin >= 0 && margin < 100;
+        });
         const avgMargin = validMarginPricings.length
             ? validMarginPricings.reduce((sum, p) => sum + Number(p.margemPlanejada), 0) / validMarginPricings.length
             : null;
         const belowTarget = target === null ? null : validMarginPricings.filter(p => Number(p.margemPlanejada) < target);
+        const missingMarginCount = latestPricings.filter(p => {
+            const margin = nullableFiniteNumber(p.margemPlanejada);
+            return margin === null || margin < 0 || margin >= 100;
+        }).length;
+        const missingCostCount = latestPricings.filter(p => {
+            const cost = nullableFiniteNumber(p.custoTotal);
+            return cost === null || cost <= 0;
+        }).length;
+        if (missingMarginCount > 0 || missingCostCount > 0) {
+            const gaps = [];
+            if (missingCostCount > 0) gaps.push(`${missingCostCount} ${missingCostCount === 1 ? 'sem custo total válido' : 'sem custo total válido'}`);
+            if (missingMarginCount > 0) gaps.push(`${missingMarginCount} ${missingMarginCount === 1 ? 'sem margem planejada válida' : 'sem margem planejada válida'}`);
+            insights.push({
+                tone: 'warning',
+                title: 'Há indicadores incompletos nas últimas versões',
+                desc: `${gaps.join(' e ')}. Esses itens ficam fora das médias e comparações correspondentes até que os dados sejam revisados.`
+            });
+        }
 
         if (belowTarget && belowTarget.length > 0) {
             const lowest = [...belowTarget].sort((a, b) => Number(a.margemPlanejada) - Number(b.margemPlanejada))[0];
@@ -1101,7 +1144,10 @@
             });
         }
 
-        const validCostPricings = latestPricings.filter(p => nullableFiniteNumber(p.custoTotal) !== null);
+        const validCostPricings = latestPricings.filter(p => {
+            const cost = nullableFiniteNumber(p.custoTotal);
+            return cost !== null && cost > 0;
+        });
         const highestCost = [...validCostPricings].sort((a, b) => Number(b.custoTotal) - Number(a.custoTotal))[0];
         if (highestCost) {
             insights.push({
@@ -3357,7 +3403,8 @@
     // --- 8.7 ANÁLISES ---
     function renderAnalyses(root) {
         const { pricings, catalog, business } = WorkspaceStore.state;
-        const target = business.margemMeta === null || business.margemMeta === '' || business.margemMeta === undefined ? null : Number(business.margemMeta);
+        const parsedTarget = nullableFiniteNumber(business.margemMeta);
+        const target = parsedTarget !== null && parsedTarget >= 0 && parsedTarget < 100 ? parsedTarget : null;
         const activePricingRecords = getActivePricingRecords(pricings, catalog);
         const activeCatalogItems = catalog.filter(item => item.status !== 'Arquivado');
         const itemsWithPricing = activeCatalogItems.filter(item => activePricingRecords.some(p => p.catalogItemId === item.id));
