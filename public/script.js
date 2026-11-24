@@ -881,11 +881,8 @@
 
     const ChartRenderer = {
         renderPriceEvolutionChart(container, pricings) {
-            if (pricings.length < 2) {
-                const single = pricings[0] || null;
-                const message = single
-                    ? `Há apenas uma versão registrada para este item (v${single.versao}). Salve uma nova versão para comparar a evolução de custos e preços.`
-                    : 'Ainda não há precificações salvas para traçar a evolução ao longo do tempo.';
+            if (!pricings.length) {
+                const message = 'Ainda não há precificações salvas para traçar a evolução ao longo do tempo.';
                 container.innerHTML = `
                     <div class="empty-state">
                         <p class="empty-state-desc">${message}</p>
@@ -970,6 +967,86 @@
                     `);
                 });
                 dot.addEventListener('mousemove', e => showChartTooltip(e, tooltipEl.innerHTML));
+                dot.addEventListener('mouseleave', hideChartTooltip);
+            });
+        },
+
+        renderPriceEvolutionOverviewChart(container, pricings) {
+            const records = [...pricings].filter(p => {
+                const date = new Date(p.criadoEm).getTime();
+                const price = nullableFiniteNumber(p.precoSugerido);
+                const cost = nullableFiniteNumber(p.custoTotal);
+                return Number.isFinite(date) && ((price !== null && price >= 0) || (cost !== null && cost >= 0));
+            }).sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm));
+
+            if (!records.length) {
+                container.innerHTML = '<div class="empty-state"><p class="empty-state-desc">Ainda não há preços ou custos válidos nos registros dos itens ativos.</p></div>';
+                return;
+            }
+
+            const grouped = new Map();
+            records.forEach((record, index) => {
+                const key = String(record.catalogItemId || record.itemNome || 'item-sem-identificacao');
+                if (!grouped.has(key)) {
+                    const palette = ['#3986D8', '#55D6A0', '#D69B45', '#A78BFA', '#E879A9', '#22B8A8', '#E07A5F', '#8BABC8'];
+                    grouped.set(key, { name: record.itemNome || 'Item sem nome', records: [], color: palette[grouped.size % palette.length] });
+                }
+                grouped.get(key).records.push({ record, index });
+            });
+            const groups = Array.from(grouped.values());
+            const values = records.flatMap(p => [nullableFiniteNumber(p.precoSugerido), nullableFiniteNumber(p.custoTotal)])
+                .filter(value => value !== null && value >= 0);
+            const minDate = new Date(records[0].criadoEm).getTime();
+            const maxDate = new Date(records[records.length - 1].criadoEm).getTime();
+            const width = 920, height = 340;
+            const pad = { top: 24, right: 28, bottom: 48, left: 82 };
+            const innerW = width - pad.left - pad.right;
+            const innerH = height - pad.top - pad.bottom;
+            const maxVal = Math.max(...values, 10) * 1.15;
+            const x = date => maxDate === minDate ? pad.left + innerW / 2 : pad.left + ((date - minDate) / (maxDate - minDate)) * innerW;
+            const y = value => pad.top + innerH - (value / maxVal) * innerH;
+            const pathFor = (items, field) => items
+                .map(item => ({ x: x(new Date(item.record.criadoEm).getTime()), value: nullableFiniteNumber(item.record[field]) }))
+                .filter(point => point.value !== null && point.value >= 0)
+                .map((point, index) => (index ? 'L ' : 'M ') + point.x + ',' + y(point.value))
+                .join(' ');
+            const ticks = [0, 0.25, 0.5, 0.75, 1].map(ratio => {
+                const value = maxVal * ratio;
+                return '<line x1="' + pad.left + '" y1="' + y(value) + '" x2="' + (width - pad.right) + '" y2="' + y(value) + '" stroke="rgba(168,181,199,0.16)" stroke-dasharray="3,3" />' +
+                    '<text x="' + (pad.left - 10) + '" y="' + (y(value) + 4) + '" text-anchor="end" fill="#A8B5C7" font-size="11" font-family="JetBrains Mono, monospace">' + Formatter.brl(value) + '</text>';
+            }).join('');
+            const dateTicks = [];
+            const tickCount = Math.min(5, records.length);
+            for (let i = 0; i < tickCount; i++) {
+                const date = minDate === maxDate ? minDate : minDate + ((maxDate - minDate) * i / Math.max(1, tickCount - 1));
+                dateTicks.push('<text x="' + x(date) + '" y="' + (height - 14) + '" text-anchor="middle" fill="#A8B5C7" font-size="11" font-family="Inter, sans-serif">' + Formatter.dateShort(new Date(date).toISOString()).slice(0, 5) + '</text>');
+            }
+            const series = groups.map(group => {
+                const pricePath = pathFor(group.records, 'precoSugerido');
+                const costPath = pathFor(group.records, 'custoTotal');
+                const lines = (pricePath ? '<path d="' + pricePath + '" fill="none" stroke="' + group.color + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />' : '') +
+                    (costPath ? '<path d="' + costPath + '" fill="none" stroke="' + group.color + '" stroke-opacity="0.72" stroke-width="1.8" stroke-dasharray="5,4" stroke-linejoin="round" stroke-linecap="round" />' : '');
+                const dots = group.records.map(item => {
+                    const record = item.record, cx = x(new Date(record.criadoEm).getTime());
+                    const price = nullableFiniteNumber(record.precoSugerido), cost = nullableFiniteNumber(record.custoTotal);
+                    return (cost !== null && cost >= 0 ? '<circle class="chart-overview-point" data-idx="' + item.index + '" data-kind="cost" cx="' + cx + '" cy="' + y(cost) + '" r="4" fill="' + group.color + '" fill-opacity="0.72" stroke="#101827" stroke-width="1.5" />' : '') +
+                        (price !== null && price >= 0 ? '<circle class="chart-overview-point" data-idx="' + item.index + '" data-kind="price" cx="' + cx + '" cy="' + y(price) + '" r="5" fill="' + group.color + '" stroke="#101827" stroke-width="2" />' : '');
+                }).join('');
+                return lines + dots;
+            }).join('');
+
+            container.innerHTML = '<svg class="chart-svg" viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Visão geral da evolução dos preços sugeridos e custos de todos os itens ativos. Cada cor representa um item; linhas contínuas representam preço e tracejadas representam custo.">' +
+                ticks + dateTicks.join('') + series + '</svg>' +
+                '<div class="chart-legend"><span class="chart-legend-entry">Linha contínua: preço sugerido</span><span class="chart-legend-entry">Linha tracejada: custo total</span><span class="chart-legend-entry">Cada cor identifica um item; pontos isolados representam itens com uma versão.</span></div>' +
+                '<div class="chart-legend">' + groups.map(group => '<span class="chart-legend-entry"><span class="legend-swatch" style="background:' + group.color + '"></span>' + Formatter.escapeHtml(group.name) + ' (' + group.records.length + ' registro(s))</span>').join('') + '</div>';
+
+            container.querySelectorAll('.chart-overview-point').forEach(dot => {
+                dot.addEventListener('mouseenter', event => {
+                    const item = records[Number(dot.dataset.idx)];
+                    const detail = dot.dataset.kind === 'price' ? 'Preço sugerido: ' + Formatter.brl(item.precoSugerido) : 'Custo total: ' + Formatter.brl(item.custoTotal);
+                    showChartTooltip(event, '<strong>' + Formatter.escapeHtml(item.itemNome || 'Item') + ' (v' + item.versao + ')</strong><br>' + detail + '<br>Data: ' + Formatter.dateShort(item.criadoEm));
+                });
+                dot.addEventListener('mousemove', event => showChartTooltip(event, tooltipEl.innerHTML));
                 dot.addEventListener('mouseleave', hideChartTooltip);
             });
         },
@@ -3488,7 +3565,7 @@
                     <div class="card-header">
                         <div>
                             <h2 class="card-title">Evolução de preços e custos</h2>
-                            <p class="card-subtitle">${selectedId === 'all' ? 'Selecione um item para comparar suas versões, sem misturar unidades de negócios diferentes.' : 'Comparativo cronológico das versões deste item.'}</p>
+                            <p class="card-subtitle">${selectedId === 'all' ? 'Visão geral de todos os produtos e serviços ativos. Cada cor identifica um item.' : 'Comparativo cronológico das versões deste item.'}</p>
                         </div>
                     </div>
                     <div id="ana-chart-evo"></div>
@@ -3554,7 +3631,7 @@
                 <div class="card-header">
                     <div>
                         <h2 class="card-title">Evolução histórica de preços e custos</h2>
-                        <p class="card-subtitle">${selectedId === 'all' ? 'Selecione um produto ou serviço no filtro acima para visualizar a evolução das versões desse item.' : 'Visão ampliada do histórico de preço sugerido e custo total deste item.'}</p>
+                        <p class="card-subtitle">${selectedId === 'all' ? 'Visão geral de todos os produtos e serviços ativos, incluindo itens com apenas uma versão.' : 'Visão ampliada do histórico de preço sugerido e custo total deste item.'}</p>
                     </div>
                 </div>
                 <div id="ana-chart-evo-feature" class="chart-container"></div>
@@ -3567,9 +3644,8 @@
         });
 
         if (selectedId === 'all') {
-            const selectionMessage = '<div class="empty-state"><p class="empty-state-desc">Escolha um produto ou serviço no filtro acima para acompanhar a evolução do custo e do preço entre versões do mesmo item.</p></div>';
-            document.getElementById('ana-chart-evo').innerHTML = selectionMessage;
-            document.getElementById('ana-chart-evo-feature').innerHTML = selectionMessage;
+            ChartRenderer.renderPriceEvolutionOverviewChart(document.getElementById('ana-chart-evo'), activePricingRecords);
+            ChartRenderer.renderPriceEvolutionOverviewChart(document.getElementById('ana-chart-evo-feature'), activePricingRecords);
             document.getElementById('ana-chart-comp').innerHTML = '<div class="empty-state"><p class="empty-state-desc">A composição é exibida por item. Selecione um produto ou serviço para consultar sua versão mais recente.</p></div>';
         } else {
             ChartRenderer.renderPriceEvolutionChart(document.getElementById('ana-chart-evo'), ordered);
