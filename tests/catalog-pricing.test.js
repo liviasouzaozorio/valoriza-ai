@@ -204,7 +204,8 @@ test('POST pricing persists a version under the authenticated business and owned
     product_id: productId,
     pricing_type: 'full',
     custo_total: 18.5,
-    preco_sugerido: 32,
+    preco_sugerido: 24.67,
+    markup: 1.33,
     margem_lucro: 25,
     data_criacao: '2026-11-24T03:00:00.000Z'
   };
@@ -242,6 +243,14 @@ test('POST pricing persists a version under the authenticated business and owned
   assert.deepEqual(calls[1].params, [productId, businessId]);
   assert.equal(calls[2].params[0], businessId);
   assert.equal(calls[2].params[1], productId);
+  // O preço enviado pelo navegador (R$ 32,00) é ignorado: o servidor recalcula R$ 24,67.
+  assert.equal(calls[2].params[10], 18.5);
+  assert.equal(calls[2].params[11], 24.67);
+  assert.equal(calls[2].params[12], 1.33);
+  assert.equal(calls[2].params[13], 25);
+  assert.equal(calls[2].params[9], null, 'margem efetiva não é preenchida sem dados de vendas');
+  const persistedSnapshot = JSON.parse(calls[2].params[17]);
+  assert.equal(persistedSnapshot.server_calculation.calculationVersion, 'server-v1');
 });
 
 test('POST pricing rejects non-finite numeric values before inserting', async () => {
@@ -328,4 +337,25 @@ test('POST pricing rejects unknown business sectors', async () => {
   assert.equal(response.status, 400);
   assert.equal(response.body.error.code, 'INVALID_PRICING_SECTOR');
   assert.equal(insertAttempted, false);
+});
+
+test('POST pricing calculate requires authentication and returns a server result', async () => {
+  app.pool.query = async sql => {
+    if (sql.includes('SELECT id FROM public.businesses')) return { rows: [{ id: businessId }] };
+    throw new Error('Unexpected SQL query');
+  };
+  const denied = await request('/api/pricings/calculate', { method: 'POST', token: 'invalid', body: {} });
+  assert.equal(denied.status, 401);
+  const response = await request('/api/pricings/calculate', {
+    method: 'POST',
+    body: {
+      sector: 'comercio',
+      costs: { custoAquisicao: 18.5 },
+      taxes: { margemDesejada: 25 }
+    }
+  });
+  assert.equal(response.status, 200);
+  assert.equal(response.body.data.result.custoTotal, 18.5);
+  assert.equal(response.body.data.result.precoSugerido, 24.67);
+  assert.equal(response.body.data.result.calculationVersion, 'server-v1');
 });
