@@ -1332,6 +1332,7 @@
 
         renderCurrentView() {
             const viewport = document.getElementById('main-viewport');
+            viewport.dataset.view = this.currentView;
             viewport.classList.remove('view-enter');
             void viewport.offsetWidth;
             viewport.classList.add('view-enter');
