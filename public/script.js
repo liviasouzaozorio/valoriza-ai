@@ -935,25 +935,34 @@
                 <svg class="chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolução dos preços sugeridos e custos; valores ausentes não são representados como zero">
                     ${yTicks.map(t => `
                         <line x1="${pad.left}" y1="${t.y}" x2="${width - pad.right}" y2="${t.y}" stroke="rgba(168,181,199,0.12)" stroke-dasharray="3,3" />
-                        <text x="${pad.left - 8}" y="${t.y + 4}" text-anchor="end" fill="#A8B5C7" font-size="11" font-family="JetBrains Mono, monospace">${Formatter.brl(t.val)}</text>
+                        <text x="${pad.left - 8}" y="${t.y + 4}" text-anchor="end" fill="#A8B5C7" font-size="14.3" font-family="JetBrains Mono, monospace">${Formatter.brl(t.val)}</text>
                     `).join('')}
-                    ${pricePath ? `<path d="${pricePath}" fill="none" stroke="#3986D8" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />` : ''}
-                    ${costPath ? `<path d="${costPath}" fill="none" stroke="#A8B5C7" stroke-width="1.8" stroke-dasharray="5,4" stroke-linejoin="round" stroke-linecap="round" />` : ''}
+                    ${ordered.map((p, i) => {
+                        const x = getX(i);
+                        const price = priceValues[i];
+                        const cost = costValues[i];
+                        if (price === null || cost === null || price < 0 || cost < 0) return '';
+                        const spreadColor = price >= cost ? '#55D6A0' : '#E87979';
+                        return `<line x1="${x}" y1="${getY(price)}" x2="${x}" y2="${getY(cost)}" stroke="${spreadColor}" stroke-opacity="0.55" stroke-width="7" stroke-linecap="round" />`;
+                    }).join('')}
+                    ${pricePath ? `<path d="${pricePath}" fill="none" stroke="#3986D8" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round" />` : ''}
+                    ${costPath ? `<path d="${costPath}" fill="none" stroke="#A8B5C7" stroke-width="2.6" stroke-dasharray="6,4" stroke-linejoin="round" stroke-linecap="round" />` : ''}
                     ${ordered.map((p, i) => {
                         const x = getX(i);
                         const price = priceValues[i];
                         const cost = costValues[i];
                         const label = Formatter.dateShort(p.criadoEm).slice(0, 5);
                         return `
-                            <text x="${x}" y="${height - 12}" text-anchor="middle" fill="#A8B5C7" font-size="11" font-family="Inter, sans-serif">${label}</text>
-                            ${cost !== null && cost >= 0 ? `<circle cx="${x}" cy="${getY(cost)}" r="3.5" fill="#A8B5C7" stroke="#101827" stroke-width="1.5" />` : ''}
-                            ${price !== null && price >= 0 ? `<circle class="chart-point" data-idx="${i}" cx="${x}" cy="${getY(price)}" r="5" fill="#55D6A0" stroke="#101827" stroke-width="2" style="cursor:pointer" />` : ''}
+                            <text x="${x}" y="${height - 12}" text-anchor="middle" fill="#A8B5C7" font-size="18.2" font-family="Inter, sans-serif">${label}</text>
+                            ${cost !== null && cost >= 0 ? `<circle cx="${x}" cy="${getY(cost)}" r="5.5" fill="#A8B5C7" stroke="#101827" stroke-width="1.5" />` : ''}
+                            ${price !== null && price >= 0 ? `<circle class="chart-point" data-idx="${i}" cx="${x}" cy="${getY(price)}" r="7" fill="#3986D8" stroke="#101827" stroke-width="2" style="cursor:pointer" />` : ''}
                         `;
                     }).join('')}
                 </svg>
                 <div class="chart-legend">
                     ${priceValues.some(value => value !== null && value >= 0) ? '<span class="chart-legend-entry"><span class="legend-swatch" style="background:#3986D8"></span> Preço sugerido (R$)</span>' : '<span class="chart-legend-entry">Preço sugerido indisponível nos registros exibidos</span>'}
-                    ${costValues.some(value => value !== null && value >= 0) ? '<span class="chart-legend-entry"><span class="legend-swatch" style="background:#A8B5C7"></span> Custo unitário (R$)</span>' : '<span class="chart-legend-entry">Custo unitário indisponível nos registros exibidos</span>'}
+                    ${costValues.some(value => value !== null && value >= 0) ? '<span class="chart-legend-entry"><span class="legend-swatch" style="background:#A8B5C7"></span> Custo total (R$)</span>' : '<span class="chart-legend-entry">Custo total indisponível nos registros exibidos</span>'}
+                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#55D6A0"></span> Faixa entre custo e preço (diferença bruta estimada; não é lucro líquido)</span>
                 </div>
             `;
 
@@ -962,8 +971,9 @@
                 dot.addEventListener('mouseenter', e => {
                     showChartTooltip(e, `
                         <strong>${Formatter.escapeHtml(item.itemNome)} (v${item.versao})</strong><br>
-                        Preço: <span class="mono">${Formatter.brl(item.precoSugerido)}</span><br>
-                        Custo: <span class="mono">${Formatter.brl(item.custoTotal)}</span> · Margem: ${Formatter.percent(item.margemPlanejada)}
+                        Preço sugerido: <span class="mono">${Formatter.brl(item.precoSugerido)}</span><br>
+                        Custo total: <span class="mono">${Formatter.brl(item.custoTotal)}</span><br>
+                        Lucro estimado: <span class="mono">${Formatter.brl(item.lucroEstimado)}</span> · Margem planejada: ${Formatter.percent(item.margemPlanejada)}
                     `);
                 });
                 dot.addEventListener('mousemove', e => showChartTooltip(e, tooltipEl.innerHTML));
@@ -1013,38 +1023,46 @@
             const ticks = [0, 0.25, 0.5, 0.75, 1].map(ratio => {
                 const value = maxVal * ratio;
                 return '<line x1="' + pad.left + '" y1="' + y(value) + '" x2="' + (width - pad.right) + '" y2="' + y(value) + '" stroke="rgba(168,181,199,0.16)" stroke-dasharray="3,3" />' +
-                    '<text x="' + (pad.left - 10) + '" y="' + (y(value) + 4) + '" text-anchor="end" fill="#A8B5C7" font-size="11" font-family="JetBrains Mono, monospace">' + Formatter.brl(value) + '</text>';
+                    '<text x="' + (pad.left - 10) + '" y="' + (y(value) + 4) + '" text-anchor="end" fill="#A8B5C7" font-size="14.3" font-family="JetBrains Mono, monospace">' + Formatter.brl(value) + '</text>';
             }).join('');
             const dateTicks = [];
             const tickCount = Math.min(5, records.length);
             for (let i = 0; i < tickCount; i++) {
                 const date = minDate === maxDate ? minDate : minDate + ((maxDate - minDate) * i / Math.max(1, tickCount - 1));
-                dateTicks.push('<text x="' + x(date) + '" y="' + (height - 14) + '" text-anchor="middle" fill="#A8B5C7" font-size="11" font-family="Inter, sans-serif">' + Formatter.dateShort(new Date(date).toISOString()).slice(0, 5) + '</text>');
+                dateTicks.push('<text x="' + x(date) + '" y="' + (height - 14) + '" text-anchor="middle" fill="#A8B5C7" font-size="14.3" font-family="Inter, sans-serif">' + Formatter.dateShort(new Date(date).toISOString()).slice(0, 5) + '</text>');
             }
             const series = groups.map(group => {
                 const pricePath = pathFor(group.records, 'precoSugerido');
                 const costPath = pathFor(group.records, 'custoTotal');
-                const lines = (pricePath ? '<path d="' + pricePath + '" fill="none" stroke="' + group.color + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />' : '') +
-                    (costPath ? '<path d="' + costPath + '" fill="none" stroke="' + group.color + '" stroke-opacity="0.72" stroke-width="1.8" stroke-dasharray="5,4" stroke-linejoin="round" stroke-linecap="round" />' : '');
+                const spreadMarkers = group.records.map(item => {
+                    const record = item.record;
+                    const price = nullableFiniteNumber(record.precoSugerido);
+                    const cost = nullableFiniteNumber(record.custoTotal);
+                    if (price === null || cost === null || price < 0 || cost < 0) return '';
+                    const cx = x(new Date(record.criadoEm).getTime());
+                    const spreadColor = price >= cost ? '#55D6A0' : '#E87979';
+                    return '<line x1="' + cx + '" y1="' + y(price) + '" x2="' + cx + '" y2="' + y(cost) + '" stroke="' + spreadColor + '" stroke-opacity="0.62" stroke-width="7" stroke-linecap="round" />';
+                }).join('');
+                const lines = (pricePath ? '<path d="' + pricePath + '" fill="none" stroke="' + group.color + '" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />' : '') +
+                    (costPath ? '<path d="' + costPath + '" fill="none" stroke="' + group.color + '" stroke-opacity="0.82" stroke-width="2.5" stroke-dasharray="6,4" stroke-linejoin="round" stroke-linecap="round" />' : '');
                 const dots = group.records.map(item => {
                     const record = item.record, cx = x(new Date(record.criadoEm).getTime());
                     const price = nullableFiniteNumber(record.precoSugerido), cost = nullableFiniteNumber(record.custoTotal);
-                    return (cost !== null && cost >= 0 ? '<circle class="chart-overview-point" data-idx="' + item.index + '" data-kind="cost" cx="' + cx + '" cy="' + y(cost) + '" r="4" fill="' + group.color + '" fill-opacity="0.72" stroke="#101827" stroke-width="1.5" />' : '') +
-                        (price !== null && price >= 0 ? '<circle class="chart-overview-point" data-idx="' + item.index + '" data-kind="price" cx="' + cx + '" cy="' + y(price) + '" r="5" fill="' + group.color + '" stroke="#101827" stroke-width="2" />' : '');
+                    return (cost !== null && cost >= 0 ? '<circle class="chart-overview-point" data-idx="' + item.index + '" data-kind="cost" cx="' + cx + '" cy="' + y(cost) + '" r="5.5" fill="' + group.color + '" fill-opacity="0.82" stroke="#101827" stroke-width="1.5" />' : '') +
+                        (price !== null && price >= 0 ? '<circle class="chart-overview-point" data-idx="' + item.index + '" data-kind="price" cx="' + cx + '" cy="' + y(price) + '" r="7" fill="' + group.color + '" stroke="#101827" stroke-width="2" />' : '');
                 }).join('');
-                return lines + dots;
+                return spreadMarkers + lines + dots;
             }).join('');
 
             container.innerHTML = '<svg class="chart-svg" viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Visão geral da evolução dos preços sugeridos e custos de todos os itens ativos. Cada cor representa um item; linhas contínuas representam preço e tracejadas representam custo.">' +
                 ticks + dateTicks.join('') + series + '</svg>' +
-                '<div class="chart-legend"><span class="chart-legend-entry">Linha contínua: preço sugerido</span><span class="chart-legend-entry">Linha tracejada: custo total</span><span class="chart-legend-entry">Cada cor identifica um item; pontos isolados representam itens com uma versão.</span></div>' +
+                '<div class="chart-legend"><span class="chart-legend-entry">Linha contínua: preço sugerido</span><span class="chart-legend-entry">Linha tracejada: custo total</span><span class="chart-legend-entry">Faixa verde: preço acima do custo; faixa vermelha: custo acima do preço. A diferença não representa lucro líquido.</span><span class="chart-legend-entry">Cada cor identifica um item; pontos isolados representam itens com uma versão.</span></div>' +
                 '<div class="chart-legend">' + groups.map(group => '<span class="chart-legend-entry"><span class="legend-swatch" style="background:' + group.color + '"></span>' + Formatter.escapeHtml(group.name) + ' (' + group.records.length + ' registro(s))</span>').join('') + '</div>';
 
             container.querySelectorAll('.chart-overview-point').forEach(dot => {
                 dot.addEventListener('mouseenter', event => {
                     const item = records[Number(dot.dataset.idx)];
-                    const detail = dot.dataset.kind === 'price' ? 'Preço sugerido: ' + Formatter.brl(item.precoSugerido) : 'Custo total: ' + Formatter.brl(item.custoTotal);
-                    showChartTooltip(event, '<strong>' + Formatter.escapeHtml(item.itemNome || 'Item') + ' (v' + item.versao + ')</strong><br>' + detail + '<br>Data: ' + Formatter.dateShort(item.criadoEm));
+                    showChartTooltip(event, '<strong>' + Formatter.escapeHtml(item.itemNome || 'Item') + ' (v' + item.versao + ')</strong><br>Preço sugerido: ' + Formatter.brl(item.precoSugerido) + '<br>Custo total: ' + Formatter.brl(item.custoTotal) + '<br>Lucro estimado: ' + Formatter.brl(item.lucroEstimado) + '<br>Data: ' + Formatter.dateShort(item.criadoEm));
                 });
                 dot.addEventListener('mousemove', event => showChartTooltip(event, tooltipEl.innerHTML));
                 dot.addEventListener('mouseleave', hideChartTooltip);
@@ -1079,7 +1097,7 @@
                         const color = colors[idx % colors.length];
                         return `
                             <div>
-                                <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:6px;font-size:13px;">
+                                <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:6px;font-size:16.9px;">
                                     <span style="color:var(--color-cloud);font-weight:500;">${Formatter.escapeHtml(cat.nome)}</span>
                                     <span class="mono" style="color:var(--color-silver);">${Formatter.brl(cat.valor)} (${Formatter.percent(pct)})</span>
                                 </div>
@@ -1127,7 +1145,7 @@
                         const targetPos = hasTarget ? Math.min(100, (parsedTarget / maxMargin) * 100) : null;
                         return `
                             <div>
-                                <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:5px;font-size:13px;">
+                                <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:5px;font-size:16.9px;">
                                     <span style="color:var(--color-cloud);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${Formatter.escapeHtml(r.itemNome)}</span>
                                     <span class="mono" style="color:${color};font-weight:600;">${Formatter.percent(r.margemPlanejada)} ${!hasTarget ? '· Meta não definida' : (belowTarget ? '· Abaixo da meta' : '· Na meta')}</span>
                                 </div>
@@ -1560,8 +1578,8 @@
                         <img src="${NILO_ASSETS.boasVindas}" alt="Nilo dando boas-vindas" class="nilo-figure nilo-float">
                     </div>
                     <div>
-                        <h3 style="font-size:16px;font-weight:600;margin-bottom:6px;">Olá! Sou o Nilo, seu apoio analítico.</h3>
-                        <p style="font-size:13px;color:var(--color-silver);margin-bottom:14px;">
+                        <h3 style="font-size:20.8px;font-weight:600;margin-bottom:6px;">Olá! Sou o Nilo, seu apoio analítico.</h3>
+                        <p style="font-size:16.9px;color:var(--color-silver);margin-bottom:14px;">
                             Cadastre sua primeira precificação para acompanhar custos, margens planejadas e recomendações do negócio.
                         </p>
                         <div style="display:flex;gap:10px;flex-wrap:wrap;">
@@ -1578,7 +1596,7 @@
                     <div class="nilo-avatar-box-sm">
                         <img src="${niloPose}" alt="Nilo analisando indicadores" class="nilo-figure nilo-float">
                     </div>
-                    <p style="font-size:13px;color:var(--color-silver);padding-top:6px;">
+                    <p style="font-size:16.9px;color:var(--color-silver);padding-top:6px;">
                         ${belowTargetCount > 0
                             ? 'Identifiquei pontos de atenção nas suas margens planejadas. Vale revisar os itens destacados antes de atualizar sua tabela de vendas.'
                             : (activePricingCount === 0
@@ -1915,11 +1933,11 @@
                                     <tr>
                                         <td>
                                             <div style="font-weight:600;color:var(--color-cloud);">${Formatter.escapeHtml(item.nome)}</div>
-                                            <div style="font-size:12px;color:var(--color-silver);">${Formatter.escapeHtml(item.categoria || 'Sem categoria')} · Cadastro ${Formatter.dateShort(item.criadoEm)}</div>
+                                            <div style="font-size:15.6px;color:var(--color-silver);">${Formatter.escapeHtml(item.categoria || 'Sem categoria')} · Cadastro ${Formatter.dateShort(item.criadoEm)}</div>
                                         </td>
                                         <td>
                                             <div>${SETORES[item.setor]?.nome || item.setor}</div>
-                                            <div style="font-size:12px;color:var(--color-silver);">${Formatter.escapeHtml(item.tipo || '—')}</div>
+                                            <div style="font-size:15.6px;color:var(--color-silver);">${Formatter.escapeHtml(item.tipo || '—')}</div>
                                         </td>
                                         <td>${Formatter.escapeHtml(item.unidade)}</td>
                                         <td><span class="status-label ${statusClass}">${Formatter.escapeHtml(item.status)}</span></td>
@@ -2106,9 +2124,9 @@
                 ${item.descricao ? `<div class="kv-row"><span class="kv-key">Descrição</span><span class="kv-val" style="max-width:65%;font-weight:400;">${Formatter.escapeHtml(item.descricao)}</span></div>` : ''}
             </div>
 
-            <h3 style="font-size:15px;font-weight:600;margin-bottom:10px;">Histórico preservado de precificações (${itemPricings.length})</h3>
+            <h3 style="font-size:19.5px;font-weight:600;margin-bottom:10px;">Histórico preservado de precificações (${itemPricings.length})</h3>
             ${itemPricings.length === 0 ? `
-                <p style="font-size:13px;color:var(--color-silver);margin-bottom:16px;">Este item ainda não possui precificações salvas.</p>
+                <p style="font-size:16.9px;color:var(--color-silver);margin-bottom:16px;">Este item ainda não possui precificações salvas.</p>
             ` : `
                 <div class="table-wrap" style="margin-bottom:16px;">
                     <table class="data-table">
@@ -2494,7 +2512,7 @@
             UI.openModal(
                 'Auxiliar de rateio operacional unitário',
                 `
-                <p style="font-size:13px;color:var(--color-silver);margin-bottom:16px;">Informe o total de despesas fixas mensais (aluguel, energia, sistemas) e a quantidade média de unidades vendidas no mês para preencher o rateio por unidade sem misturar períodos.</p>
+                <p style="font-size:16.9px;color:var(--color-silver);margin-bottom:16px;">Informe o total de despesas fixas mensais (aluguel, energia, sistemas) e a quantidade média de unidades vendidas no mês para preencher o rateio por unidade sem misturar períodos.</p>
                 <div class="form-grid">
                     <div class="form-field">
                         <label class="field-label" for="aux-fixo">Custo fixo mensal (R$)</label>
@@ -2505,7 +2523,7 @@
                         <input id="aux-vol" class="field-input mono" type="text" inputmode="numeric" placeholder="Ex: 500">
                     </div>
                 </div>
-                <div id="aux-preview" style="margin-top:16px;font-size:14px;color:var(--color-emerald);" class="mono"></div>
+                <div id="aux-preview" style="margin-top:16px;font-size:18.2px;color:var(--color-emerald);" class="mono"></div>
                 <div class="wizard-footer">
                     <button type="button" class="btn btn-ghost" id="aux-cancel">Fechar</button>
                     <button type="button" class="btn btn-primary" id="aux-apply">Aplicar ao campo de rateio</button>
@@ -2776,7 +2794,7 @@
                 <div class="grid-2" style="margin-bottom:20px;">
                     <div class="review-summary-card" style="padding:18px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                            <h3 style="font-size:15px;font-weight:600;">Identificação</h3>
+                            <h3 style="font-size:19.5px;font-weight:600;">Identificação</h3>
                             <button type="button" class="btn btn-ghost btn-sm" data-goto-step="1">Editar</button>
                         </div>
                         <div class="kv-list">
@@ -2789,7 +2807,7 @@
 
                     <div class="review-summary-card" style="padding:18px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                            <h3 style="font-size:15px;font-weight:600;">Impostos, taxas e margem</h3>
+                            <h3 style="font-size:19.5px;font-weight:600;">Impostos, taxas e margem</h3>
                             <button type="button" class="btn btn-ghost btn-sm" data-goto-step="3">Editar</button>
                         </div>
                         <div class="kv-list">
@@ -2804,13 +2822,13 @@
 
                 <div class="review-summary-card" style="padding:18px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                        <h3 style="font-size:15px;font-weight:600;">Custos declarados por categoria</h3>
+                        <h3 style="font-size:19.5px;font-weight:600;">Custos declarados por categoria</h3>
                         <button type="button" class="btn btn-ghost btn-sm" data-goto-step="2">Editar custos</button>
                     </div>
                     <div class="grid-2">
                         ${Array.from(grouped.entries()).map(([catName, fields]) => `
                             <div>
-                                <div style="font-size:12px;font-weight:600;color:var(--color-blue);margin-bottom:8px;">${catName}</div>
+                                <div style="font-size:15.6px;font-weight:600;color:var(--color-blue);margin-bottom:8px;">${catName}</div>
                                 <div class="kv-list">
                                     ${fields.map(f => {
                                         const raw = w.costs[f.id];
@@ -2915,8 +2933,8 @@
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;">
                         <div>
                             <div class="kpi-label">Preço de venda sugerido · ${Formatter.escapeHtml(w.unidade)}</div>
-                            <div class="mono" style="font-size:34px;font-weight:700;color:var(--color-emerald);line-height:1.15;margin-top:4px;">${Formatter.brl(r.precoSugerido)}</div>
-                            <div style="font-size:13px;color:var(--color-silver);margin-top:6px;">Item: <strong style="color:var(--color-cloud);">${Formatter.escapeHtml(w.itemNome)}</strong> · ${SETORES[w.setor]?.nome}</div>
+                            <div class="mono" style="font-size:44.2px;font-weight:700;color:var(--color-emerald);line-height:1.15;margin-top:4px;">${Formatter.brl(r.precoSugerido)}</div>
+                            <div style="font-size:16.9px;color:var(--color-silver);margin-top:6px;">Item: <strong style="color:var(--color-cloud);">${Formatter.escapeHtml(w.itemNome)}</strong> · ${SETORES[w.setor]?.nome}</div>
                         </div>
                         <div class="nilo-avatar-box-sm">
                             <img src="${targetMargin === null ? NILO_ASSETS.analisando : (healthyMargin ? NILO_ASSETS.comemorando : NILO_ASSETS.recomendacao)}" alt="Nilo resultado da precificação" class="nilo-figure nilo-enter">
@@ -2926,19 +2944,19 @@
                     <div class="grid-2" style="gap:12px;">
                         <div class="pricing-result-metric-card" style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                             <div class="kpi-label">Custo total unitário</div>
-                            <div class="kpi-value" style="font-size:20px;margin-top:4px;">${Formatter.brl(r.custoTotal)}</div>
+                            <div class="kpi-value" style="font-size:26.0px;margin-top:4px;">${Formatter.brl(r.custoTotal)}</div>
                         </div>
                         <div class="pricing-result-metric-card" style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                             <div class="kpi-label">Multiplicador (Markup)</div>
-                            <div class="kpi-value" style="font-size:20px;color:var(--color-blue);margin-top:4px;">${r.markup.toFixed(2)}x</div>
+                            <div class="kpi-value" style="font-size:26.0px;color:var(--color-blue);margin-top:4px;">${r.markup.toFixed(2)}x</div>
                         </div>
                         <div class="pricing-result-metric-card" style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                             <div class="kpi-label">Impostos e taxas (${Formatter.percent(r.percentualImpostosTaxas)})</div>
-                            <div class="kpi-value warning" style="font-size:20px;margin-top:4px;">${Formatter.brl(r.valorImpostosTaxas)}</div>
+                            <div class="kpi-value warning" style="font-size:26.0px;margin-top:4px;">${Formatter.brl(r.valorImpostosTaxas)}</div>
                         </div>
                         <div class="pricing-result-metric-card" style="padding:14px;border-radius:var(--radius-md);background:var(--color-midnight);border:var(--border-hairline);">
                             <div class="kpi-label">Lucro estimado / unidade (${Formatter.percent(r.margemPlanejada)})</div>
-                            <div class="kpi-value positive" style="font-size:20px;margin-top:4px;">${Formatter.brl(r.lucroEstimado)}</div>
+                            <div class="kpi-value positive" style="font-size:26.0px;margin-top:4px;">${Formatter.brl(r.lucroEstimado)}</div>
                         </div>
                     </div>
                 </section>
@@ -2957,26 +2975,26 @@
                     <div class="composition-legend">
                         <div class="legend-item">
                             <span class="legend-label"><span class="legend-swatch" style="background:#3986D8"></span> Custo unitário</span>
-                            <span class="mono" style="font-size:12px;">${Formatter.brl(r.custoTotal)} (${Formatter.percent(pctCusto)})</span>
+                            <span class="mono" style="font-size:15.6px;">${Formatter.brl(r.custoTotal)} (${Formatter.percent(pctCusto)})</span>
                         </div>
                         <div class="legend-item">
                             <span class="legend-label"><span class="legend-swatch" style="background:#EF4444"></span> Impostos</span>
-                            <span class="mono" style="font-size:12px;">${Formatter.brl(r.valorImpostos)} (${Formatter.percent(pctImposto)})</span>
+                            <span class="mono" style="font-size:15.6px;">${Formatter.brl(r.valorImpostos)} (${Formatter.percent(pctImposto)})</span>
                         </div>
                         <div class="legend-item">
                             <span class="legend-label"><span class="legend-swatch" style="background:#F59E0B"></span> Taxas e comissões</span>
-                            <span class="mono" style="font-size:12px;">${Formatter.brl(r.valorTaxasComissoes)} (${Formatter.percent(pctTaxas)})</span>
+                            <span class="mono" style="font-size:15.6px;">${Formatter.brl(r.valorTaxasComissoes)} (${Formatter.percent(pctTaxas)})</span>
                         </div>
                         <div class="legend-item">
                             <span class="legend-label"><span class="legend-swatch" style="background:#55D6A0"></span> Lucro estimado</span>
-                            <span class="mono" style="font-size:12px;">${Formatter.brl(r.lucroEstimado)} (${Formatter.percent(pctLucro)})</span>
+                            <span class="mono" style="font-size:15.6px;">${Formatter.brl(r.lucroEstimado)} (${Formatter.percent(pctLucro)})</span>
                         </div>
                     </div>
 
                     ${warnings.length ? `
                         <div style="margin-top:18px;padding-top:14px;border-top:var(--border-hairline);">
-                            <div style="font-size:12px;font-weight:600;color:var(--color-warning);margin-bottom:6px;">Indicadores de atenção</div>
-                            <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--color-silver);display:flex;flex-direction:column;gap:4px;">
+                            <div style="font-size:15.6px;font-weight:600;color:var(--color-warning);margin-bottom:6px;">Indicadores de atenção</div>
+                            <ul style="margin:0;padding-left:18px;font-size:16.9px;color:var(--color-silver);display:flex;flex-direction:column;gap:4px;">
                                 ${warnings.map(msg => `<li>${Formatter.escapeHtml(msg)}</li>`).join('')}
                             </ul>
                         </div>
@@ -3212,8 +3230,8 @@
                 <div class="simulation-result-content" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px;">
                     <div>
                         <div class="kpi-label">Resultado temporário da simulação</div>
-                        <div class="mono" style="font-size:32px;font-weight:700;color:var(--color-emerald);margin-top:4px;">${Formatter.brl(res.precoSugerido)}</div>
-                        <div style="font-size:12px;color:var(--color-silver);margin-top:4px;">Não salvo no catálogo nem no histórico</div>
+                        <div class="mono" style="font-size:41.6px;font-weight:700;color:var(--color-emerald);margin-top:4px;">${Formatter.brl(res.precoSugerido)}</div>
+                        <div style="font-size:15.6px;color:var(--color-silver);margin-top:4px;">Não salvo no catálogo nem no histórico</div>
                     </div>
                     <div class="nilo-avatar-box-sm">
                         <img src="${NILO_ASSETS.recomendacao}" alt="Nilo recomendando" class="nilo-figure nilo-enter">
@@ -3478,7 +3496,7 @@
                 <div class="kv-row"><span class="kv-key">Lucro estimado / unidade</span><span class="kv-val mono">${Formatter.brl(p.lucroEstimado)}</span></div>
             </div>
 
-            <h3 style="font-size:14px;font-weight:600;margin-bottom:10px;">Composição dos custos</h3>
+            <h3 style="font-size:18.2px;font-weight:600;margin-bottom:10px;">Composição dos custos</h3>
             <div id="modal-hist-cost-chart" style="margin-bottom:18px;"></div>
 
             <div class="wizard-footer">
@@ -3550,13 +3568,13 @@
             <div class="surface-card" style="margin-bottom:20px;">
                 <div class="toolbar" style="margin-bottom:0;">
                     <div class="toolbar-group">
-                        <label for="ana-item-select" style="font-size:13px;font-weight:500;color:var(--color-silver);">Escopo da análise:</label>
+                        <label for="ana-item-select" style="font-size:16.9px;font-weight:500;color:var(--color-silver);">Escopo da análise:</label>
                         <select id="ana-item-select" class="field-select" style="width:auto;min-width:240px;">
                             <option value="all" ${selectedId === 'all' ? 'selected' : ''}>Todos os itens ativos (${activePricingRecords.length} registros)</option>
                             ${itemsWithPricing.map(item => `<option value="${item.id}" ${selectedId === item.id ? 'selected' : ''}>${Formatter.escapeHtml(item.nome)}</option>`).join('')}
                         </select>
                     </div>
-                    <span style="font-size:12px;color:var(--color-silver);">Exibindo métricas planejadas de custo, preço e margem</span>
+                    <span style="font-size:15.6px;color:var(--color-silver);">Exibindo métricas planejadas de custo, preço e margem</span>
                 </div>
             </div>
 
@@ -3627,15 +3645,6 @@
                 </section>
             </div>
 
-            <section class="surface-card analysis-evolution-feature">
-                <div class="card-header">
-                    <div>
-                        <h2 class="card-title">Evolução histórica de preços e custos</h2>
-                        <p class="card-subtitle">${selectedId === 'all' ? 'Visão geral de todos os produtos e serviços ativos, incluindo itens com apenas uma versão.' : 'Visão ampliada do histórico de preço sugerido e custo total deste item.'}</p>
-                    </div>
-                </div>
-                <div id="ana-chart-evo-feature" class="chart-container"></div>
-            </section>
         `;
 
         document.getElementById('ana-item-select').addEventListener('change', e => {
@@ -3645,11 +3654,9 @@
 
         if (selectedId === 'all') {
             ChartRenderer.renderPriceEvolutionOverviewChart(document.getElementById('ana-chart-evo'), activePricingRecords);
-            ChartRenderer.renderPriceEvolutionOverviewChart(document.getElementById('ana-chart-evo-feature'), activePricingRecords);
             document.getElementById('ana-chart-comp').innerHTML = '<div class="empty-state"><p class="empty-state-desc">A composição é exibida por item. Selecione um produto ou serviço para consultar sua versão mais recente.</p></div>';
         } else {
             ChartRenderer.renderPriceEvolutionChart(document.getElementById('ana-chart-evo'), ordered);
-            ChartRenderer.renderPriceEvolutionChart(document.getElementById('ana-chart-evo-feature'), ordered);
             ChartRenderer.renderCostDistributionChart(document.getElementById('ana-chart-comp'), latestFocus.categoriasCusto, latestFocus.custoTotal);
         }
         ChartRenderer.renderPlannedMarginChart(document.getElementById('ana-chart-margin'), ordered, target);
@@ -3775,7 +3782,7 @@
                     </div>
 
                     <div style="padding:14px;border-radius:var(--radius-md);background:var(--app-background);border:1px solid var(--border);">
-                        <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;">Contexto enviado à IA</div>
+                        <div style="font-size:15.6px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;">Contexto enviado à IA</div>
                         ${ctx.resumoFinanceiro ? `
                             <div class="kv-list">
                                 <div class="kv-row"><span class="kv-key">Preço sugerido</span><span class="kv-val mono">${ctx.resumoFinanceiro.precoSugerido}</span></div>
@@ -3784,7 +3791,7 @@
                                 <div class="kv-row"><span class="kv-key">Impostos e taxas</span><span class="kv-val mono">${ctx.resumoFinanceiro.taxaPercentual}</span></div>
                                 <div class="kv-row"><span class="kv-key">Margem desejada</span><span class="kv-val mono">${ctx.resumoFinanceiro.margemPercentual}</span></div>
                             </div>
-                        ` : '<p style="font-size:12px;color:var(--text-secondary);">Nenhum dado financeiro será enviado. O Nilo pode responder normalmente a perguntas gerais.</p>'}
+                        ` : '<p style="font-size:15.6px;color:var(--text-secondary);">Nenhum dado financeiro será enviado. O Nilo pode responder normalmente a perguntas gerais.</p>'}
                     </div>
                 </aside>
 
@@ -3990,7 +3997,7 @@
                                                     </div>
 
                         <div class="form-field form-field-full">
-                            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;">
+                            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:18.2px;">
                                 <input id="set-rascunho" type="checkbox" ${settings.salvarRascunhoAutomatico ? 'checked' : ''} style="width:16px;height:16px;">
                                 <span>Salvar rascunho automaticamente se você sair antes de concluir</span>
                             </label>
@@ -4051,7 +4058,7 @@
             UI.openModal(
                 'Confirmar exclusão de dados',
                 `
-                <p style="font-size:14px;color:var(--color-silver);margin-bottom:18px;">
+                <p style="font-size:18.2px;color:var(--color-silver);margin-bottom:18px;">
                     Esta ação apaga o perfil do negócio, o catálogo, o histórico de precificações, os rascunhos e as conversas salvos neste dispositivo. Não será possível desfazer. Deseja continuar?
                 </p>
                 <div class="wizard-footer">
