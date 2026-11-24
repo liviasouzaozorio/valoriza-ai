@@ -242,21 +242,21 @@
                 },
                 {
                     id: 'custoHoraProdutiva',
-                    label: 'Custo da hora produtiva (R$/h)',
-                    categoria: 'Tempo técnico',
+                    label: 'Quanto custa cada hora de trabalho? (R$/h)',
+                    categoria: 'Tempo de trabalho',
                     tipo: 'currency',
                     obrigatorio: true,
-                    placeholder: '0,00',
-                    help: 'Seus custos fixos de operação + pró-labore base divididos pelas horas faturáveis do mês.'
+                    placeholder: 'Ex: 40,00',
+                    help: 'Some os custos fixos do negócio e a retirada mensal desejada. Depois, divida pelas horas do mês que você consegue cobrar dos clientes. Esse valor será multiplicado pelo tempo informado acima.'
                 },
                 {
                     id: 'maoObraContratada',
-                    label: 'Mão de obra própria extra ou contratada',
-                    categoria: 'Execução e terceiros',
+                    label: 'Pagamento de ajudante ou profissional contratado',
+                    categoria: 'Ajuda na execução',
                     tipo: 'currency',
                     obrigatorio: false,
-                    placeholder: '0,00',
-                    help: 'Valor pago a assistentes, freelancers ou técnicos auxiliares neste atendimento específico.'
+                    placeholder: 'Ex: 50,00',
+                    help: 'Informe quanto você vai pagar a outra pessoa para ajudar neste serviço específico. Se fizer tudo sozinho e não houver pagamento extra, deixe em branco.'
                 },
                 {
                     id: 'deslocamento',
@@ -2546,10 +2546,10 @@
             },
             {
                 id: 'margemDesejada',
-                label: 'Margem de lucro desejada sobre o preço de venda (%)',
+                label: 'Quanto do preço de venda você quer manter como lucro? (%)',
                 obrigatorio: true,
-                placeholder: 'Ex: 25',
-                help: 'Percentual do preço final de venda que deve restar como lucro após pagar custos, taxas e impostos (diferente de markup sobre custo).'
+                placeholder: 'Ex: 20',
+                help: 'É a parte do preço final que deve sobrar como lucro estimado depois de pagar os custos, impostos e taxas informados. Exemplo: em uma venda de R$ 100, uma margem de 20% representa R$ 20 de lucro estimado. Não é o mesmo que markup.'
             }
         ];
 
@@ -2816,7 +2816,7 @@
             <div class="notice-bar">
                 <div>
                     <div class="notice-bar-text"><strong>Prévia de preço calculada</strong> com base nas informações preenchidas. Revise os valores antes de usar esta recomendação.</div>
-                    <div class="notice-bar-sub">A margem exibida considera o percentual sobre o preço de venda sugerido, e não sobre o custo.</div>
+                    <div class="notice-bar-sub">A margem é calculada sobre o preço de venda, não sobre o custo. Neste resultado, ${Formatter.percent(r.margemPlanejada)} de margem representam ${Formatter.brl(r.lucroEstimado)} de lucro estimado por ${Formatter.escapeHtml(w.unidade)}.</div>
                 </div>
             </div>
 
@@ -3078,16 +3078,19 @@
                             <div class="form-field">
                                 <label class="field-label" for="sim-cost-${f.id}">${f.label}</label>
                                 <input id="sim-cost-${f.id}" class="field-input mono" type="text" inputmode="decimal" data-sim-cost="${f.id}" value="${Formatter.escapeHtml(sim.costs[f.id] ?? '')}" placeholder="${f.placeholder}">
+                                <span class="field-help">${Formatter.escapeHtml(f.help)}</span>
                             </div>
                         `).join('')}
 
                         <div class="form-field">
-                            <label class="field-label" for="sim-taxas">Impostos e taxas totais (%)</label>
+                            <label class="field-label" for="sim-taxas">Impostos e taxas sobre a venda (%)</label>
                             <input id="sim-taxas" class="field-input mono" type="text" inputmode="decimal" value="${Formatter.escapeHtml(sim.taxasTotais)}" placeholder="Ex: 10">
+                            <span class="field-help">Some os percentuais cobrados sobre cada venda, como imposto, maquininha, comissão e taxa de aplicativo. Exemplo: 6% + 3% = 9%.</span>
                         </div>
                         <div class="form-field">
-                            <label class="field-label" for="sim-margem">Margem desejada (%)</label>
-                            <input id="sim-margem" class="field-input mono" type="text" inputmode="decimal" value="${Formatter.escapeHtml(sim.margemDesejada)}" placeholder="Ex: 25">
+                            <label class="field-label" for="sim-margem">Quanto você quer ganhar sobre o preço de venda? (%)</label>
+                            <input id="sim-margem" class="field-input mono" type="text" inputmode="decimal" value="${Formatter.escapeHtml(sim.margemDesejada)}" placeholder="Ex: 20">
+                            <span class="field-help">É a parte do preço que deve sobrar como lucro estimado. Exemplo: em R$ 100 de venda, 20% de margem representam R$ 20.</span>
                         </div>
                     </div>
 
@@ -3129,12 +3132,14 @@
                     </div>
                 </div>
 
-                <div class="kv-list" style="margin-bottom:20px;">
+                <div class="kv-list simulation-result-details" style="margin-bottom:14px;">
                     <div class="kv-row"><span class="kv-key">Custo total considerado</span><span class="kv-val mono">${Formatter.brl(res.custoTotal)}</span></div>
-                    <div class="kv-row"><span class="kv-key">Multiplicador (Markup)</span><span class="kv-val mono">${res.markup.toFixed(2)}x</span></div>
+                    <div class="kv-row"><span class="kv-key">Markup (multiplicador do custo)</span><span class="kv-val mono">${Formatter.multiplier(res.markup)}</span></div>
                     <div class="kv-row"><span class="kv-key">Impostos e taxas (${Formatter.percent(res.percentualImpostosTaxas)})</span><span class="kv-val mono" style="color:var(--color-warning);">${Formatter.brl(res.valorImpostosTaxas)}</span></div>
                     <div class="kv-row"><span class="kv-key">Lucro estimado (${Formatter.percent(res.margemPlanejada)})</span><span class="kv-val mono" style="color:var(--color-emerald);">${Formatter.brl(res.lucroEstimado)}</span></div>
                 </div>
+
+                <p class="simulation-result-explainer">A margem mostra quanto do preço de venda fica como lucro estimado. Já o markup mostra quantas vezes o custo foi multiplicado para chegar ao preço.</p>
 
                 <div style="display:flex;flex-direction:column;gap:10px;">
                     <button type="button" class="btn btn-primary" id="sim-promote-btn">Adicionar ao catálogo e salvar no histórico</button>
@@ -3645,14 +3650,15 @@
             </div>
 
             <div class="chat-layout">
-                <aside class="surface-card">
-                    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-                        <div class="nilo-avatar-box-sm">
-                            <img src="${UI.chatSending ? NILO_ASSETS.processando : NILO_ASSETS.apresentacao}" alt="Nilo Consultor IA" class="nilo-figure ${UI.chatSending ? '' : 'nilo-float'}" id="ai-nilo-avatar">
+                <aside class="surface-card nilo-profile-card">
+                    <div class="nilo-profile-heading">
+                        <div class="nilo-profile-avatar">
+                            <img src="${UI.chatSending ? NILO_ASSETS.processando : NILO_ASSETS.apresentacao}" alt="Nilo, assistente do ValorizAI" class="nilo-figure ${UI.chatSending ? '' : 'nilo-float'}" id="ai-nilo-avatar">
                         </div>
-                        <div>
-                            <div style="font-family:var(--font-display);font-weight:700;font-size:15px;">Nilo · Consultor</div>
-                            <div style="font-size:12px;color:var(--color-silver);">${ctx.setor && SETORES[ctx.setor] ? `Setor: <strong style="color:var(--color-cloud);">${SETORES[ctx.setor].nome}</strong>` : 'Consultas gerais e apoio a negócios'}</div>
+                        <div class="nilo-profile-copy">
+                            <h2>Nilo</h2>
+                            <span>Assistente do ValorizAI</span>
+                            <p>${ctx.setor && SETORES[ctx.setor] ? `Contexto atual: ${SETORES[ctx.setor].nome}` : 'Apoio para dúvidas sobre gestão, custos e decisões do negócio.'}</p>
                         </div>
                     </div>
 
