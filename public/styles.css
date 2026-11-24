@@ -2340,3 +2340,149 @@ label.field-label {
         display: none;
     }
 }
+
+
+/* Acessibilidade visual — escala tipográfica ligeiramente ampliada.
+   Mantém a hierarquia original e prioriza leitura em formulários, cards e tabelas. */
+body {
+    font-size: 15.5px;
+}
+
+.nav-item {
+    font-size: 15px;
+}
+
+.sidebar-business-name {
+    font-size: 14px;
+}
+
+.sidebar-business-meta,
+.topbar-date {
+    font-size: 13.5px;
+}
+
+.topbar-title {
+    font-size: 17px;
+}
+
+.page-heading {
+    font-size: 26px;
+}
+
+.page-display {
+    font-size: 34px;
+}
+
+.page-subtitle {
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.surface-card {
+    padding: 24px;
+}
+
+.card-title {
+    font-size: 20px;
+}
+
+.card-subtitle {
+    font-size: 14.5px;
+    line-height: 1.55;
+}
+
+.kpi-label {
+    font-size: 13.5px;
+    line-height: 1.45;
+}
+
+.kpi-value {
+    font-size: 26px;
+}
+
+.kpi-meta {
+    font-size: 13px;
+}
+
+.field-label {
+    font-size: 14.5px;
+    line-height: 1.45;
+}
+
+.field-input,
+.field-select,
+.field-textarea {
+    font-size: 15.5px;
+    min-height: 44px;
+}
+
+.field-help,
+.field-req {
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.btn {
+    font-size: 14.5px;
+}
+
+.data-table {
+    font-size: 14.5px;
+}
+
+.data-table th {
+    font-size: 13px;
+}
+
+.data-table td {
+    line-height: 1.5;
+}
+
+.kv-key,
+.kv-val {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Corrige o rótulo do setor na Identificação: o ícone acompanha o título,
+   em vez de ser distribuído ao centro/fim da linha. */
+.field-label:has(> .field-info) {
+    justify-content: flex-start !important;
+    gap: 5px;
+}
+
+/* Cards com mais respiro para leitura sem aumentar excessivamente a interface. */
+.kpi-card {
+    padding: 20px;
+}
+
+.simulation-result-explainer {
+    font-size: 13.5px;
+    line-height: 1.6;
+}
+
+@media (max-width: 680px) {
+    body {
+        font-size: 15px;
+    }
+
+    .main-viewport .page-heading {
+        font-size: 24px;
+    }
+
+    .main-viewport .page-display {
+        font-size: 30px;
+    }
+
+    .surface-card {
+        padding: 20px;
+    }
+
+    .card-title {
+        font-size: 18.5px;
+    }
+
+    .data-table {
+        font-size: 13.5px;
+    }
+}
