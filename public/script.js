@@ -4276,10 +4276,9 @@
                 setMobileDrawerOpen(!shell.classList.contains('mobile-drawer-open'));
                 return;
             }
-            if (shell.classList.contains('sidebar-collapsed')) {
-                setDesktopSidebarCollapsed(false);
-                saveSidebarPreference(false);
-            }
+            const collapsed = !shell.classList.contains('sidebar-collapsed');
+            setDesktopSidebarCollapsed(collapsed);
+            saveSidebarPreference(collapsed);
         });
         document.getElementById('sidebar-backdrop').addEventListener('click', () => setMobileDrawerOpen(false));
         loadSidebarPreference();
