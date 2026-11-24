@@ -2217,7 +2217,7 @@
                 fieldsBox.innerHTML = `
                     <div class="form-grid">
                         <div class="form-field form-field-full">
-                            <label class="field-label" for="wiz-catalog-select">Item do catálogo ${fieldRequiredMark(true)}</label>
+                            <label class="field-label" for="wiz-catalog-select"><span>Item do catálogo</span> ${fieldInfoIcon('Selecione o produto ou serviço que já está cadastrado. O ValorizAI usará os dados de identificação existentes para criar uma nova versão de precificação.')} ${fieldRequiredMark(true)}</label>
                             <select id="wiz-catalog-select" class="field-select">
                                 <option value="">Selecione um item...</option>
                                 ${activeCatalog.map(c => `<option value="${c.id}" ${w.catalogItemId === c.id ? 'selected' : ''}>${Formatter.escapeHtml(c.nome)} (${SETORES[c.setor]?.nome} · ${Formatter.escapeHtml(c.unidade)})</option>`).join('')}
@@ -2240,7 +2240,7 @@
             } else {
                 fieldsBox.innerHTML = `
                     <div style="margin-bottom:18px;">
-                        <div class="field-label" style="margin-bottom:8px;">Setor da operação ${fieldRequiredMark(true)}</div>
+                        <div class="field-label" style="margin-bottom:8px;"><span>Setor da operação</span> ${fieldInfoIcon('Escolha a atividade principal relacionada a este item: Comércio para revenda, Indústria para fabricação ou Serviços para trabalhos e atendimentos.')} ${fieldRequiredMark(true)}</div>
                         <div class="sector-selector-grid">
                             ${Object.values(SETORES).map(s => `
                                 <button type="button" class="sector-option ${w.setor === s.id ? 'active' : ''}" data-wiz-sector="${s.id}">
@@ -2252,17 +2252,17 @@
                     </div>
                     <div class="form-grid">
                         <div class="form-field">
-                            <label class="field-label" for="wiz-item-nome">Nome do produto ou serviço ${fieldRequiredMark(true)}</label>
+                            <label class="field-label" for="wiz-item-nome"><span>Nome do produto ou serviço</span> ${fieldInfoIcon('Digite o nome pelo qual você identifica e vende este item. Exemplo: Café especial 250 g ou Instalação elétrica residencial.')} ${fieldRequiredMark(true)}</label>
                             <input id="wiz-item-nome" class="field-input" type="text" value="${Formatter.escapeHtml(w.itemNome)}" placeholder="Ex: Café especial 250g ou Revisão elétrica">
                             <span class="field-error hidden" id="err-s1-nome"></span>
                         </div>
                         <div class="form-field">
-                            <label class="field-label" for="wiz-item-unidade">Unidade de comercialização ${fieldRequiredMark(true)}</label>
+                            <label class="field-label" for="wiz-item-unidade"><span>Unidade de comercialização</span> ${fieldInfoIcon('É a unidade usada para vender ou cobrar o item. Exemplos: Unidade, Caixa, Quilograma, Hora, Diária ou Projeto. Use a mesma unidade ao informar os custos e definir o preço.')} ${fieldRequiredMark(true)}</label>
                             <input id="wiz-item-unidade" class="field-input" type="text" value="${Formatter.escapeHtml(w.unidade || SETORES[w.setor].unidadePadrao)}" placeholder="Ex: Unidade, Hora, Projeto, Caixa">
                             <span class="field-error hidden" id="err-s1-unidade"></span>
                         </div>
                         <div class="form-field form-field-full">
-                            <label class="field-label" for="wiz-item-desc">Descrição complementar</label>
+                            <label class="field-label" for="wiz-item-desc"><span>Descrição complementar</span> ${fieldInfoIcon('Adicione detalhes que ajudem a diferenciar este item de outros parecidos, como tamanho, material, modelo ou tipo de atendimento. Este campo é opcional.')}</label>
                             <input id="wiz-item-desc" class="field-input" type="text" value="${Formatter.escapeHtml(w.descricao)}" placeholder="Detalhes que ajudam a diferenciar esta versão de preço">
                         </div>
                     </div>
