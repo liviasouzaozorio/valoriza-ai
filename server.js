@@ -484,6 +484,18 @@ app.post('/api/pricings', async (req,res) => {
     for(const key of numeric) if(b[key]!==undefined && b[key]!==null && (typeof b[key]!=='number'||!Number.isFinite(b[key]))) {
       return res.status(400).json({success:false,error:{code:'INVALID_PRICING_NUMBER',message:'Um dos valores numéricos da precificação é inválido.'}});
     }
+    const nonNegative=['custo_total','preco_sugerido','markup','direct_cost','allocated_fixed_cost'];
+    if(nonNegative.some(key => b[key] !== undefined && b[key] !== null && b[key] < 0) ||
+       (b.quantity !== undefined && b.quantity !== null && b.quantity <= 0)) {
+      return res.status(400).json({success:false,error:{code:'INVALID_PRICING_RANGE',message:'Custos, preço e markup não podem ser negativos; a quantidade deve ser maior que zero.'}});
+    }
+    const percentages=['impostos','margem_lucro','variable_expenses_percent','desired_margin_percent'];
+    if(percentages.some(key => b[key] !== undefined && b[key] !== null && (b[key] < 0 || b[key] >= 100))) {
+      return res.status(400).json({success:false,error:{code:'INVALID_PRICING_PERCENTAGE',message:'Percentuais de taxas e margem devem estar entre 0% e menos de 100%.'}});
+    }
+    if(b.setor !== undefined && b.setor !== null && !['comercio','industria','servicos'].includes(b.setor)) {
+      return res.status(400).json({success:false,error:{code:'INVALID_PRICING_SECTOR',message:'O segmento informado para a precificação é inválido.'}});
+    }
     if(!['full','quick'].includes(b.pricing_type)) return res.status(400).json({success:false,error:{code:'INVALID_PRICING_TYPE',message:'Tipo de precificação inválido.'}});
     if(!b.input_snapshot||typeof b.input_snapshot!=='object'||Array.isArray(b.input_snapshot)||
        !b.result_snapshot||typeof b.result_snapshot!=='object'||Array.isArray(b.result_snapshot)) {
