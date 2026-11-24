@@ -1479,7 +1479,7 @@
                     </div>
                     <div class="form-field">
                         <label class="field-label" for="biz-nome">Nome do negócio</label>
-                        <input id="biz-nome" class="field-input" type="text" value="${Formatter.escapeHtml(b.nomeNegocio)}" placeholder="Ex: Padaria Trigo & Cia ou Studio Silva">
+                        <input id="biz-nome" class="field-input" type="text" required maxlength="160" value="${Formatter.escapeHtml(b.nomeNegocio)}" placeholder="Ex: Padaria Trigo & Cia ou Studio Silva">
                     </div>
 
                     <div class="form-field">
@@ -1545,15 +1545,24 @@
             });
         });
 
-        document.getElementById('business-form').addEventListener('submit', e => {
+        document.getElementById('business-form').addEventListener('submit', async e => {
             e.preventDefault();
+            const form = e.currentTarget;
+            const submitButton = form.querySelector('button[type="submit"]');
+            const nomeNegocio = document.getElementById('biz-nome').value.trim();
             const margemMeta = Formatter.parseNumber(document.getElementById('biz-margem-meta').value);
+            if (!nomeNegocio) {
+                UI.toast('Informe o nome do negócio para continuar.', 'error');
+                document.getElementById('biz-nome').focus();
+                return;
+            }
             if (margemMeta !== null && (!Number.isFinite(margemMeta) || margemMeta < 0 || margemMeta >= 100)) {
                 UI.toast('Informe uma meta entre 0% e 99%, ou deixe o campo vazio.', 'error');
                 return;
             }
-            WorkspaceStore.state.business = {
-                nomeNegocio: document.getElementById('biz-nome').value.trim(),
+
+            const businessPayload = {
+                nomeNegocio,
                 empreendedor: document.getElementById('biz-empreendedor').value.trim(),
                 margemMeta,
                 segmento: selectedSegment,
@@ -1561,13 +1570,73 @@
                 regimeInformativo: document.getElementById('biz-regime').value.trim(),
                 descricao: document.getElementById('biz-descricao').value.trim(),
                 cidadeUf: document.getElementById('biz-cidade').value.trim(),
-                observacoes: document.getElementById('biz-obs').value.trim(),
-                atualizadoEm: new Date().toISOString()
+                observacoes: document.getElementById('biz-obs').value.trim()
             };
-            WorkspaceStore.save();
-            UI.updateChrome();
-            UI.renderCurrentView();
-            UI.toast('Perfil atualizado neste dispositivo.', 'success');
+            const config = window.VALORIZAI_CONFIG || {};
+            const authClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+            submitButton.disabled = true;
+            submitButton.textContent = 'Salvando…';
+
+            try {
+                const { data: sessionData, error: sessionError } = await authClient.auth.getSession();
+                const session = sessionData?.session;
+                if (sessionError || !session?.access_token) throw new Error('Sua sessão expirou. Entre novamente.');
+
+                const response = await fetch('/api/business/profile', {
+                    method: 'PATCH',
+                    headers: {
+                        Authorization: `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: businessPayload.nomeNegocio,
+                        sector: businessPayload.segmento || null,
+                        description: businessPayload.descricao || null,
+                        operating_model: businessPayload.modeloOperacao || null,
+                        target_margin_percent: businessPayload.margemMeta,
+                        additional_data: {
+                            entrepreneur_name: businessPayload.empreendedor || null,
+                            tax_regime: businessPayload.regimeInformativo || null,
+                            location_text: businessPayload.cidadeUf || null,
+                            notes: businessPayload.observacoes || null
+                        }
+                    })
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || !result.success || !result.data?.business) {
+                    throw new Error(result.error?.message || 'Não foi possível salvar seu perfil agora.');
+                }
+
+                const saved = result.data.business;
+                const additional = saved.additional_data || {};
+                WorkspaceStore.state.business = {
+                    ...WorkspaceStore.state.business,
+                    nomeNegocio: saved.name || '',
+                    empreendedor: additional.entrepreneur_name || '',
+                    margemMeta: saved.target_margin_percent ?? null,
+                    segmento: saved.sector === 'servicos' ? 'servico' : (saved.sector || ''),
+                    modeloOperacao: saved.operating_model || '',
+                    regimeInformativo: additional.tax_regime || '',
+                    descricao: saved.description || '',
+                    cidadeUf: additional.location_text || '',
+                    observacoes: additional.notes || '',
+                    atualizadoEm: saved.updated_at || new Date().toISOString()
+                };
+                const locallySaved = WorkspaceStore.save();
+                UI.updateChrome();
+                UI.renderCurrentView();
+                UI.toast(
+                    locallySaved
+                        ? 'Perfil salvo na sua conta.'
+                        : 'Perfil salvo na sua conta. Não foi possível atualizar a cópia deste navegador.',
+                    locallySaved ? 'success' : 'info'
+                );
+            } catch (error) {
+                UI.toast(error.message || 'Não foi possível salvar seu perfil. Tente novamente.', 'error');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Salvar informações';
+            }
         });
     }
 
