@@ -2996,13 +2996,17 @@ body {
     }
 }
 
-/* Evita que o botão de cadastro do catálogo fique sob o atalho flutuante do Nilo. */
-#main-viewport[data-view="catalogo"] > .page-header .page-header-actions {
+/* Reserva espaço para o atalho flutuante do Nilo nos cabeçalhos com ações à direita. */
+#main-viewport[data-view="catalogo"] > .page-header .page-header-actions,
+#main-viewport[data-view="precificacao"] > .page-header .page-header-actions,
+#main-viewport[data-view="historico"] > .page-header .page-header-actions {
     transform: translateX(-96px);
 }
 
 @media (max-width: 680px) {
-    #main-viewport[data-view="catalogo"] > .page-header .page-header-actions {
+    #main-viewport[data-view="catalogo"] > .page-header .page-header-actions,
+    #main-viewport[data-view="precificacao"] > .page-header .page-header-actions,
+    #main-viewport[data-view="historico"] > .page-header .page-header-actions {
         transform: translateX(-76px);
     }
 }
