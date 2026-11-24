@@ -442,7 +442,7 @@ app.patch('/api/products/:id', async (req,res) => {
     values.push(req.params.id,businessId);
     const result=await pool.query(
       `UPDATE public.products SET ${assignments.join(',')}
-       WHERE id = ${values.length-1} AND business_id = ${values.length}
+       WHERE id = $${values.length-1} AND business_id = $${values.length}
        RETURNING id,business_id,name,description,category,item_type,sector,unit,status,additional_data,created_at,updated_at`,values
     );
     if(!result.rows[0]) return res.status(404).json({success:false,error:{code:'PRODUCT_NOT_FOUND',message:'Item não encontrado.'}});
