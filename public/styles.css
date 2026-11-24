@@ -2230,3 +2230,101 @@ body, .app-shell, .main-viewport { color: var(--text-primary); }
         padding: 16px;
     }
 }
+
+
+/* Campos: dicas contextuais por ícone, sem texto permanente abaixo dos inputs. */
+.form-field > .field-label,
+label.field-label {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.field-info {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    color: #64748B;
+    cursor: help;
+    vertical-align: middle;
+    outline: none;
+}
+
+.field-info svg {
+    display: block;
+    width: 15px;
+    height: 15px;
+}
+
+.field-info:hover,
+.field-info:focus-visible {
+    color: #2875C5;
+}
+
+.field-info::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 9px);
+    z-index: 120;
+    width: max-content;
+    max-width: min(290px, calc(100vw - 48px));
+    padding: 9px 11px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 8px;
+    background: #19263A;
+    color: #F8FAFC;
+    box-shadow: 0 8px 24px rgba(15,23,42,.22);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    white-space: normal;
+    text-align: left;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, 4px);
+    transition: opacity .14s ease, transform .14s ease, visibility .14s ease;
+}
+
+.field-info:hover::after,
+.field-info:focus-visible::after,
+.field-info:focus::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+}
+
+.field-required {
+    display: inline-block;
+    color: #DC2626;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1;
+    margin-left: 1px;
+}
+
+/* Navegação desktop: a seta fica no menu aberto; o hamburger aparece no topo
+   somente quando o menu lateral está recolhido. */
+.app-shell.sidebar-collapsed .sidebar-collapse-btn {
+    display: none;
+}
+
+.app-shell.sidebar-collapsed .mobile-menu-btn {
+    display: inline-flex;
+}
+
+@media (max-width: 960px) {
+    .mobile-menu-btn {
+        display: inline-flex;
+    }
+
+    .sidebar-collapse-btn {
+        display: none;
+    }
+}
