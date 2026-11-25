@@ -881,103 +881,170 @@
 
     const ChartRenderer = {
         renderPriceEvolutionChart(container, pricings) {
-            if (!pricings.length) {
-                const message = 'Ainda não há precificações salvas para traçar a evolução ao longo do tempo.';
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <p class="empty-state-desc">${message}</p>
-                    </div>`;
-                return;
-            }
-
             const ordered = [...pricings].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm));
-            const priceValues = ordered.map(p => nullableFiniteNumber(p.precoSugerido));
-            const costValues = ordered.map(p => nullableFiniteNumber(p.custoTotal));
-            const validValues = [...priceValues, ...costValues].filter(value => value !== null && value >= 0);
-            if (!validValues.length) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <p class="empty-state-desc">Há registros no histórico, mas ainda não existem custos ou preços válidos para desenhar este gráfico.</p>
-                    </div>`;
+            const records = ordered.map(item => {
+                const price = nullableFiniteNumber(item.precoSugerido);
+                const cost = nullableFiniteNumber(item.custoTotal);
+                const date = new Date(item.criadoEm);
+                return {
+                    item,
+                    price: price !== null && price >= 0 ? price : null,
+                    cost: cost !== null && cost >= 0 ? cost : null,
+                    date: Number.isFinite(date.getTime()) ? date : null
+                };
+            });
+
+            if (!records.length) {
+                container.innerHTML = '<div class="empty-state"><p class="empty-state-desc">Ainda não há versões salvas para este produto ou serviço.</p></div>';
                 return;
             }
 
-            const width = 580;
-            const height = 240;
-            const pad = { top: 20, right: 24, bottom: 38, left: 72 };
+            const validValues = records.flatMap(record => [record.price, record.cost])
+                .filter(value => value !== null);
+            if (!validValues.length) {
+                container.innerHTML = '<div class="empty-state"><p class="empty-state-desc">Há versões salvas, mas ainda não existem preços ou custos válidos para desenhar este gráfico.</p></div>';
+                return;
+            }
+
+            const width = Math.max(340, Math.min(920, container.clientWidth || 580));
+            const height = 310;
+            const pad = { top: 24, right: 24, bottom: 58, left: 78 };
             const innerW = width - pad.left - pad.right;
             const innerH = height - pad.top - pad.bottom;
-            const maxVal = Math.max(...validValues, 10) * 1.15;
-            const stepX = ordered.length > 1 ? innerW / (ordered.length - 1) : innerW / 2;
-            const getX = idx => ordered.length > 1 ? pad.left + idx * stepX : pad.left + innerW / 2;
-            const getY = val => pad.top + innerH - (val / maxVal) * innerH;
-            const buildPath = values => {
+            const maxVal = Math.max(...validValues, 10) * 1.12;
+            const getX = index => records.length > 1
+                ? pad.left + index * (innerW / (records.length - 1))
+                : pad.left + innerW / 2;
+            const getY = value => pad.top + innerH - (value / maxVal) * innerH;
+            const makeLinePath = field => {
                 let path = '';
-                let activeSegment = false;
-                values.forEach((value, index) => {
-                    if (value === null || value < 0) {
-                        activeSegment = false;
-                        return;
-                    }
-                    path += `${activeSegment ? ' L' : ' M'} ${getX(index)},${getY(value)}`;
-                    activeSegment = true;
+                let active = false;
+                records.forEach((record, index) => {
+                    const value = record[field];
+                    if (value === null) { active = false; return; }
+                    path += (active ? ' L ' : ' M ') + getX(index) + ',' + getY(value);
+                    active = true;
                 });
                 return path.trim();
             };
-            const pricePath = buildPath(priceValues);
-            const costPath = buildPath(costValues);
-            const yTicks = [0, 0.33, 0.66, 1].map(ratio => ({
-                val: maxVal * ratio,
-                y: getY(maxVal * ratio)
-            }));
+
+            const areaPolygons = [];
+            for (let index = 0; index < records.length - 1; index++) {
+                const a = records[index], b = records[index + 1];
+                if (a.price === null || a.cost === null || b.price === null || b.cost === null) continue;
+                const x1 = getX(index), x2 = getX(index + 1);
+                const p1 = { x: x1, y: getY(a.price) }, c1 = { x: x1, y: getY(a.cost) };
+                const p2 = { x: x2, y: getY(b.price) }, c2 = { x: x2, y: getY(b.cost) };
+                const d1 = a.price - a.cost, d2 = b.price - b.cost;
+                const polygon = (points, color) => areaPolygons.push(
+                    '<polygon points="' + points.map(point => point.x + ',' + point.y).join(' ') +
+                    '" fill="' + color + '" fill-opacity="0.2" />'
+                );
+                if (d1 === 0 && d2 === 0) continue;
+                if (d1 === 0 || d2 === 0 || Math.sign(d1) === Math.sign(d2)) {
+                    polygon([p1, p2, c2, c1], d1 + d2 >= 0 ? '#55D6A0' : '#E87979');
+                } else {
+                    const ratio = d1 / (d1 - d2);
+                    const cross = {
+                        x: x1 + (x2 - x1) * ratio,
+                        y: getY(a.price + (b.price - a.price) * ratio)
+                    };
+                    polygon([p1, cross, cross, c1], d1 > 0 ? '#55D6A0' : '#E87979');
+                    polygon([cross, p2, c2, cross], d2 > 0 ? '#55D6A0' : '#E87979');
+                }
+            }
+
+            const dateKeys = records.map(record => record.date
+                ? record.date.getFullYear() + '-' + record.date.getMonth() + '-' + record.date.getDate()
+                : 'sem-data');
+            const dayCounts = dateKeys.reduce((counts, key) => {
+                counts[key] = (counts[key] || 0) + 1;
+                return counts;
+            }, {});
+            const labelFor = record => {
+                if (!record.date) return 'Data indisponível';
+                const dateLabel = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' }).format(record.date);
+                return dayCounts[dateKeys[records.indexOf(record)]] > 1
+                    ? dateLabel + ' ' + new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false }).format(record.date)
+                    : dateLabel;
+            };
+            const labelIndexes = new Set();
+            const maxLabels = Math.max(2, Math.floor(innerW / 76));
+            const labelStep = Math.max(1, Math.ceil(records.length / maxLabels));
+            records.forEach((record, index) => {
+                if (index % labelStep === 0 || index === records.length - 1) labelIndexes.add(index);
+            });
+            const yTicks = [0, 0.25, 0.5, 0.75, 1].map(ratio => {
+                const value = maxVal * ratio;
+                const y = getY(value);
+                return '<line x1="' + pad.left + '" y1="' + y + '" x2="' + (width - pad.right) + '" y2="' + y + '" stroke="rgba(168,181,199,0.16)" stroke-dasharray="3,3" />' +
+                    '<text x="' + (pad.left - 9) + '" y="' + (y + 4) + '" text-anchor="end" fill="#A8B5C7" font-size="11" font-family="JetBrains Mono, monospace">' + Formatter.brl(value) + '</text>';
+            }).join('');
+            const xLabels = [...labelIndexes].map(index =>
+                '<text x="' + getX(index) + '" y="' + (height - 18) + '" text-anchor="middle" fill="#A8B5C7" font-size="11" font-family="Inter, sans-serif">' +
+                Formatter.escapeHtml(labelFor(records[index])) + '</text>'
+            ).join('');
+            const pricePath = makeLinePath('price');
+            const costPath = makeLinePath('cost');
 
             container.innerHTML = `
-                <svg class="chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolução dos preços sugeridos e custos; valores ausentes não são representados como zero">
-                    ${yTicks.map(t => `
-                        <line x1="${pad.left}" y1="${t.y}" x2="${width - pad.right}" y2="${t.y}" stroke="rgba(168,181,199,0.12)" stroke-dasharray="3,3" />
-                        <text x="${pad.left - 8}" y="${t.y + 4}" text-anchor="end" fill="#A8B5C7" font-size="14.3" font-family="JetBrains Mono, monospace">${Formatter.brl(t.val)}</text>
-                    `).join('')}
-                    ${ordered.map((p, i) => {
-                        const x = getX(i);
-                        const price = priceValues[i];
-                        const cost = costValues[i];
-                        if (price === null || cost === null || price < 0 || cost < 0) return '';
-                        const spreadColor = price >= cost ? '#55D6A0' : '#E87979';
-                        return `<line x1="${x}" y1="${getY(price)}" x2="${x}" y2="${getY(cost)}" stroke="${spreadColor}" stroke-opacity="0.55" stroke-width="7" stroke-linecap="round" />`;
-                    }).join('')}
-                    ${pricePath ? `<path d="${pricePath}" fill="none" stroke="#3986D8" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round" />` : ''}
-                    ${costPath ? `<path d="${costPath}" fill="none" stroke="#A8B5C7" stroke-width="2.6" stroke-dasharray="6,4" stroke-linejoin="round" stroke-linecap="round" />` : ''}
-                    ${ordered.map((p, i) => {
-                        const x = getX(i);
-                        const price = priceValues[i];
-                        const cost = costValues[i];
-                        const label = Formatter.dateShort(p.criadoEm).slice(0, 5);
-                        return `
-                            <text x="${x}" y="${height - 12}" text-anchor="middle" fill="#A8B5C7" font-size="18.2" font-family="Inter, sans-serif">${label}</text>
-                            ${cost !== null && cost >= 0 ? `<circle cx="${x}" cy="${getY(cost)}" r="5.5" fill="#A8B5C7" stroke="#101827" stroke-width="1.5" />` : ''}
-                            ${price !== null && price >= 0 ? `<circle class="chart-point" data-idx="${i}" cx="${x}" cy="${getY(price)}" r="7" fill="#3986D8" stroke="#101827" stroke-width="2" style="cursor:pointer" />` : ''}
-                        `;
-                    }).join('')}
-                </svg>
-                <div class="chart-legend">
-                    ${priceValues.some(value => value !== null && value >= 0) ? '<span class="chart-legend-entry"><span class="legend-swatch" style="background:#3986D8"></span> Preço sugerido (R$)</span>' : '<span class="chart-legend-entry">Preço sugerido indisponível nos registros exibidos</span>'}
-                    ${costValues.some(value => value !== null && value >= 0) ? '<span class="chart-legend-entry"><span class="legend-swatch" style="background:#A8B5C7"></span> Custo total (R$)</span>' : '<span class="chart-legend-entry">Custo total indisponível nos registros exibidos</span>'}
-                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#55D6A0"></span> Faixa entre custo e preço (diferença bruta estimada; não é lucro líquido)</span>
+                <div class="analysis-evolution-chart-scroll">
+                    <svg class="chart-svg analysis-evolution-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolução do preço sugerido, custo total e margem bruta do item selecionado">
+                        ${yTicks}
+                        ${areaPolygons.join('')}
+                        ${pricePath ? '<path d="' + pricePath + '" fill="none" stroke="#3986D8" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />' : ''}
+                        ${costPath ? '<path d="' + costPath + '" fill="none" stroke="#A8B5C7" stroke-width="2.6" stroke-dasharray="7,5" stroke-linejoin="round" stroke-linecap="round" />' : ''}
+                        ${records.map((record, index) => {
+                            const x = getX(index);
+                            const pricePoint = record.price === null ? '' : '<circle class="analysis-evolution-point" data-idx="' + index + '" cx="' + x + '" cy="' + getY(record.price) + '" r="5.5" fill="#3986D8" stroke="#FFFFFF" stroke-width="1.5" tabindex="0" role="button" aria-label="Preço sugerido: ' + Formatter.brl(record.price) + '" />';
+                            const costPoint = record.cost === null ? '' : '<circle class="analysis-evolution-point" data-idx="' + index + '" cx="' + x + '" cy="' + getY(record.cost) + '" r="5" fill="#A8B5C7" stroke="#FFFFFF" stroke-width="1.5" tabindex="0" role="button" aria-label="Custo total: ' + Formatter.brl(record.cost) + '" />';
+                            return pricePoint + costPoint;
+                        }).join('')}
+                        ${xLabels}
+                    </svg>
                 </div>
+                <div class="chart-legend analysis-evolution-legend">
+                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#3986D8"></span> Preço sugerido</span>
+                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#A8B5C7"></span> Custo total (tracejado)</span>
+                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#55D6A0"></span> Margem positiva</span>
+                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#E87979"></span> Margem negativa</span>
+                </div>
+                <p class="analysis-evolution-note">Margem bruta = preço sugerido menos custo total; o percentual é calculado sobre o preço sugerido.</p>
             `;
 
-            container.querySelectorAll('.chart-point').forEach(dot => {
-                const item = ordered[Number(dot.dataset.idx)];
-                dot.addEventListener('mouseenter', e => {
-                    showChartTooltip(e, `
-                        <strong>${Formatter.escapeHtml(item.itemNome)} (v${item.versao})</strong><br>
-                        Preço sugerido: <span class="mono">${Formatter.brl(item.precoSugerido)}</span><br>
-                        Custo total: <span class="mono">${Formatter.brl(item.custoTotal)}</span><br>
-                        Lucro estimado: <span class="mono">${Formatter.brl(item.lucroEstimado)}</span> · Margem planejada: ${Formatter.percent(item.margemPlanejada)}
-                    `);
+            const tooltipFor = (record, event) => {
+                const grossMargin = record.price !== null && record.cost !== null ? record.price - record.cost : null;
+                const marginPercent = grossMargin !== null && record.price > 0 ? (grossMargin / record.price) * 100 : null;
+                const dateLabel = record.date
+                    ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(record.date)
+                    : 'Data indisponível';
+                showChartTooltip(event, `
+                    <strong>${Formatter.escapeHtml(record.item.itemNome || 'Item')} · v${record.item.versao}</strong><br>
+                    Data/hora: <span class="mono">${dateLabel}</span><br>
+                    Preço sugerido: <span class="mono">${record.price === null ? '—' : Formatter.brl(record.price)}</span><br>
+                    Custo total: <span class="mono">${record.cost === null ? '—' : Formatter.brl(record.cost)}</span><br>
+                    Margem bruta: <span class="mono">${grossMargin === null ? '—' : Formatter.brl(grossMargin)}</span><br>
+                    Margem bruta (%): <span class="mono">${marginPercent === null ? '—' : Formatter.percent(marginPercent)}</span>
+                `);
+            };
+            container.querySelectorAll('.analysis-evolution-point').forEach(point => {
+                const record = records[Number(point.dataset.idx)];
+                point.addEventListener('pointerenter', event => tooltipFor(record, event));
+                point.addEventListener('pointermove', event => tooltipFor(record, event));
+                point.addEventListener('pointerleave', hideChartTooltip);
+                point.addEventListener('click', event => tooltipFor(record, event));
+                point.addEventListener('focus', () => {
+                    const rect = point.getBoundingClientRect();
+                    tooltipFor(record, { clientX: rect.left + rect.width / 2, clientY: rect.top });
                 });
-                dot.addEventListener('mousemove', e => showChartTooltip(e, tooltipEl.innerHTML));
-                dot.addEventListener('mouseleave', hideChartTooltip);
+                point.addEventListener('blur', hideChartTooltip);
+                point.addEventListener('keydown', event => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        const rect = point.getBoundingClientRect();
+                        tooltipFor(record, { clientX: rect.left + rect.width / 2, clientY: rect.top });
+                    }
+                });
             });
         },
 
@@ -1332,6 +1399,7 @@
         catalogFilter: { search: '', sector: 'all', status: 'all' },
         historyFilter: { search: '', sector: 'all', sort: 'newest' },
         analysisSelectedItemId: 'all',
+        analysisEvolutionSelectedItemId: null,
         simulacaoResult: null,
         chatSending: false,
         niloOpen: false,
@@ -3565,6 +3633,21 @@
 
         const ordered = [...filteredPricings].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm));
         const latestFocus = ordered[ordered.length - 1];
+        const latestItem = [...itemsWithPricing].map(item => ({
+            item,
+            latest: activePricingRecords.filter(p => p.catalogItemId === item.id)
+                .sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm)).at(-1)
+        })).filter(entry => entry.latest)
+            .sort((a, b) => new Date(b.latest.criadoEm) - new Date(a.latest.criadoEm))[0]?.item;
+        let evolutionSelectedId = UI.analysisEvolutionSelectedItemId;
+        if (!itemsWithPricing.some(item => item.id === evolutionSelectedId)) {
+            evolutionSelectedId = latestItem?.id || itemsWithPricing[0]?.id || null;
+            UI.analysisEvolutionSelectedItemId = evolutionSelectedId;
+        }
+        const evolutionPricings = activePricingRecords
+            .filter(p => p.catalogItemId === evolutionSelectedId)
+            .sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm));
+        const evolutionItem = itemsWithPricing.find(item => item.id === evolutionSelectedId);
 
         body.innerHTML = `
             <div class="surface-card" style="margin-bottom:20px;">
@@ -3582,11 +3665,17 @@
 
             <div class="grid-2" style="margin-bottom:20px;">
                 <section class="surface-card">
-                    <div class="card-header">
-                        <div>
+                    <div class="card-header analysis-evolution-header">
+                        <div class="analysis-evolution-heading">
                             <h2 class="card-title">Evolução de preços e custos</h2>
-                            <p class="card-subtitle">${selectedId === 'all' ? 'Visão geral de todos os produtos e serviços ativos. Cada cor identifica um item.' : 'Comparativo cronológico das versões deste item.'}</p>
+                            <p class="card-subtitle">Preço sugerido, custo total e margem bruta por versão.</p>
                         </div>
+                        <label class="analysis-evolution-select-wrap" for="ana-evolution-item-select">
+                            <span>Produto ou serviço</span>
+                            <select id="ana-evolution-item-select" class="field-select" aria-label="Selecionar produto ou serviço para o gráfico">
+                                ${itemsWithPricing.map(item => `<option value="${Formatter.escapeHtml(item.id)}" ${evolutionSelectedId === item.id ? 'selected' : ''}>${Formatter.escapeHtml(item.nome)}</option>`).join('')}
+                            </select>
+                        </label>
                     </div>
                     <div id="ana-chart-evo"></div>
                 </section>
@@ -3654,11 +3743,18 @@
             renderAnalyses(root);
         });
 
+        ChartRenderer.renderPriceEvolutionChart(document.getElementById('ana-chart-evo'), evolutionPricings);
+        document.getElementById('ana-evolution-item-select').addEventListener('change', event => {
+            UI.analysisEvolutionSelectedItemId = event.target.value;
+            const selectedPricings = activePricingRecords
+                .filter(p => p.catalogItemId === UI.analysisEvolutionSelectedItemId)
+                .sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm));
+            ChartRenderer.renderPriceEvolutionChart(document.getElementById('ana-chart-evo'), selectedPricings);
+        });
+
         if (selectedId === 'all') {
-            ChartRenderer.renderPriceEvolutionOverviewChart(document.getElementById('ana-chart-evo'), activePricingRecords);
             document.getElementById('ana-chart-comp').innerHTML = '<div class="empty-state"><p class="empty-state-desc">A composição é exibida por item. Selecione um produto ou serviço para consultar sua versão mais recente.</p></div>';
         } else {
-            ChartRenderer.renderPriceEvolutionChart(document.getElementById('ana-chart-evo'), ordered);
             ChartRenderer.renderCostDistributionChart(document.getElementById('ana-chart-comp'), latestFocus.categoriasCusto, latestFocus.custoTotal);
         }
         ChartRenderer.renderPlannedMarginChart(document.getElementById('ana-chart-margin'), ordered, target);
