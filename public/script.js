@@ -4196,16 +4196,15 @@
             }
         });
         const shell = document.getElementById('app-shell');
-        const collapseButton = document.getElementById('sidebar-collapse-btn');
         const mobileMenuButton = document.getElementById('mobile-menu-btn');
         const isMobileNavigation = () => window.matchMedia('(max-width: 960px)').matches;
 
         const setDesktopSidebarCollapsed = (collapsed) => {
             shell.classList.toggle('sidebar-collapsed', collapsed);
             localStorage.setItem(STORAGE_KEYS.SIDEBAR, collapsed ? '1' : '0');
-            collapseButton.setAttribute('aria-expanded', String(!collapsed));
-            collapseButton.setAttribute('aria-label', collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral');
-            collapseButton.title = collapsed ? 'Expandir menu' : 'Recolher menu';
+            mobileMenuButton.setAttribute('aria-expanded', String(!collapsed));
+            mobileMenuButton.setAttribute('aria-label', collapsed ? 'Expandir menu' : 'Recolher menu');
+            mobileMenuButton.title = collapsed ? 'Expandir menu' : 'Recolher menu';
         };
 
         const setMobileDrawerOpen = (open) => {
@@ -4263,14 +4262,7 @@
             });
         });
 
-        // Desktop: controle único de expandir/recolher, com preferência sincronizada na conta.
-        collapseButton.addEventListener('click', () => {
-            const collapsed = !shell.classList.contains('sidebar-collapsed');
-            setDesktopSidebarCollapsed(collapsed);
-            saveSidebarPreference(collapsed);
-        });
-
-        // Mobile: o hamburger alterna abrir/fechar o drawer.
+        // O único controle da navegação é o hamburger da barra superior.
         mobileMenuButton.addEventListener('click', () => {
             if (isMobileNavigation()) {
                 setMobileDrawerOpen(!shell.classList.contains('mobile-drawer-open'));
