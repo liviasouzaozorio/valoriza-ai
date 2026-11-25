@@ -1040,7 +1040,7 @@
                     Data/hora: <span class="mono">${dateLabel}</span><br>
                     Preço sugerido: <span class="mono">${record.price === null ? '—' : Formatter.brl(record.price)}</span><br>
                     Custo total: <span class="mono">${record.cost === null ? '—' : Formatter.brl(record.cost)}</span><br>
-                    Markup: <span class="mono">${Formatter.multiplier(record.item.markup)}</span><br>
+                    Markup (preço ÷ custo): <span class="mono">${Formatter.multiplier(record.item.markup)}</span><br>
                     Margem bruta: <span class="mono">${grossMargin === null ? '—' : Formatter.brl(grossMargin)}</span> (${marginPercent === null ? '—' : Formatter.percent(marginPercent)})<br>
                     Margem planejada: <span class="mono">${formatNullablePercent(record.item.margemPlanejada)}</span><br>
                     Impostos e taxas: <span class="mono">${formatNullablePercent(record.item.percentualImpostosTaxas)}</span>
@@ -1646,7 +1646,7 @@
                                 ${recentPricings.length ? recentPricings.map(p => `
                                     <tr>
                                         <td>${Formatter.escapeHtml(p.itemNome)} <span class="mono" style="color:var(--color-silver);">v${p.versao}</span></td>
-                                        <td>${Formatter.dateShort(p.criadoEm)}</td>
+                                        <td>${Formatter.dateTime(p.criadoEm)}</td>
                                         <td class="num">${Formatter.brl(p.precoSugerido)}</td>
                                     </tr>
                                 `).join('') : '<tr><td colspan="3">Nenhuma precificação vinculada a item ativo.</td></tr>'}
@@ -3557,7 +3557,7 @@
                                     <td>${SETORES[p.setor]?.nome || p.setor}</td>
                                     <td class="num">${Formatter.brl(p.custoTotal)}</td>
                                     <td class="num" style="color:var(--color-emerald);font-weight:600;">${Formatter.brl(p.precoSugerido)}</td>
-                                    <td class="num">${Formatter.multiplier(p.markup)}</td>
+                                    <td class="num" title="Markup = preço sugerido dividido pelo custo total. Não é um percentual de margem.">${Formatter.multiplier(p.markup)}</td>
                                     <td class="num">${formatNullablePercent(getGrossMargin(p).percent)}</td>
                                     <td class="num" style="${target === null || p.margemPlanejada === null ? '' : `color:${p.margemPlanejada < target ? 'var(--color-warning)' : 'var(--color-emerald)'};`}">${formatNullablePercent(p.margemPlanejada)}</td>
                                     <td style="text-align:right;white-space:nowrap;">
@@ -3609,7 +3609,7 @@
                 <div class="kv-row"><span class="kv-key">Setor · Unidade</span><span class="kv-val">${sectorCfg?.nome || p.setor} · ${Formatter.escapeHtml(p.unidade)}</span></div>
                 <div class="kv-row"><span class="kv-key">Custo total unitário</span><span class="kv-val mono">${Formatter.brl(p.custoTotal)}</span></div>
                 <div class="kv-row"><span class="kv-key">Preço sugerido</span><span class="kv-val mono" style="color:var(--color-emerald);">${Formatter.brl(p.precoSugerido)}</span></div>
-                <div class="kv-row"><span class="kv-key">Markup</span><span class="kv-val mono">${Formatter.multiplier(p.markup)}</span></div>
+                <div class="kv-row"><span class="kv-key" title="Preço sugerido dividido pelo custo total; não representa margem percentual.">Markup (preço ÷ custo)</span><span class="kv-val mono">${Formatter.multiplier(p.markup)}</span></div>
                 <div class="kv-row"><span class="kv-key">Margem bruta</span><span class="kv-val mono">${formatNullablePercent(getGrossMargin(p).percent)} (${getGrossMargin(p).amount === null ? '—' : Formatter.brl(getGrossMargin(p).amount)})</span></div>
                 <div class="kv-row"><span class="kv-key">Margem planejada</span><span class="kv-val mono">${formatNullablePercent(p.margemPlanejada)}</span></div>
                 <div class="kv-row"><span class="kv-key">Impostos e taxas (${Formatter.percent(p.percentualImpostosTaxas)})</span><span class="kv-val mono">${Formatter.brl(p.valorImpostosTaxas)}</span></div>
