@@ -170,12 +170,6 @@ a {
     height: 26px;
 }
 
-.app-shell.sidebar-collapsed .sidebar-collapse-btn {
-    width: 26px;
-    height: 26px;
-    flex: 0 0 26px;
-}
-
 .sidebar-nav {
     flex: 1;
     overflow-y: auto;
@@ -2330,18 +2324,9 @@ label.field-label {
     margin-left: 1px;
 }
 
-/* O botão do topo permanece visível para permitir recolher e reabrir o menu. */
-.app-shell.sidebar-collapsed .sidebar-collapse-btn {
-    display: none;
-}
-
 @media (max-width: 960px) {
     .mobile-menu-btn {
         display: inline-flex;
-    }
-
-    .sidebar-collapse-btn {
-        display: none;
     }
 }
 
@@ -3006,13 +2991,3 @@ body {
     }
 }
 
-
-/* Correção definitiva: o controle do menu no topo fica sempre visível no desktop e mobile. */
-.topbar .topbar-left > #mobile-menu-btn {
-    display: inline-flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    flex: 0 0 38px;
-    position: relative;
-    z-index: 31;
-}
