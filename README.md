@@ -1,103 +1,79 @@
 <div align="center">
-  <img src="public/img-valorizaai/nilo/nilo-analisando.svg" alt="Mascote Nilo" width="180"/>
-  <br />
-  <img src="public/img-valorizaai/logos/valorizai-horizontal-gradient-dark.svg" alt="Logo" width="200"/>
-   <br />
-  
-  <p><b>Iniciação Científica: Sistema inteligente de markup para microempreendedores.</b></p>
-  <p><i>Plataforma de precificação, análise de dados e apoio à gestão logística com IA.</i></p>
+  <img src="public/img-valorizaai/nilo/nilo-analisando.svg" alt="Nilo" width="180"/>
+  <br/>
+  <img src="public/img-valorizaai/logos/valorizai-horizontal-gradient-dark.svg" alt="ValorizAI" width="200"/>
 
-  <p>
-  <img src="https://img.shields.io/badge/Power%20BI-F2C811?style=for-the-badge&logo=powerbi&logoColor=black" alt="Power BI">
-  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js">
-  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript">
-  <img src="https://img.shields.io/badge/Google%20AI%20Studio-8E75B2?style=for-the-badge&logo=google&logoColor=white" alt="Google AI Studio">
-  <img src="https://img.shields.io/badge/Tailwind%20CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
-</p>
+  <h3>Iniciação Científica: Plataforma inteligente de precificação para micro e pequenos negócios.</h3>
+  <p>Precificação, Business Intelligence e Inteligência Artificial aplicados à gestão empresarial.</p>
+
+  ![Power BI](https://img.shields.io/badge/Power%20BI-F2C811?style=for-the-badge&logo=powerbi&logoColor=black)
+  ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+  ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)
+  ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+  ![Gemini API](https://img.shields.io/badge/Gemini%20API-8E75B2?style=for-the-badge&logo=google&logoColor=white)
+  ![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 </div>
 
 ---
 
-## ⚡ Sobre o Projeto
+## Sobre o projeto
 
-O **Valoriza AI** é um projeto de **Iniciação Científica em desenvolvimento**, voltado à utilização de dados, Inteligência Artificial e análise de custos para apoiar a **precificação e a tomada de decisão de microempreendedores**.
+O **ValorizAI** é um projeto de Iniciação Científica que propõe uma plataforma de apoio à precificação e à gestão de micro e pequenos negócios.
 
-A solução combina análise operacional e automação para transformar informações financeiras e logísticas em **indicadores e insights úteis para o negócio**.
+A solução busca transformar dados financeiros e operacionais em informações que auxiliem empreendedores na compreensão de seus custos, formação de preços e tomada de decisões.
 
-O projeto conta com uma **calculadora inteligente de markup**, que considera custos fixos, custos variáveis e margem de lucro para auxiliar na definição de preços e na redução de erros de precificação.
+A proposta contempla negócios dos segmentos de comércio, indústria e serviços.
 
-Além da análise de custos, a plataforma integra **Google AI Studio (Gemini API)** para oferecer um assistente especializado em logística, apoiando dúvidas e decisões relacionadas a **fretes, embalagens, custos operacionais e supply chain**.
+## Business Intelligence & Analytics
 
----
+O projeto envolve organização, análise e visualização de dados para apoiar decisões empresariais.
 
-## 📊 Dados & Analytics
+- Utilização de Power BI nas atividades de análise e visualização de dados.
+- Estruturação de indicadores relacionados à precificação.
+- Análise de custos, margens e resultados planejados.
+- Organização de informações para acompanhamento gerencial.
 
-O projeto também envolve a construção de um fluxo de dados para transformar informações brutas em dados estruturados para análise.
+## Funcionalidades definidas
 
-Atualmente, o desenvolvimento contempla:
+- **Cadastro:** cada empreendedor possui uma conta e um negócio associado.
+- **Catálogo:** cadastro e gerenciamento de produtos e serviços.
+- **Precificação:** cálculo estruturado considerando custos, taxas e margem desejada.
+- **Histórico:** preservação das versões anteriores de precificação.
+- **Simulação rápida:** teste temporário de cenários, sem registro automático no histórico.
+- **Dashboards:** indicadores e gráficos baseados nos dados disponíveis.
+- **Nilo:** assistente de IA para explicar conceitos, interpretar resultados e oferecer recomendações contextualizadas.
 
-- 🔄 **Pipeline de Dados** com Node.js e PostgreSQL
-- 🧹 **Limpeza e validação de dados**
-- 🔀 **Transformação e organização de datasets**
-- 📈 **Monitoramento de KPIs**
-- 📊 **Dashboards interativos no Power BI**
-- 🤖 **Integração de IA para geração de análises e diagnósticos**
-- 💡 **Identificação de informações relevantes para apoio à decisão**
+## Arquitetura e tecnologias
 
----
+- **Frontend:** JavaScript e Tailwind CSS.
+- **Backend:** Node.js e Express.
+- **Banco de dados:** PostgreSQL e Supabase.
+- **Autenticação:** Supabase Auth.
+- **Inteligência Artificial:** Gemini API.
+- **Business Intelligence:** Power BI.
+- **Versionamento:** Git e GitHub.
 
-## ⚙️ Funcionalidades
+## Regras importantes do sistema
 
-- 📟 **Calculadora Inteligente de Markup**  
-  Automação da precificação com base em custos, margem de lucro e equilíbrio financeiro.
+- O motor de precificação é responsável pelos cálculos oficiais.
+- O Nilo não cria nem altera precificações oficiais por conta própria.
+- Simulações rápidas não entram automaticamente no histórico.
+- O histórico de preços anteriores deve ser preservado.
+- Indicadores devem ser calculados a partir de dados disponíveis, sem inventar informações de vendas ou faturamento.
 
-- 📊 **Análise de Dados e KPIs**  
-  Estruturação e visualização de informações para acompanhamento de indicadores e identificação de oportunidades.
+## Status do projeto
 
-- 📈 **Dashboard no Power BI**  
-  Visualização interativa de métricas para facilitar a interpretação dos dados e apoiar decisões.
+**Em desenvolvimento.**
 
-- 🤖 **Assistente Logístico com IA**  
-  Suporte inteligente para dúvidas sobre transporte, fretes, embalagens, custos operacionais e supply chain através da Gemini API.
+A implementação está sendo organizada progressivamente, priorizando autenticação, estrutura de dados, cadastro empresarial, catálogo, precificação, histórico, dashboards e integração do consultor de IA.
 
-- 🔄 **Pipeline de Dados**  
-  Processo de limpeza, validação e transformação de dados para geração de informações mais confiáveis para análise.
+## Objetivo
 
----
-
-## 🛠️ Tecnologias
-
-- **JavaScript**
-- **Node.js**
-- **PostgreSQL**
-- **Power BI**
-- **Google AI Studio / Gemini API**
-- **Tailwind CSS**
-- **Git**
+Desenvolver uma ferramenta acessível que ajude micro e pequenos empreendedores a compreender seus custos, estruturar preços e utilizar dados para tomar decisões mais conscientes.
 
 ---
 
-## 🚧 Status do Projeto
-
-🟡 **Em desenvolvimento**
-
-O projeto está sendo desenvolvido continuamente como parte de uma **Iniciação Científica**, com evolução das funcionalidades de análise de dados, dashboards, automação e inteligência artificial.
-
----
-
-## 🎯 Objetivo
-
-Desenvolver uma solução acessível que ajude **microempreendedores a transformar dados financeiros e operacionais em informações úteis para precificação, análise e tomada de decisão**, aproximando tecnologia, dados e gestão logística.
-
-
-## 🔐 Configuração de preferências da interface
-
-A preferência de recolhimento da navegação é salva por usuário autenticado.
-
-1. Configure no ambiente do servidor `SUPABASE_URL` e `SUPABASE_ANON_KEY` (a mesma URL/chave pública configurada no frontend).
-2. Configure `DATABASE_URL` para o PostgreSQL do projeto.
-3. Execute as migrations do diretório `supabase/migrations` no banco Supabase.
-4. Reinicie o servidor.
-
-A API valida o access token consultando o Supabase Auth antes de ler ou gravar a preferência. A migration cria `public.user_preferences` com RLS e políticas limitadas ao próprio usuário. Não use a chave `service_role` no navegador.
+<div align="center">
+  <strong>ValorizAI</strong><br/>
+  Inteligência para decisões de preço.
+</div>
