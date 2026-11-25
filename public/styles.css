@@ -2991,3 +2991,39 @@ body {
     }
 }
 
+
+
+/* Ajustes responsivos dos cabeçalhos e ações reposicionados em telas pequenas. */
+@media (max-width: 680px) {
+    #main-viewport[data-view="catalogo"] > .page-header .page-header-actions,
+    #main-viewport[data-view="precificacao"] > .page-header .page-header-actions,
+    #main-viewport[data-view="historico"] > .page-header .page-header-actions {
+        width: 100%;
+        max-width: 100%;
+        margin-left: 0;
+        transform: none;
+        justify-content: stretch;
+    }
+
+    #main-viewport[data-view="catalogo"] > .page-header,
+    #main-viewport[data-view="precificacao"] > .page-header,
+    #main-viewport[data-view="historico"] > .page-header {
+        align-items: stretch;
+    }
+
+    #main-viewport[data-view="catalogo"] > .page-header .page-header-actions .btn,
+    #main-viewport[data-view="precificacao"] > .page-header .page-header-actions .btn,
+    #main-viewport[data-view="historico"] > .page-header .page-header-actions .btn {
+        width: 100%;
+        max-width: 100%;
+        white-space: normal;
+        text-align: center;
+    }
+
+    #main-viewport[data-view="precificacao"] > .page-header .page-header-actions #wiz-reset-btn {
+        min-height: 42px;
+        padding: 10px 14px;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+}
