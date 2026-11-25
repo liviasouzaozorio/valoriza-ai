@@ -4276,6 +4276,7 @@
         loadSidebarPreference();
 
         // Nilo é global: abrir o painel preserva a tela atual.
+        const niloLauncher = document.getElementById('nilo-launcher');
         const niloFab = document.getElementById('nilo-fab');
         const niloHelpBubble = document.getElementById('nilo-help-bubble');
         const niloPanel = document.getElementById('nilo-panel');
@@ -4283,6 +4284,7 @@
         const closeNilo = () => {
             UI.niloOpen = false;
             niloPanel.hidden = true;
+            niloLauncher.hidden = false;
             niloFab.setAttribute('aria-expanded', 'false');
             niloHelpBubble.hidden = false;
         };
@@ -4315,6 +4317,7 @@
         const openNilo = () => {
             UI.niloOpen = true;
             niloPanel.hidden = false;
+            niloLauncher.hidden = true;
             niloFab.setAttribute('aria-expanded', 'true');
             niloHelpBubble.hidden = true;
             renderConsultor(niloPanelContent);
