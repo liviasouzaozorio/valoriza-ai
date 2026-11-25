@@ -3123,3 +3123,51 @@ body {
         margin-right: 70px;
     }
 }
+
+
+/* Custos e rentabilidade — leitura do histórico e orientação do escopo da composição. */
+#main-viewport[data-view="analises"] .analysis-table-scroll-hint {
+    margin: 0 0 9px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.45;
+}
+#main-viewport[data-view="analises"] .analysis-history-table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: #8DA3BD #E8EEF5;
+    -webkit-overflow-scrolling: touch;
+}
+#main-viewport[data-view="analises"] .analysis-history-table-wrap .data-table {
+    width: 100%;
+    min-width: 760px;
+}
+#main-viewport[data-view="analises"] .analysis-history-table-wrap .data-table th,
+#main-viewport[data-view="analises"] .analysis-history-table-wrap .data-table td {
+    padding-left: 9px;
+    padding-right: 9px;
+}
+#main-viewport[data-view="analises"] .analysis-history-table-wrap .data-table th:first-child,
+#main-viewport[data-view="analises"] .analysis-history-table-wrap .data-table td:first-child {
+    min-width: 150px;
+}
+#main-viewport[data-view="analises"] .analysis-history-table-wrap::-webkit-scrollbar {
+    height: 10px;
+}
+#main-viewport[data-view="analises"] .analysis-history-table-wrap::-webkit-scrollbar-track {
+    background: #E8EEF5;
+    border-radius: 999px;
+}
+#main-viewport[data-view="analises"] .analysis-history-table-wrap::-webkit-scrollbar-thumb {
+    background: #8DA3BD;
+    border: 2px solid #E8EEF5;
+    border-radius: 999px;
+}
+@media (max-width: 680px) {
+    #main-viewport[data-view="analises"] .analysis-history-table-wrap .data-table {
+        min-width: 720px;
+    }
+}
