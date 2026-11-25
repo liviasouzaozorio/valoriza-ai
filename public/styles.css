@@ -3027,3 +3027,9 @@ body {
         overflow-wrap: anywhere;
     }
 }
+
+
+/* Mantém o launcher do Nilo oculto enquanto o painel de conversa estiver aberto. */
+.nilo-launcher[hidden] {
+    display: none;
+}
