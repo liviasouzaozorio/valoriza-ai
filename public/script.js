@@ -2204,19 +2204,31 @@
                                 <th>Data</th>
                                 <th class="num">Custo</th>
                                 <th class="num">Preço</th>
-                                <th class="num">Margem</th>
+                                <th class="num" title="Percentual definido como objetivo na formação do preço. Não é a margem bruta calculada sobre o preço de venda.">Margem planejada</th>
+                                <th class="num" title="(Preço sugerido − Custo total) ÷ Preço sugerido.">Margem bruta</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${itemPricings.map(p => `
-                                <tr>
-                                    <td class="mono">v${p.versao}</td>
-                                    <td>${Formatter.dateShort(p.criadoEm)}</td>
-                                    <td class="num">${Formatter.brl(p.custoTotal)}</td>
-                                    <td class="num" style="color:var(--color-emerald);font-weight:600;">${Formatter.brl(p.precoSugerido)}</td>
-                                    <td class="num">${Formatter.percent(p.margemPlanejada)}</td>
-                                </tr>
-                            `).join('')}
+                            ${itemPricings.map(p => {
+                                const price = nullableFiniteNumber(p.precoSugerido);
+                                const cost = nullableFiniteNumber(p.custoTotal);
+                                const grossMargin = price !== null && price > 0 && cost !== null
+                                    ? ((price - cost) / price) * 100
+                                    : null;
+                                const grossMarginColor = grossMargin === null
+                                    ? 'var(--text-secondary)'
+                                    : (grossMargin >= 0 ? '#55D6A0' : '#E87979');
+                                return `
+                                    <tr>
+                                        <td class="mono">v${p.versao}</td>
+                                        <td>${Formatter.dateShort(p.criadoEm)}</td>
+                                        <td class="num">${Formatter.brl(p.custoTotal)}</td>
+                                        <td class="num" style="color:var(--color-emerald);font-weight:600;">${Formatter.brl(p.precoSugerido)}</td>
+                                        <td class="num" title="Percentual planejado na formação do preço">${Formatter.percent(p.margemPlanejada)}</td>
+                                        <td class="num mono" style="color:${grossMarginColor};font-weight:600;" title="Margem bruta = (preço sugerido − custo total) ÷ preço sugerido">${grossMargin === null ? '—' : Formatter.percent(grossMargin)}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
