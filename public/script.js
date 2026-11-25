@@ -33,11 +33,36 @@
         return Number.isFinite(parsed) ? parsed : null;
     }
 
+    function getGrossMargin(pricing) {
+        const price = nullableFiniteNumber(pricing?.precoSugerido);
+        const cost = nullableFiniteNumber(pricing?.custoTotal);
+        if (price === null || cost === null || price <= 0) return { amount: null, percent: null };
+        const amount = price - cost;
+        return { amount, percent: (amount / price) * 100 };
+    }
+
+    function formatNullablePercent(value) {
+        const parsed = nullableFiniteNumber(value);
+        return parsed === null ? '—' : Formatter.percent(parsed);
+    }
+
     function mapPricingFromApi(row) {
         const input = row.input_snapshot || {};
         const snapshot = row.result_snapshot || {};
         const serverResult = snapshot.server_calculation || {};
         const extra = snapshot.ui_record || snapshot;
+        const isServerCalculation = row.calculation_version === 'server-v1' ||
+            serverResult.calculationVersion === 'server-v1';
+        const cost = nullableFiniteNumber(row.custo_total ?? extra.custoTotal);
+        const price = nullableFiniteNumber(row.preco_sugerido ?? extra.precoSugerido);
+        // Registros legados sem snapshot/versionamento não comprovam que margem_lucro
+        // representa margem planejada. Só confiamos em campos explicitamente semânticos.
+        const plannedMargin = nullableFiniteNumber(
+            row.desired_margin_percent ??
+            serverResult.margemPlanejada ??
+            (isServerCalculation ? (extra.margemPlanejada ?? row.margem_lucro) : null)
+        );
+        const grossMargin = getGrossMargin({ precoSugerido: price, custoTotal: cost });
         return {
             id: String(row.id),
             catalogItemId: row.product_id || '',
@@ -46,11 +71,13 @@
             setor: row.setor === 'servicos' ? 'servico' : (row.setor || input.sector || 'comercio'),
             unidade: row.unit || '',
             criadoEm: row.data_criacao,
-            custoTotal: nullableFiniteNumber(row.custo_total ?? extra.custoTotal),
-            precoSugerido: nullableFiniteNumber(row.preco_sugerido ?? extra.precoSugerido),
+            custoTotal: cost,
+            precoSugerido: price,
             markup: nullableFiniteNumber(row.markup ?? extra.markup),
-            margemPlanejada: nullableFiniteNumber(row.margem_lucro ?? extra.margemPlanejada),
-            percentualImpostosTaxas: nullableFiniteNumber(row.impostos ?? extra.percentualImpostosTaxas),
+            margemBrutaValor: grossMargin.amount,
+            margemBruta: grossMargin.percent,
+            margemPlanejada: plannedMargin,
+            percentualImpostosTaxas: nullableFiniteNumber(row.variable_expenses_percent ?? row.impostos ?? serverResult.percentualImpostosTaxas ?? extra.percentualImpostosTaxas),
             valorImpostosTaxas: nullableFiniteNumber(serverResult.valorImpostosTaxas ?? extra.valorImpostosTaxas),
             lucroEstimado: nullableFiniteNumber(serverResult.lucroEstimado ?? extra.lucroEstimado),
             fonteCalculo: row.calculation_version || serverResult.calculationVersion || extra.fonteCalculo || 'persistido',
@@ -954,19 +981,9 @@
                 }
             }
 
-            const dateKeys = records.map(record => record.date
-                ? record.date.getFullYear() + '-' + record.date.getMonth() + '-' + record.date.getDate()
-                : 'sem-data');
-            const dayCounts = dateKeys.reduce((counts, key) => {
-                counts[key] = (counts[key] || 0) + 1;
-                return counts;
-            }, {});
-            const labelFor = record => {
-                if (!record.date) return 'Data indisponível';
-                const dateLabel = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' }).format(record.date);
-                return dayCounts[dateKeys[records.indexOf(record)]] > 1
-                    ? dateLabel + ' ' + new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false }).format(record.date)
-                    : dateLabel;
+            const labelFor = (record, index) => {
+                const version = Number(record.item.versao);
+                return Number.isInteger(version) && version > 0 ? 'V' + version : 'Registro ' + (index + 1);
             };
             const labelIndexes = new Set();
             const maxLabels = Math.max(2, Math.floor(innerW / 76));
@@ -982,7 +999,7 @@
             }).join('');
             const xLabels = [...labelIndexes].map(index =>
                 '<text x="' + getX(index) + '" y="' + (height - 18) + '" text-anchor="middle" fill="#A8B5C7" font-size="11" font-family="Inter, sans-serif">' +
-                Formatter.escapeHtml(labelFor(records[index])) + '</text>'
+                Formatter.escapeHtml(labelFor(records[index], index)) + '</text>'
             ).join('');
             const pricePath = makeLinePath('price');
             const costPath = makeLinePath('cost');
@@ -1006,10 +1023,10 @@
                 <div class="chart-legend analysis-evolution-legend">
                     <span class="chart-legend-entry"><span class="legend-swatch" style="background:#3986D8"></span> Preço sugerido</span>
                     <span class="chart-legend-entry"><span class="legend-swatch" style="background:#A8B5C7"></span> Custo total (tracejado)</span>
-                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#55D6A0"></span> Margem positiva</span>
-                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#E87979"></span> Margem negativa</span>
+                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#55D6A0"></span> Margem bruta positiva</span>
+                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#E87979"></span> Margem bruta negativa</span>
                 </div>
-                <p class="analysis-evolution-note">Margem bruta = preço sugerido menos custo total; o percentual é calculado sobre o preço sugerido.</p>
+                <p class="analysis-evolution-note">Eixo horizontal por versão. A área verde/vermelha mostra a diferença entre preço e custo (margem bruta), não o lucro líquido.</p>
             `;
 
             const tooltipFor = (record, event) => {
@@ -1019,12 +1036,14 @@
                     ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(record.date)
                     : 'Data indisponível';
                 showChartTooltip(event, `
-                    <strong>${Formatter.escapeHtml(record.item.itemNome || 'Item')} · v${record.item.versao}</strong><br>
+                    <strong>${Formatter.escapeHtml(record.item.itemNome || 'Item')} · V${record.item.versao}</strong><br>
                     Data/hora: <span class="mono">${dateLabel}</span><br>
                     Preço sugerido: <span class="mono">${record.price === null ? '—' : Formatter.brl(record.price)}</span><br>
                     Custo total: <span class="mono">${record.cost === null ? '—' : Formatter.brl(record.cost)}</span><br>
-                    Margem bruta: <span class="mono">${grossMargin === null ? '—' : Formatter.brl(grossMargin)}</span><br>
-                    Margem bruta (%): <span class="mono">${marginPercent === null ? '—' : Formatter.percent(marginPercent)}</span>
+                    Markup: <span class="mono">${Formatter.multiplier(record.item.markup)}</span><br>
+                    Margem bruta: <span class="mono">${grossMargin === null ? '—' : Formatter.brl(grossMargin)}</span> (${marginPercent === null ? '—' : Formatter.percent(marginPercent)})<br>
+                    Margem planejada: <span class="mono">${formatNullablePercent(record.item.margemPlanejada)}</span><br>
+                    Impostos e taxas: <span class="mono">${formatNullablePercent(record.item.percentualImpostosTaxas)}</span>
                 `);
             };
             container.querySelectorAll('.analysis-evolution-point').forEach(point => {
@@ -1179,8 +1198,7 @@
         },
 
         renderPlannedMarginChart(container, pricings, targetMargin) {
-            // Seleciona primeiro a última versão de cada item; uma margem ausente na versão atual
-            // não pode fazer o gráfico reutilizar silenciosamente a margem de uma versão antiga.
+            // Seleciona a última versão de cada item; margem ausente não herda valor antigo.
             const latestByItem = new Map();
             [...pricings].sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm)).forEach(p => {
                 latestByItem.set(getPricingItemKey(p), p);
@@ -1194,40 +1212,54 @@
             if (!rows.length) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <p class="empty-state-desc">Nenhuma margem planejada válida disponível nas últimas versões dos itens ativos. Confira os dados antes de comparar com a meta.</p>
+                        <p class="empty-state-desc">Nenhuma margem planejada válida disponível nas últimas versões dos itens ativos. Registros antigos sem informação suficiente aparecem como indisponíveis.</p>
                     </div>`;
                 return;
             }
 
             const parsedTarget = nullableFiniteNumber(targetMargin);
             const hasTarget = parsedTarget !== null && parsedTarget >= 0 && parsedTarget < 100;
-            const maxMargin = Math.max(hasTarget ? parsedTarget : 0, ...rows.map(r => Number(r.margemPlanejada)), 40);
+            if (!hasTarget) {
+                container.innerHTML = `
+                    <div style="display:flex;flex-direction:column;gap:12px;">
+                        ${rows.map(r => `
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:var(--border-hairline);">
+                                <span style="color:var(--color-cloud);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${Formatter.escapeHtml(r.itemNome)}</span>
+                                <strong class="mono" style="color:var(--color-blue);white-space:nowrap;">${Formatter.percent(r.margemPlanejada)}</strong>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <p class="chart-legend">Valores informativos, sem barra de progresso porque não existe uma meta definida para servir de referência.</p>
+                `;
+                return;
+            }
 
+            const maxMargin = Math.max(parsedTarget, ...rows.map(r => Number(r.margemPlanejada)), 1);
             container.innerHTML = `
                 <div style="display:flex;flex-direction:column;gap:14px;">
                     ${rows.map(r => {
-                        const belowTarget = hasTarget && Number(r.margemPlanejada) < parsedTarget;
-                        const color = !hasTarget ? 'var(--color-blue)' : (belowTarget ? 'var(--color-warning)' : 'var(--color-emerald)');
-                        const barW = Math.min(100, Math.max(4, (r.margemPlanejada / maxMargin) * 100));
-                        const targetPos = hasTarget ? Math.min(100, (parsedTarget / maxMargin) * 100) : null;
+                        const belowTarget = Number(r.margemPlanejada) < parsedTarget;
+                        const color = belowTarget ? 'var(--color-warning)' : 'var(--color-emerald)';
+                        const barW = Math.min(100, Math.max(0, (r.margemPlanejada / maxMargin) * 100));
+                        const targetPos = Math.min(100, (parsedTarget / maxMargin) * 100);
                         return `
                             <div>
                                 <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:5px;font-size:16.9px;">
                                     <span style="color:var(--color-cloud);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${Formatter.escapeHtml(r.itemNome)}</span>
-                                    <span class="mono" style="color:${color};font-weight:600;">${Formatter.percent(r.margemPlanejada)} ${!hasTarget ? '· Meta não definida' : (belowTarget ? '· Abaixo da meta' : '· Na meta')}</span>
+                                    <span class="mono" style="color:${color};font-weight:600;">${Formatter.percent(r.margemPlanejada)} · ${belowTarget ? 'Abaixo da meta' : 'Na meta ou acima'}</span>
                                 </div>
                                 <div style="position:relative;height:10px;border-radius:999px;background:var(--color-midnight);border:var(--border-hairline);">
                                     <div class="chart-bar-anim" style="width:${barW}%;height:100%;background:${color};border-radius:999px;"></div>
-                                    ${hasTarget ? `<div title="Meta: ${Formatter.percent(parsedTarget, 0)}" style="position:absolute;top:-3px;bottom:-3px;left:${targetPos}%;width:2px;background:var(--color-cloud);opacity:0.65;"></div>` : ''}
+                                    <div title="Meta: ${Formatter.percent(parsedTarget, 0)}" style="position:absolute;top:-3px;bottom:-3px;left:${targetPos}%;width:2px;background:var(--color-cloud);opacity:0.75;"></div>
                                 </div>
                             </div>
                         `;
                     }).join('')}
                 </div>
-                ${hasTarget ? `<div class="chart-legend">
-                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#55D6A0"></span> Margem planejada dentro da meta</span>
+                <div class="chart-legend">
+                    <span class="chart-legend-entry"><span class="legend-swatch" style="background:#55D6A0"></span> Margem planejada dentro ou acima da meta</span>
                     <span class="chart-legend-entry"><span class="legend-swatch" style="background:#F59E0B"></span> Abaixo da meta (${Formatter.percent(parsedTarget, 0)})</span>
-                </div>` : '<p class="chart-legend">Defina uma meta de margem em Meu negócio para ativar a comparação.</p>'}
+                </div>
             `;
         }
     };
@@ -3206,7 +3238,9 @@
             custoTotal: nullableFiniteNumber(saved.custo_total),
             precoSugerido: nullableFiniteNumber(saved.preco_sugerido),
             markup: nullableFiniteNumber(saved.markup),
-            margemPlanejada: nullableFiniteNumber(saved.margem_lucro),
+            margemBrutaValor: getGrossMargin({ precoSugerido: saved.preco_sugerido, custoTotal: saved.custo_total }).amount,
+            margemBruta: getGrossMargin({ precoSugerido: saved.preco_sugerido, custoTotal: saved.custo_total }).percent,
+            margemPlanejada: nullableFiniteNumber(saved.desired_margin_percent ?? saved.margem_lucro),
             percentualImpostosTaxas: nullableFiniteNumber(saved.impostos),
             valorImpostosTaxas: nullableFiniteNumber(authoritative.valorImpostosTaxas),
             lucroEstimado: nullableFiniteNumber(authoritative.lucroEstimado),
@@ -3509,6 +3543,7 @@
                                 <th class="num">Custo total</th>
                                 <th class="num">Preço sugerido</th>
                                 <th class="num">Markup</th>
+                                <th class="num">Margem bruta</th>
                                 <th class="num">Margem planejada</th>
                                 <th style="text-align:right;">Ações</th>
                             </tr>
@@ -3523,7 +3558,8 @@
                                     <td class="num">${Formatter.brl(p.custoTotal)}</td>
                                     <td class="num" style="color:var(--color-emerald);font-weight:600;">${Formatter.brl(p.precoSugerido)}</td>
                                     <td class="num">${Formatter.multiplier(p.markup)}</td>
-                                    <td class="num" style="${target === null ? '' : `color:${p.margemPlanejada < target ? 'var(--color-warning)' : 'var(--color-emerald)'};`}">${Formatter.percent(p.margemPlanejada)}</td>
+                                    <td class="num">${formatNullablePercent(getGrossMargin(p).percent)}</td>
+                                    <td class="num" style="${target === null || p.margemPlanejada === null ? '' : `color:${p.margemPlanejada < target ? 'var(--color-warning)' : 'var(--color-emerald)'};`}">${formatNullablePercent(p.margemPlanejada)}</td>
                                     <td style="text-align:right;white-space:nowrap;">
                                         <div style="display:inline-flex;gap:6px;">
                                             <button type="button" class="btn btn-ghost btn-sm" data-hist-detail="${p.id}">Detalhes</button>
@@ -3573,7 +3609,9 @@
                 <div class="kv-row"><span class="kv-key">Setor · Unidade</span><span class="kv-val">${sectorCfg?.nome || p.setor} · ${Formatter.escapeHtml(p.unidade)}</span></div>
                 <div class="kv-row"><span class="kv-key">Custo total unitário</span><span class="kv-val mono">${Formatter.brl(p.custoTotal)}</span></div>
                 <div class="kv-row"><span class="kv-key">Preço sugerido</span><span class="kv-val mono" style="color:var(--color-emerald);">${Formatter.brl(p.precoSugerido)}</span></div>
-                <div class="kv-row"><span class="kv-key">Markup · Margem planejada</span><span class="kv-val mono">${Formatter.multiplier(p.markup)} · ${Formatter.percent(p.margemPlanejada)}</span></div>
+                <div class="kv-row"><span class="kv-key">Markup</span><span class="kv-val mono">${Formatter.multiplier(p.markup)}</span></div>
+                <div class="kv-row"><span class="kv-key">Margem bruta</span><span class="kv-val mono">${formatNullablePercent(getGrossMargin(p).percent)} (${getGrossMargin(p).amount === null ? '—' : Formatter.brl(getGrossMargin(p).amount)})</span></div>
+                <div class="kv-row"><span class="kv-key">Margem planejada</span><span class="kv-val mono">${formatNullablePercent(p.margemPlanejada)}</span></div>
                 <div class="kv-row"><span class="kv-key">Impostos e taxas (${Formatter.percent(p.percentualImpostosTaxas)})</span><span class="kv-val mono">${Formatter.brl(p.valorImpostosTaxas)}</span></div>
                 <div class="kv-row"><span class="kv-key">Lucro estimado / unidade</span><span class="kv-val mono">${Formatter.brl(p.lucroEstimado)}</span></div>
             </div>
@@ -3665,13 +3703,13 @@
             <div class="surface-card" style="margin-bottom:20px;">
                 <div class="toolbar" style="margin-bottom:0;">
                     <div class="toolbar-group">
-                        <label for="ana-item-select" style="font-size:16.9px;font-weight:500;color:var(--color-silver);">Escopo da análise:</label>
+                        <label for="ana-item-select" style="font-size:16.9px;font-weight:500;color:var(--color-silver);">Escopo geral:</label>
                         <select id="ana-item-select" class="field-select" style="width:auto;min-width:240px;">
                             <option value="all" ${selectedId === 'all' ? 'selected' : ''}>Todos os itens ativos (${activePricingRecords.length} registros)</option>
                             ${itemsWithPricing.map(item => `<option value="${item.id}" ${selectedId === item.id ? 'selected' : ''}>${Formatter.escapeHtml(item.nome)}</option>`).join('')}
                         </select>
                     </div>
-                    <span style="font-size:15.6px;color:var(--color-silver);">Exibindo métricas planejadas de custo, preço e margem</span>
+                    <span style="font-size:15.6px;color:var(--color-silver);">Controla composição de custos, margens planejadas e histórico abaixo.</span>
                 </div>
             </div>
 
@@ -3680,10 +3718,10 @@
                     <div class="card-header analysis-evolution-header">
                         <div class="analysis-evolution-heading">
                             <h2 class="card-title">Evolução de preços e custos</h2>
-                            <p class="card-subtitle">Preço sugerido, custo total e margem bruta por versão.</p>
+                            <p class="card-subtitle">Selecione um item independentemente do escopo geral. Compare preço e custo por versão.</p>
                         </div>
                         <label class="analysis-evolution-select-wrap" for="ana-evolution-item-select">
-                            <span>Produto ou serviço</span>
+                            <span>Item deste gráfico</span>
                             <select id="ana-evolution-item-select" class="field-select" aria-label="Selecionar produto ou serviço para o gráfico">
                                 ${itemsWithPricing.map(item => `<option value="${Formatter.escapeHtml(item.id)}" ${evolutionSelectedId === item.id ? 'selected' : ''}>${Formatter.escapeHtml(item.nome)}</option>`).join('')}
                             </select>
@@ -3726,20 +3764,24 @@
                             <thead>
                                 <tr>
                                     <th>Item / Versão</th>
+                                    <th>Data e hora</th>
                                     <th class="num">Custo</th>
                                     <th class="num">Preço</th>
                                     <th class="num">Markup</th>
-                                    <th class="num">Margem</th>
+                                    <th class="num">Margem bruta</th>
+                                    <th class="num">Margem planejada</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${[...ordered].reverse().slice(0, 8).map(p => `
                                     <tr>
-                                        <td>${Formatter.escapeHtml(p.itemNome)} <span class="mono" style="color:var(--color-silver);">v${p.versao}</span></td>
+                                        <td>${Formatter.escapeHtml(p.itemNome)} <span class="mono" style="color:var(--color-silver);">V${p.versao}</span></td>
+                                        <td>${Formatter.dateTime(p.criadoEm)}</td>
                                         <td class="num">${Formatter.brl(p.custoTotal)}</td>
                                         <td class="num" style="color:var(--color-emerald);">${Formatter.brl(p.precoSugerido)}</td>
                                         <td class="num">${Formatter.multiplier(p.markup)}</td>
-                                        <td class="num">${Formatter.percent(p.margemPlanejada)}</td>
+                                        <td class="num">${formatNullablePercent(getGrossMargin(p).percent)}</td>
+                                        <td class="num">${formatNullablePercent(p.margemPlanejada)}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
