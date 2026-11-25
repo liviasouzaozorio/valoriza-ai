@@ -1,7 +1,6 @@
 <div align="center">
   <img src="public/img-valorizaai/nilo/nilo-analisando.svg" alt="Nilo" width="180"/>
   <br/>
-  <img src="public/img-valorizaai/logos/valorizai-horizontal-gradient-dark.svg" alt="ValorizAI" width="200"/>
 
   <h3>Iniciação Científica: Plataforma inteligente de precificação para micro e pequenos negócios.</h3>
   <p>Precificação, Business Intelligence e Inteligência Artificial aplicados à gestão empresarial.</p>
