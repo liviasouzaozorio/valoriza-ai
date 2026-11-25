@@ -3734,7 +3734,7 @@
                     <div class="card-header">
                         <div>
                             <h2 class="card-title">Composição de custos por categoria</h2>
-                            <p class="card-subtitle">${selectedId === 'all' ? 'Selecione um item para consultar a composição da sua versão mais recente.' : `Referência: ${Formatter.escapeHtml(latestFocus.itemNome)} (v${latestFocus.versao})`}</p>
+                            <p class="card-subtitle">${selectedId === 'all' ? 'A composição acompanha o Escopo geral acima. Selecione um produto ou serviço nesse seletor para consultar sua versão mais recente; o item escolhido no gráfico não altera este card.' : `Referência: ${Formatter.escapeHtml(latestFocus.itemNome)} (v${latestFocus.versao})`}</p>
                         </div>
                     </div>
                     <div id="ana-chart-comp"></div>
@@ -3759,7 +3759,8 @@
                             <p class="card-subtitle">Registros do escopo selecionado; compare versões do mesmo item.</p>
                         </div>
                     </div>
-                    <div class="table-wrap">
+                    <p class="analysis-table-scroll-hint">A tabela contém todas as colunas; em telas menores, deslize horizontalmente para consultar os valores à direita.</p>
+                    <div class="table-wrap analysis-history-table-wrap" role="region" aria-label="Histórico de versões; tabela com rolagem horizontal" tabindex="0">
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -3807,7 +3808,7 @@
         });
 
         if (selectedId === 'all') {
-            document.getElementById('ana-chart-comp').innerHTML = '<div class="empty-state"><p class="empty-state-desc">A composição é exibida por item. Selecione um produto ou serviço para consultar sua versão mais recente.</p></div>';
+            document.getElementById('ana-chart-comp').innerHTML = '<div class="empty-state"><p class="empty-state-desc">Nenhum item específico está selecionado no Escopo geral. Escolha um produto ou serviço no seletor acima. A seleção de “Item deste gráfico” é independente e não altera esta composição.</p></div>';
         } else {
             ChartRenderer.renderCostDistributionChart(document.getElementById('ana-chart-comp'), latestFocus.categoriasCusto, latestFocus.custoTotal);
         }
